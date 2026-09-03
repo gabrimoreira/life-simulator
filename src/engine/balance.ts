@@ -90,7 +90,7 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   poor: {
     label: 'classe baixa',
     allowance: 300,
-    baseIncome: 11_000,
+    baseIncome: 9_000,
     costOfLiving: 14_000,
     startingMoney: 0,
     statBias: { health: -8, intelligence: -5, happiness: -4 },
@@ -99,8 +99,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   lowerMiddle: {
     label: 'classe média baixa',
     allowance: 900,
-    baseIncome: 16_000,
-    costOfLiving: 22_000,
+    baseIncome: 14_000,
+    costOfLiving: 24_000,
     startingMoney: 500,
     statBias: { health: -3, intelligence: -1 },
     weight: 33,
@@ -108,8 +108,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   middle: {
     label: 'classe média',
     allowance: 2_400,
-    baseIncome: 24_000,
-    costOfLiving: 33_000,
+    baseIncome: 18_000,
+    costOfLiving: 36_000,
     startingMoney: 2_000,
     statBias: {},
     weight: 25,
@@ -117,8 +117,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   upperMiddle: {
     label: 'classe média alta',
     allowance: 6_000,
-    baseIncome: 38_000,
-    costOfLiving: 55_000,
+    baseIncome: 26_000,
+    costOfLiving: 60_000,
     startingMoney: 12_000,
     statBias: { health: 4, intelligence: 5, looks: 3 },
     weight: 13,
@@ -126,8 +126,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   rich: {
     label: 'classe alta',
     allowance: 18_000,
-    baseIncome: 70_000,
-    costOfLiving: 100_000,
+    baseIncome: 45_000,
+    costOfLiving: 110_000,
     startingMoney: 80_000,
     statBias: { health: 8, intelligence: 6, looks: 6, reputation: 8 },
     weight: 4,
@@ -142,6 +142,12 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
  */
 export const DEBT_INTEREST_RATE = 0.06
 export const DEBT_CEILING = 400_000
+/**
+ * Reserva mantida antes de amortizar divida. Ninguem zera a conta para quitar
+ * um financiamento, mas tambem ninguem senta em cima de dois milhoes pagando
+ * juros de cinquenta mil — que era o que acontecia antes desta regra.
+ */
+export const DEBT_PAYDOWN_BUFFER_YEARS = 1
 
 // --- Geracao do personagem -------------------------------------------------
 
@@ -161,13 +167,11 @@ export const PARENT_AGE_AT_BIRTH = { min: 19, max: 42 } as const
 export const INITIAL_RELATION = { min: 55, max: 90 } as const
 
 /**
- * Relacoes ignoradas decaem sozinhas todo ano — mas so ate um piso. Na Fase 1
- * o jogador nao tem NENHUMA acao para cuidar de alguem, entao deixar tudo
- * chegar a zero seria punicao sem agencia. O piso sai quando a aba Relacoes
- * ganhar acoes, na Fase 3.
+ * Relacoes ignoradas decaem sozinhas todo ano. O piso que existia na Fase 1
+ * caiu junto com o motivo dele: agora o jogador TEM como cuidar de alguem, e
+ * ver a barra chegar a zero e a consequencia de nao ter feito nada.
  */
-export const RELATION_ANNUAL_DECAY = 1
-export const RELATION_DECAY_FLOOR = 30
+export const RELATION_ANNUAL_DECAY = 2
 
 
 // --- Carreira ---------------------------------------------------------------
@@ -210,6 +214,16 @@ export const CAREER_RESTART_PENALTY = 2
  */
 export const COST_OF_LIVING_INCOME_SHARE = 0.42
 
+/** Comer e ter um teto. Ninguem vive por menos que isto. */
+export const SUBSISTENCE_COST = 22_000
+/**
+ * Teto do padrao de vida herdado, como fracao da renda. Nascer rico te torna
+ * caro, mas nao te condena: se a renda nao sustenta o padrao da familia, ele
+ * desce ate caber. Sem esse limite, um filho de classe alta com salario de
+ * analista ficava no vermelho a vida inteira sem nada que pudesse fazer.
+ */
+export const INHERITED_LIFESTYLE_CAP = 1.15
+
 /**
  * Estudante vive como estudante: republica, casa dos pais, arroz e feijao.
  * Sem isso, cursar uma faculdade paga enquanto se paga custo de vida cheio
@@ -224,3 +238,31 @@ export const DROPOUT_UNHAPPY_THRESHOLD = 15
 export const DROPOUT_CHANCE = 0.25
 /** Estudar cansa. */
 export const STUDY_HAPPINESS_COST = 2
+
+
+// --- Ativos -----------------------------------------------------------------
+
+/** Corretagem, imposto, comprador negociando: vender sempre custa. */
+export const ASSET_SALE_HAIRCUT = 0.08
+/** Piso do valor de um ativo, como fracao do preco de compra. */
+export const ASSET_VALUE_FLOOR = 0.05
+
+// --- Relacoes ---------------------------------------------------------------
+
+/** Parentes envelhecem e morrem. Mesma curva de Gompertz, saude media fixa. */
+export const RELATIVE_MORTALITY_BASE = 0.00018
+export const RELATIVE_MORTALITY_GROWTH = 0.085
+
+/** Perder alguem proximo cobra felicidade proporcional a relacao. */
+export const GRIEF_MAX_HAPPINESS_LOSS = 25
+
+// --- Heranca ----------------------------------------------------------------
+
+/** Fatia do patrimonio liquido que passa para os filhos, dividida entre eles. */
+export const INHERITANCE_SHARE = 0.7
+/**
+ * Quanto os stats do pai puxam os do filho. O resto e regressao a media, senao
+ * uma linhagem otimizada viraria uma escada infinita de superpessoas.
+ */
+export const HEIR_STAT_INHERITANCE = 0.45
+export const HEIR_STAT_NOISE = 12

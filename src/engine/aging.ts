@@ -20,7 +20,6 @@ import {
   MORTALITY_HEALTH_MAX_MULT,
   MORTALITY_HEALTH_MIN_MULT,
   RELATION_ANNUAL_DECAY,
-  RELATION_DECAY_FLOOR,
 } from './balance'
 import { setStat } from './effects'
 import type { Rng } from './rng'
@@ -53,13 +52,11 @@ export function applyAging(state: GameState, rng: Rng): void {
     )
   }
 
-  // Quem nao e cuidado se afasta — ate o piso, nunca ate o zero.
+  // Quem nao e cuidado se afasta. O envelhecimento e a morte dos parentes
+  // ficam em `relations.ts`, junto com o resto do que e social.
   for (const person of state.relations) {
     if (!person.alive) continue
-    person.age += 1
-    if (person.relation > RELATION_DECAY_FLOOR) {
-      person.relation = Math.max(RELATION_DECAY_FLOOR, person.relation - RELATION_ANNUAL_DECAY)
-    }
+    person.relation = Math.max(0, person.relation - RELATION_ANNUAL_DECAY)
   }
 }
 

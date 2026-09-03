@@ -77,7 +77,25 @@ export interface Enrollment {
   financed: boolean
 }
 
-export type ActionGroup = 'health' | 'education' | 'career' | 'social' | 'crime'
+export type ActionGroup =
+  | 'health'
+  | 'education'
+  | 'career'
+  | 'assets'
+  | 'social'
+  | 'crime'
+
+export type AssetKind = 'property' | 'vehicle' | 'investment'
+
+export interface OwnedAsset {
+  assetId: string
+  /** Desnormalizado do catalogo, como em CareerState: o avaliador de condicoes
+   *  nao recebe o ContentPack e nao deve receber. */
+  kind: AssetKind
+  /** Valor de mercado atual. Muda todo ano. */
+  value: number
+  boughtYear: number
+}
 
 export type EventCategory =
   | 'childhood'
@@ -121,6 +139,7 @@ export interface Character {
   careerHistory: Record<string, number>
   /** null = nao esta estudando nada agora. */
   enrollment: Enrollment | null
+  assets: OwnedAsset[]
   flags: Record<string, boolean>
   alive: boolean
   deathCause: string | null
@@ -168,6 +187,8 @@ export interface GameState {
   lastFiredYear: Record<string, number>
   /** Idem para acoes. Namespace separado: ids de acao e de evento nao colidem. */
   lastActionYear: Record<string, number>
+  /** Cooldown de acao de relacao, por `<personId>:<actionId>`. */
+  lastRelationActionYear: Record<string, number>
   choiceLog: ChoiceRecord[]
   pendingEventIds: string[]
   turnPhase: TurnPhase
@@ -177,7 +198,14 @@ export interface GameState {
 // Conteudo declarativo
 // ---------------------------------------------------------------------------
 
-export type RelationRef = { by: 'kind'; kind: RelationKind } | { by: 'id'; id: string }
+export type RelationRef =
+  | { by: 'kind'; kind: RelationKind }
+  | { by: 'id'; id: string }
+  /**
+   * A pessoa em quem a acao foi disparada. So faz sentido dentro de uma
+   * RelationAction; o engine substitui por um ref de id antes de aplicar.
+   */
+  | { by: 'target' }
 
 export type Condition =
   | { type: 'age'; min?: number; max?: number }
@@ -194,6 +222,9 @@ export type Condition =
   | { type: 'careerLevel'; min?: number; max?: number }
   | { type: 'performance'; min?: number; max?: number }
   | { type: 'enrolled'; value: boolean }
+  | { type: 'ownsAsset'; assetId?: string; kind?: AssetKind }
+  | { type: 'netWorth'; min?: number; max?: number }
+  | { type: 'relationLevel'; kind: RelationKind; min?: number; max?: number }
   | { type: 'not'; condition: Condition }
   | { type: 'anyOf'; conditions: Condition[] }
 
@@ -212,6 +243,9 @@ export type Effect =
   | { type: 'study' }
   | { type: 'dropOut' }
   | { type: 'actionPoints'; delta: number }
+  | { type: 'asset'; action: 'buy' | 'sell'; assetId: string }
+  /** Converte uma relacao existente em outro tipo: namorado vira conjuge. */
+  | { type: 'relationKind'; target: RelationRef; kind: RelationKind }
   | { type: 'death'; cause: string }
 
 export interface Outcome {
@@ -258,6 +292,47 @@ export interface CareerTrack {
   /** Efeitos aplicados todo ano so por estar na trilha (fama, desgaste). */
   annualEffects?: Effect[]
   levels: CareerLevel[]
+}
+
+export interface AssetDef {
+  id: string
+  name: string
+  kind: AssetKind
+  hint: string
+  price: number
+  /** Manutencao anual como fracao do valor atual. IPTU, seguro, taxa. */
+  upkeepRate: number
+  /** Valorizacao anual media, em fracao. Negativa = deprecia. */
+  appreciation: number
+  /** Oscilacao em torno da media. 0 = valor previsivel. */
+  volatility: number
+  requirements: Condition[]
+}
+
+/**
+ * Acao dirigida a uma pessoa. Vive na aba Relacoes, nao na lista global de
+ * acoes: com N pessoas na vida, N x 6 linhas soltas seria ilegivel.
+ */
+export interface RelationAction {
+  id: string
+  label: string
+  hint: string
+  cost: number
+  /** Tipos de relacao em que a acao aparece. */
+  kinds: RelationKind[]
+  /** Sobre o personagem, nao sobre o alvo. */
+  conditions?: Condition[]
+  requirements?: Condition[]
+  /**
+   * Nivel de relacao COM O ALVO. Nao da para expressar isso como Condition:
+   * o avaliador nao conhece o alvo, e `relationLevel` compara por TIPO de
+   * relacao, o que responderia por outra pessoa quando ha duas do mesmo tipo.
+   */
+  minRelation?: number
+  maxRelation?: number
+  /** Anos minimos entre dois usos NA MESMA pessoa. */
+  cooldown?: number
+  outcomes: Outcome[]
 }
 
 export interface Course {
