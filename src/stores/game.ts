@@ -3,14 +3,25 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { GAME_CONTENT } from '../content'
+import { CLASS_PROFILES } from '../engine/balance'
+import { ACTION_GROUP_LABELS, availableActions } from '../engine/actions'
+import type { ActionGroup } from '../engine/types'
+import { careerTitle, currentLevel } from '../engine/careers'
+import { courseName } from '../engine/education'
 import { firstFailure } from '../engine/conditions'
 import { createGame } from '../engine/generate'
 import { interpolate } from '../engine/text'
-import { advanceYear, chooseOption, currentEvent } from '../engine/turn'
+import { advanceYear, chooseOption, currentEvent, runAction } from '../engine/turn'
 import type { EventOption, GameState, Gender } from '../engine/types'
 import { CURRENT_SAVE_VERSION } from '../save/adapter'
 import type { SaveAdapter } from '../save/adapter'
 import { createLocalStorageAdapter } from '../save/local-storage-adapter'
+
+export interface ActionGroupView {
+  key: ActionGroup
+  label: string
+  actions: ReturnType<typeof availableActions>
+}
 
 export interface OptionStatus {
   text: string
@@ -88,6 +99,49 @@ export const useGameStore = defineStore('game', () => {
     await persist()
   }
 
+  const actionGroups = computed<ActionGroupView[]>(() => {
+    const current = state.value
+    if (!current) return []
+
+    const all = availableActions(current, GAME_CONTENT)
+    const order: ActionGroup[] = ['career', 'education', 'health', 'social', 'crime']
+
+    return order
+      .map((key) => ({
+        key,
+        label: ACTION_GROUP_LABELS[key],
+        actions: all.filter((action) => action.group === key),
+      }))
+      .filter((group) => group.actions.length > 0)
+  })
+
+  const jobTitle = computed(() => (state.value ? careerTitle(state.value, GAME_CONTENT) : null))
+
+  /** Salário base do cargo atual, ou a renda informal de quem não tem cargo. */
+  const currentSalary = computed(() => {
+    const current = state.value
+    if (!current) return 0
+    const level = currentLevel(current, GAME_CONTENT)
+    if (level) return level.salary
+    return CLASS_PROFILES[current.character.socialClass].baseIncome
+  })
+
+  const studying = computed(() => {
+    const enrollment = state.value?.character.enrollment
+    if (!enrollment) return null
+    return {
+      name: courseName(GAME_CONTENT, enrollment.courseId),
+      yearsLeft: enrollment.yearsLeft,
+      financed: enrollment.financed,
+    }
+  })
+
+  async function act(actionId: string): Promise<void> {
+    if (!state.value) return
+    if (!runAction(state.value, GAME_CONTENT, actionId)) return
+    await persist()
+  }
+
   async function discard(): Promise<void> {
     state.value = null
     activeTab.value = 'life'
@@ -104,6 +158,11 @@ export const useGameStore = defineStore('game', () => {
     pendingEvent,
     pendingEventText,
     pendingOptions,
+    actionGroups,
+    jobTitle,
+    currentSalary,
+    studying,
+    act,
     init,
     newGame,
     nextYear,

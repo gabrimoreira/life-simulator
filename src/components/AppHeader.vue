@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { formatMoney } from '../engine/text'
 import type { Character } from '../engine/types'
 
-const props = defineProps<{ character: Character }>()
+const props = defineProps<{ character: Character; actionPoints: number }>()
 
 const money = computed(() => formatMoney(props.character.money))
 </script>
@@ -23,7 +23,10 @@ const money = computed(() => formatMoney(props.character.money))
         {{ money }}
         <template v-if="character.debt > 0">· dívida {{ formatMoney(character.debt) }}</template>
       </span>
-      <span class="shrink-0">{{ character.city }}/{{ character.uf }}</span>
+      <span class="shrink-0">
+        {{ character.city }}/{{ character.uf }}
+        <span class="ml-1 text-ochre tabular-nums">{{ actionPoints }} PA</span>
+      </span>
     </div>
   </header>
 </template>
