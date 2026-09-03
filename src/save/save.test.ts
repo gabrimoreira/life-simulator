@@ -72,6 +72,29 @@ describe('compatibilidade de forma', () => {
   })
 })
 
+describe('migração v4 -> v5', () => {
+  it('um curso em andamento ganha o modo de pagamento', () => {
+    const save = JSON.parse(JSON.stringify(makeSave()))
+    save.state.character.enrollment = {
+      courseId: 'direito',
+      targetLevel: 'bachelor',
+      yearsLeft: 3,
+      annualCost: 20_000,
+      financed: true,
+    }
+    const antigo = { ...save, saveVersion: 4 }
+
+    const depois = migrate(antigo)
+    expect(depois?.state.character.enrollment).toMatchObject({ mode: 'cash', yearsLeft: 3 })
+  })
+
+  it('quem não estava estudando continua sem matrícula', () => {
+    const save = JSON.parse(JSON.stringify(makeSave()))
+    save.state.character.enrollment = null
+    expect(migrate({ ...save, saveVersion: 4 })?.state.character.enrollment).toBeNull()
+  })
+})
+
 describe('migração v3 -> v4', () => {
   /** Um save v3 é o v4 sem nada que a Fase 4 acrescentou. */
   function v3Save(): Record<string, unknown> {
@@ -127,7 +150,7 @@ describe('migração v2 -> v3', () => {
   })
 })
 
-describe('migração v1 -> v4, em cadeia', () => {
+describe('migração v1 -> v5, em cadeia', () => {
   /** Um save v1 é o v2 sem nada que a Fase 2 acrescentou. */
   function v1Save(): Record<string, unknown> {
     const save = JSON.parse(JSON.stringify(makeSave()))

@@ -5,7 +5,7 @@
 
 import { ASSET_SALE_HAIRCUT, ASSET_VALUE_FLOOR } from './balance'
 import type { ContentPack } from './content-pack'
-import { addMoney } from './effects'
+import { addMoney, applyEffects } from './effects'
 import type { Rng } from './rng'
 import { formatMoney } from './text'
 import { makeNote } from './timeline'
@@ -84,6 +84,7 @@ export function applyAssetYear(
       Math.round(owned.value * (1 + asset.appreciation + swing)),
     )
     upkeep += Math.round(owned.value * asset.upkeepRate)
+    if (asset.annualEffects) applyEffects(asset.annualEffects, state, rng, content)
   }
 
   if (upkeep > 0) addMoney(state.character, -upkeep)

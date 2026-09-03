@@ -16,8 +16,9 @@ import { addMoney, applyEffects, setStat } from './effects'
 import type { Rng } from './rng'
 import { formatMoney } from './text'
 import { makeNote } from './timeline'
+import { evaluateAll } from './conditions'
 import { courseFlag } from './types'
-import type { Course, GameState, TimelineEntry } from './types'
+import type { Course, GameState, PaymentMode, TimelineEntry } from './types'
 
 export function findCourse(content: ContentPack, courseId: string): Course | undefined {
   return content.courses.find((course) => course.id === courseId)
@@ -55,19 +56,30 @@ export function applySchooling(state: GameState): TimelineEntry | null {
   return null
 }
 
-export function enroll(state: GameState, content: ContentPack, courseId: string): boolean {
+export function enroll(
+  state: GameState,
+  content: ContentPack,
+  courseId: string,
+  mode: PaymentMode = 'cash',
+): boolean {
   const course = findCourse(content, courseId)
   if (!course || state.character.enrollment !== null) return false
+  if (mode === 'scholarship' && !hasScholarship(state, course)) return false
 
   state.character.enrollment = {
     courseId: course.id,
     targetLevel: course.grants,
     yearsLeft: course.years,
-    annualCost: course.annualCost,
-    // Reavaliado a cada ano cursado; aqui e so a previsao do primeiro.
-    financed: course.annualCost > state.character.money,
+    annualCost: mode === 'scholarship' ? 0 : course.annualCost,
+    mode,
+    financed: mode === 'financed',
   }
   return true
+}
+
+/** Se o personagem passa nos requisitos da bolsa integral deste curso. */
+export function hasScholarship(state: GameState, course: Course): boolean {
+  return course.scholarship !== undefined && evaluateAll(course.scholarship, state)
 }
 
 export function dropOut(state: GameState): boolean {
@@ -96,15 +108,14 @@ export function studyYear(
   }
 
   if (enrollment.annualCost > 0) {
-    // A decisao e por ANO, nao na matricula: quem tem caixa paga do caixa.
-    // Fixar `financed` na entrada fazia o aluno acumular divida sentado em
-    // cima de dinheiro, e a renda ficava so girando para quitar juros.
-    if (enrollment.annualCost > c.money) {
+    // Quem escolheu financiar sempre vai para a divida — e o ponto de ter
+    // escolhido. Quem paga do proprio bolso so recorre a ela se faltar caixa.
+    const mustBorrow = enrollment.mode === 'financed' || enrollment.annualCost > c.money
+    if (mustBorrow) {
       c.debt = Math.min(DEBT_CEILING, c.debt + enrollment.annualCost)
       enrollment.financed = true
     } else {
       addMoney(c, -enrollment.annualCost)
-      enrollment.financed = false
     }
   }
 

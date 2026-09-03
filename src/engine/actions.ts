@@ -16,12 +16,19 @@ import type { ContentPack } from './content-pack'
 import { applyEffects } from './effects'
 import { pickOutcome } from './events'
 import { isInPrison, mentionsPrison } from './prison'
-import { courseName, dropOut, enroll, studyYear } from './education'
+import { courseName, dropOut, enroll, hasScholarship, studyYear } from './education'
 import type { Rng } from './rng'
 import { formatMoney } from './text'
 import { makeNote } from './timeline'
 import { courseFlag } from './types'
-import type { ActionGroup, Condition, GameState, Outcome, TimelineEntry } from './types'
+import type {
+  ActionGroup,
+  Condition,
+  GameState,
+  Outcome,
+  PaymentMode,
+  TimelineEntry,
+} from './types'
 
 export const ENROLL_PREFIX = 'enroll:'
 export const CAREER_PREFIX = 'career:'
@@ -96,18 +103,46 @@ function derivedActions(state: GameState, content: ContentPack): ActionSpec[] {
     for (const course of content.courses) {
       // Some da lista quem já concluiu o curso ou já passou daquele nível.
       if (state.character.flags[courseFlag(course.id)] === true) continue
-      specs.push({
-        id: `${ENROLL_PREFIX}${course.id}`,
-        group: 'education',
-        label: `Matricular-se em ${course.name}`,
-        hint:
-          course.annualCost > 0
-            ? `${course.years} anos. Sem dinheiro em caixa, a mensalidade vira dívida.`
-            : `${course.years} anos, sem mensalidade.`,
+
+      const base = {
+        group: 'education' as const,
         cost: 1,
-        conditions: [{ type: 'age', min: 17 }],
+        conditions: [{ type: 'age' as const, min: 17 }],
         requirements: course.requirements,
         outcomes: null,
+      }
+
+      // Bolsa: aparece só para quem passa nos requisitos dela, e paga zero.
+      if (course.scholarship !== undefined && hasScholarship(state, course)) {
+        specs.push({
+          ...base,
+          id: `${ENROLL_PREFIX}${course.id}:scholarship`,
+          label: `${course.name} com bolsa integral`,
+          hint: `${course.years} anos, sem pagar nada. Você se qualificou.`,
+        })
+      }
+
+      if (course.annualCost === 0) {
+        specs.push({
+          ...base,
+          id: `${ENROLL_PREFIX}${course.id}:cash`,
+          label: `Matricular-se em ${course.name}`,
+          hint: `${course.years} anos, sem mensalidade.`,
+        })
+        continue
+      }
+
+      specs.push({
+        ...base,
+        id: `${ENROLL_PREFIX}${course.id}:cash`,
+        label: `${course.name}, pagando do bolso`,
+        hint: `${formatMoney(course.annualCost)} por ano durante ${course.years} anos.`,
+      })
+      specs.push({
+        ...base,
+        id: `${ENROLL_PREFIX}${course.id}:financed`,
+        label: `${course.name}, financiado`,
+        hint: `Guarda o seu caixa e sai devendo ${formatMoney(course.annualCost * course.years)}.`,
       })
     }
   }
@@ -249,18 +284,19 @@ function performDerived(
   }
 
   if (spec.id.startsWith(ENROLL_PREFIX)) {
-    const courseId = spec.id.slice(ENROLL_PREFIX.length)
-    if (!enroll(state, content, courseId)) return null
-    const enrollment = state.character.enrollment
+    const [courseId, rawMode] = spec.id.slice(ENROLL_PREFIX.length).split(':')
+    if (courseId === undefined) return null
+    const mode: PaymentMode =
+      rawMode === 'scholarship' || rawMode === 'financed' ? rawMode : 'cash'
+
+    if (!enroll(state, content, courseId, mode)) return null
     const name = courseName(content, courseId)
-    return makeNote(
-      state,
-      enrollment?.financed === true
-        ? `Você entrou em ${name}, financiad{o}.`
-        : `Você entrou em ${name}.`,
-      'school',
-      [{ label: 'Matrícula', text: name, tone: 'good' }],
-    )
+    const como =
+      mode === 'scholarship' ? ', com bolsa' : mode === 'financed' ? ', financiad{o}' : ''
+
+    return makeNote(state, `Você entrou em ${name}${como}.`, 'school', [
+      { label: 'Matrícula', text: name, tone: 'good' },
+    ])
   }
 
   if (spec.id.startsWith(BUY_PREFIX)) {

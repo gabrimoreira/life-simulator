@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import AppHeader from '../components/AppHeader.vue'
 import EventModal from '../components/EventModal.vue'
+import InstallPrompt from '../components/InstallPrompt.vue'
 import TabBar from '../components/TabBar.vue'
 import TimelineFeed from '../components/TimelineFeed.vue'
 import ActionsTab from '../components/tabs/ActionsTab.vue'
@@ -42,6 +43,8 @@ const showAdvance = computed(
         </button>
       </div>
     </main>
+
+    <InstallPrompt />
 
     <TabBar v-model="store.activeTab" />
 

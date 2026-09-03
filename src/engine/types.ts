@@ -75,11 +75,16 @@ export interface CareerState {
   performance: number
 }
 
+/** Como o curso esta sendo pago. Definido na matricula e nao muda depois. */
+export type PaymentMode = 'scholarship' | 'cash' | 'financed'
+
 export interface Enrollment {
   courseId: string
   targetLevel: EducationLevel
   yearsLeft: number
   annualCost: number
+  mode: PaymentMode
+  /** Se ja precisou recorrer a divida em algum ano. So para exibicao. */
   financed: boolean
 }
 
@@ -340,6 +345,11 @@ export interface AssetDef {
   /** Oscilacao em torno da media. 0 = valor previsivel. */
   volatility: number
   requirements: Condition[]
+  /**
+   * Aplicados todo ano so por possuir a coisa. E o que faz um iate comprar
+   * felicidade em vez de ser mais um numero na lista de bens.
+   */
+  annualEffects?: Effect[]
 }
 
 /**
@@ -377,6 +387,11 @@ export interface Course {
   /** Custo anual. 0 = publica. */
   annualCost: number
   requirements: Condition[]
+  /**
+   * Requisitos da bolsa integral. Quem passa neles cursa de graca — e a
+   * escolha entre bolsa, a vista e financiado passa a existir de verdade.
+   */
+  scholarship?: Condition[]
   /** Efeitos aplicados na CONCLUSAO. A flag do curso e adicionada sozinha. */
   completionEffects: Effect[]
 }

@@ -83,6 +83,7 @@ describe('ser preso', () => {
       targetLevel: 'bachelor',
       yearsLeft: 3,
       annualCost: 0,
+      mode: 'cash',
       financed: false,
     }
 
