@@ -5,6 +5,7 @@ import { KNOWN_TOKENS, extractTokens } from './text'
 import type { ContentPack } from './content-pack'
 import { ENGINE_READ_FLAGS } from './flags'
 import type {
+  Achievement,
   AssetDef,
   CareerTrack,
   Condition,
@@ -289,6 +290,29 @@ export function validateRelationActions(actions: RelationAction[]): string[] {
   return problems
 }
 
+
+export function validateAchievements(achievements: Achievement[]): string[] {
+  const problems: string[] = []
+  const seen = new Set<string>()
+
+  for (const achievement of achievements) {
+    const where = `conquista "${achievement.id}"`
+
+    if (seen.has(achievement.id)) problems.push(`${where}: id duplicado`)
+    seen.add(achievement.id)
+
+    if (achievement.name.trim() === '') problems.push(`${where}: name vazio`)
+    if (achievement.description.trim() === '') problems.push(`${where}: description vazia`)
+    // Conquista sem condicao seria concedida no primeiro turno de toda vida.
+    if (achievement.conditions.length === 0) problems.push(`${where}: sem condicoes`)
+
+    achievement.conditions.forEach((c, i) =>
+      checkCondition(c, `${where}.conditions[${i}]`, problems),
+    )
+  }
+
+  return problems
+}
 
 // ---------------------------------------------------------------------------
 // Saude do conteudo como um todo

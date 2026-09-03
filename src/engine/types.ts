@@ -246,6 +246,7 @@ export type Condition =
   | { type: 'ownsAsset'; assetId?: string; kind?: AssetKind }
   | { type: 'netWorth'; min?: number; max?: number }
   | { type: 'relationLevel'; kind: RelationKind; min?: number; max?: number }
+  | { type: 'relationCount'; kind: RelationKind; min?: number; max?: number }
   | { type: 'not'; condition: Condition }
   | { type: 'anyOf'; conditions: Condition[] }
 
@@ -315,6 +316,15 @@ export interface CareerTrack {
   /** Efeitos aplicados todo ano so por estar na trilha (fama, desgaste). */
   annualEffects?: Effect[]
   levels: CareerLevel[]
+}
+
+export interface Achievement {
+  id: string
+  name: string
+  /** Uma linha, mostrada abaixo do nome. Explica o que foi feito, nao como. */
+  description: string
+  /** Avaliadas no fim de cada turno, inclusive no turno da morte. */
+  conditions: Condition[]
 }
 
 export interface AssetDef {

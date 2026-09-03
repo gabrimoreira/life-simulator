@@ -11,6 +11,7 @@
 // volta pro save depois de cada operacao.
 
 import { resetActionPoints } from './actions'
+import { checkAchievements } from './achievements'
 import { applyAging, checkDeath } from './aging'
 import { applyAssetYear } from './assets'
 import { EVENTS_PER_TURN } from './balance'
@@ -49,8 +50,12 @@ export function currentEvent(state: GameState, content: ContentPack): GameEvent 
   return findEvent(content, id) ?? null
 }
 
-function finishTurn(state: GameState): void {
+function finishTurn(state: GameState, content: ContentPack): void {
   withRng(state, (rng) => checkDeath(state, rng))
+
+  // Depois da checagem de morte, de propósito: várias conquistas só fazem
+  // sentido no turno em que a vida acaba.
+  for (const note of checkAchievements(state, content)) state.timeline.push(note)
 
   const c = state.character
   if (!c.alive) {
@@ -116,7 +121,7 @@ export function advanceYear(state: GameState, content: ContentPack): void {
   }
 
   if (state.pendingEventIds.length === 0) {
-    finishTurn(state)
+    finishTurn(state, content)
   } else {
     state.turnPhase = 'resolving'
   }
@@ -187,6 +192,6 @@ export function chooseOption(state: GameState, content: ContentPack, optionIndex
 
   // Um efeito de morte esvazia a fila: o resto do ano nao acontece.
   if (!state.character.alive || state.pendingEventIds.length === 0) {
-    finishTurn(state)
+    finishTurn(state, content)
   }
 }

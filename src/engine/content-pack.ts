@@ -2,6 +2,7 @@
 // Isso e o que deixa o motor testavel com pools falsos minusculos.
 
 import type {
+  Achievement,
   AssetDef,
   CareerTrack,
   Course,
@@ -24,6 +25,7 @@ export interface ContentPack {
   courses: Course[]
   assets: AssetDef[]
   relationActions: RelationAction[]
+  achievements: Achievement[]
   maleNames: string[]
   femaleNames: string[]
   surnames: string[]

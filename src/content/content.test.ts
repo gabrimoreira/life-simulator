@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  validateAchievements,
   validateActions,
   validateAssets,
   validateCareers,
@@ -21,6 +22,7 @@ describe('conteúdo do jogo', () => {
     expect(validateCourses(GAME_CONTENT.courses)).toEqual([])
     expect(validateAssets(GAME_CONTENT.assets)).toEqual([])
     expect(validateRelationActions(GAME_CONTENT.relationActions)).toEqual([])
+    expect(validateAchievements(GAME_CONTENT.achievements)).toEqual([])
   })
 
   it('toda trilha tem um nível de entrada alcançável cedo', () => {

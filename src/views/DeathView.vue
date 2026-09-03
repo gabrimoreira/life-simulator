@@ -56,6 +56,19 @@ const chosen = computed(() => props.timeline.filter((entry) => entry.kind === 'n
       </dl>
     </section>
 
+    <section v-if="store.achievements.length" class="mt-6">
+      <h2 class="flex items-baseline justify-between border-b border-rule pb-1 font-serif text-sm tracking-wide uppercase">
+        <span>Conquistas</span>
+        <span class="tabular-nums">{{ store.achievements.length }}</span>
+      </h2>
+      <ul class="mt-2 space-y-2">
+        <li v-for="item in store.achievements" :key="item.id">
+          <span class="block text-sm">{{ item.name }}</span>
+          <span class="block text-[11px] leading-snug text-muted">{{ item.description }}</span>
+        </li>
+      </ul>
+    </section>
+
     <section v-if="store.canContinueLineage" class="mt-8">
       <h2 class="border-b border-rule pb-1 font-serif text-sm tracking-wide uppercase">
         Continuar a linhagem

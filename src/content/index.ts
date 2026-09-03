@@ -1,6 +1,7 @@
 // O ContentPack que o jogo usa de verdade. Testes montam packs menores.
 
 import type { ContentPack } from '../engine/content-pack'
+import { ACHIEVEMENTS } from './achievements'
 import { GAME_ACTIONS } from './actions'
 import { ASSETS } from './assets'
 import { CAREER_TRACKS } from './careers'
@@ -17,6 +18,7 @@ export const GAME_CONTENT: ContentPack = {
   courses: COURSES,
   assets: ASSETS,
   relationActions: RELATION_ACTIONS,
+  achievements: ACHIEVEMENTS,
   maleNames: MALE_NAMES,
   femaleNames: FEMALE_NAMES,
   surnames: SURNAMES,

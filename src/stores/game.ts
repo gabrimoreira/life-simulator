@@ -6,6 +6,7 @@ import { GAME_CONTENT } from '../content'
 import { CLASS_PROFILES } from '../engine/balance'
 import { ACTION_GROUP_LABELS, availableActions } from '../engine/actions'
 import type { ActionGroup, Person } from '../engine/types'
+import { earnedAchievements } from '../engine/achievements'
 import { netWorth, ownedWithDef } from '../engine/assets'
 import { careerTitle, currentLevel } from '../engine/careers'
 import { canContinue, createHeir, heirCandidates } from '../engine/heir'
@@ -147,6 +148,10 @@ export const useGameStore = defineStore('game', () => {
 
   const heirs = computed(() => (state.value ? heirCandidates(state.value) : []))
 
+  const achievements = computed(() =>
+    state.value ? earnedAchievements(state.value, GAME_CONTENT) : [],
+  )
+
   const canContinueLineage = computed(() => (state.value ? canContinue(state.value) : false))
 
   function actionsForPerson(person: Person): ReturnType<typeof relationActionsFor> {
@@ -197,6 +202,7 @@ export const useGameStore = defineStore('game', () => {
     assets,
     worth,
     heirs,
+    achievements,
     canContinueLineage,
     actionsForPerson,
     actOnPerson,
