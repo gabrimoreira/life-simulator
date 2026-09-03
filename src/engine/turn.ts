@@ -12,6 +12,7 @@
 
 import { resetActionPoints } from './actions'
 import { applyAging, checkDeath } from './aging'
+import { applyAssetYear } from './assets'
 import { EVENTS_PER_TURN } from './balance'
 import { firstFailure } from './conditions'
 import type { ContentPack } from './content-pack'
@@ -20,10 +21,18 @@ import { applySchooling } from './education'
 import { applyEffects } from './effects'
 import { findEvent, pickOutcome, selectEvents } from './events'
 import { performAction } from './actions'
+import { applyRelationYear, performRelationAction } from './relations'
 import { createRng } from './rng'
 import type { Rng } from './rng'
-import { interpolate } from './text'
+import { formatMoney, interpolate } from './text'
 import type { GameEvent, GameState } from './types'
+
+/** A manutencao dos bens entra na mesma linha de razao da renda e do custo. */
+function joinSummary(economy: string | null, upkeep: number): string | null {
+  if (upkeep <= 0) return economy
+  const bens = `Bens ${formatMoney(upkeep)}`
+  return economy === null ? bens : `${economy} · ${bens}`
+}
 
 function withRng<T>(state: GameState, fn: (rng: Rng) => T): T {
   const rng = createRng(state.rngState)
@@ -70,16 +79,20 @@ export function advanceYear(state: GameState, content: ContentPack): void {
   resetActionPoints(state)
 
   withRng(state, (rng) => applyAging(state, rng))
+  const relationNotes = withRng(state, (rng) => applyRelationYear(state, rng))
   const economy = withRng(state, (rng) => applyEconomy(state, rng, content))
+  const assets = withRng(state, (rng) => applyAssetYear(state, rng, content))
 
   state.timeline.push({
     kind: 'year',
     year: state.year,
     age: state.character.age,
-    summary: economy.summary,
+    summary: joinSummary(economy.summary, assets.upkeep),
   })
 
-  for (const note of economy.notes) state.timeline.push(note)
+  for (const note of [...economy.notes, ...assets.notes, ...relationNotes]) {
+    state.timeline.push(note)
+  }
 
   const schoolingNote = applySchooling(state)
   if (schoolingNote) state.timeline.push(schoolingNote)
@@ -101,6 +114,25 @@ export function advanceYear(state: GameState, content: ContentPack): void {
   } else {
     state.turnPhase = 'resolving'
   }
+}
+
+/** Executa uma acao dirigida a uma pessoa e joga o resultado na timeline. */
+export function runRelationAction(
+  state: GameState,
+  content: ContentPack,
+  personId: string,
+  actionId: string,
+): boolean {
+  if (!state.character.alive) return false
+  if (state.turnPhase === 'resolving') return false
+
+  const note = withRng(state, (rng) =>
+    performRelationAction(state, content, rng, personId, actionId),
+  )
+  if (!note) return false
+
+  state.timeline.push(note)
+  return true
 }
 
 /** Executa uma acao da aba Acoes e joga o resultado na timeline. */

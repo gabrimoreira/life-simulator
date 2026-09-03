@@ -8,7 +8,8 @@
 // são regra. "Você pode se matricular num curso para o qual tem requisito" não
 // é um dado que alguém escreve, é uma consequência de existirem cursos.
 
-import { ACTION_POINTS_PER_TURN } from './balance'
+import { assetName, buyAsset, findAsset, sellAsset } from './assets'
+import { ACTION_POINTS_PER_TURN, ASSET_SALE_HAIRCUT } from './balance'
 import { hireInto } from './careers'
 import { firstFailure } from './conditions'
 import type { ContentPack } from './content-pack'
@@ -16,12 +17,15 @@ import { applyEffects } from './effects'
 import { pickOutcome } from './events'
 import { courseName, dropOut, enroll, studyYear } from './education'
 import type { Rng } from './rng'
+import { formatMoney } from './text'
 import { makeNote } from './timeline'
 import { courseFlag } from './types'
 import type { ActionGroup, Condition, GameState, Outcome, TimelineEntry } from './types'
 
 export const ENROLL_PREFIX = 'enroll:'
 export const CAREER_PREFIX = 'career:'
+export const BUY_PREFIX = 'buy:'
+export const SELL_PREFIX = 'sell:'
 export const STUDY_ACTION_ID = 'study'
 export const DROP_OUT_ACTION_ID = 'drop_out'
 
@@ -53,6 +57,7 @@ export const ACTION_GROUP_LABELS: Record<ActionGroup, string> = {
   health: 'Saúde',
   education: 'Educação',
   career: 'Carreira',
+  assets: 'Bens',
   social: 'Social',
   crime: 'Crime',
 }
@@ -104,6 +109,35 @@ function derivedActions(state: GameState, content: ContentPack): ActionSpec[] {
         outcomes: null,
       })
     }
+  }
+
+  for (const asset of content.assets) {
+    const owned = state.character.assets.find((a) => a.assetId === asset.id)
+
+    if (owned) {
+      const proceeds = Math.round(owned.value * (1 - ASSET_SALE_HAIRCUT))
+      specs.push({
+        id: `${SELL_PREFIX}${asset.id}`,
+        group: 'assets',
+        label: `Vender ${asset.name.toLowerCase()}`,
+        hint: `Vale ${formatMoney(owned.value)}; você recebe ${formatMoney(proceeds)}.`,
+        cost: 0,
+        conditions: [],
+        outcomes: null,
+      })
+      continue
+    }
+
+    specs.push({
+      id: `${BUY_PREFIX}${asset.id}`,
+      group: 'assets',
+      label: `Comprar ${asset.name.toLowerCase()}`,
+      hint: `${formatMoney(asset.price)}. ${asset.hint}`,
+      cost: 1,
+      conditions: asset.requirements,
+      requirements: [{ type: 'money', min: asset.price }],
+      outcomes: null,
+    })
   }
 
   if (state.character.career === null) {
@@ -223,6 +257,25 @@ function performDerived(
       'school',
       [{ label: 'Matrícula', text: name, tone: 'good' }],
     )
+  }
+
+  if (spec.id.startsWith(BUY_PREFIX)) {
+    const assetId = spec.id.slice(BUY_PREFIX.length)
+    const asset = findAsset(content, assetId)
+    if (!asset || !buyAsset(state, content, assetId)) return null
+    return makeNote(state, `Você comprou ${asset.name.toLowerCase()}.`, null, [
+      { label: asset.name, text: `−${formatMoney(asset.price)}`, tone: 'neutral' },
+    ])
+  }
+
+  if (spec.id.startsWith(SELL_PREFIX)) {
+    const assetId = spec.id.slice(SELL_PREFIX.length)
+    const name = assetName(content, assetId)
+    const proceeds = sellAsset(state, assetId)
+    if (proceeds === null) return null
+    return makeNote(state, `Você vendeu ${name.toLowerCase()}.`, null, [
+      { label: name, text: `+${formatMoney(proceeds)}`, tone: 'good' },
+    ])
   }
 
   if (spec.id.startsWith(CAREER_PREFIX)) {

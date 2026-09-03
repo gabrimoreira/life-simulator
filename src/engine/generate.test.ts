@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { GAME_CONTENT } from '../content'
+import { skipPendingEvents } from '../test/fixtures'
 import { advanceYear } from './turn'
 import { createGame } from './generate'
-import { PARENT_MIN_AGE_AT_FIRST_CHILD, RELATION_DECAY_FLOOR } from './balance'
+import {
+  INITIAL_RELATION,
+  PARENT_MIN_AGE_AT_FIRST_CHILD,
+  RELATION_ANNUAL_DECAY,
+} from './balance'
 import { STAT_KEYS } from './types'
 
 const newGame = (seed: number, name = 'Cecília'): ReturnType<typeof createGame> =>
@@ -93,16 +98,29 @@ describe('createGame', () => {
 })
 
 describe('decaimento de relação', () => {
-  it('não zera relações — na Fase 1 não há como cuidar de ninguém', () => {
+  it('quem é ignorado por décadas some da sua vida afetiva', () => {
+    // Na Fase 1 havia um piso, porque o jogador não tinha NENHUMA ação para
+    // cuidar de alguém — decair até zero seria punição sem agência. A aba
+    // Relações removeu o motivo, então o piso saiu junto.
     const state = newGame(9)
-    for (let i = 0; i < 60; i++) {
+    // Só a família do nascimento: eventos podem trazer amizades novas no meio
+    // do caminho, e essas ainda não tiveram tempo de esfriar.
+    const originais = new Set(state.relations.map((p) => p.id))
+
+    for (let i = 0; i < 40; i++) {
       if (!state.character.alive) break
       advanceYear(state, GAME_CONTENT)
-      // Ignora os eventos: aqui interessa só o decaimento automático.
-      state.pendingEventIds = []
+      skipPendingEvents(state)
     }
-    for (const person of state.relations) {
-      expect(person.relation).toBeGreaterThanOrEqual(RELATION_DECAY_FLOOR)
+
+    const sobreviventes = state.relations.filter((p) => p.alive && originais.has(p.id))
+    expect(sobreviventes.length).toBeGreaterThan(0)
+
+    // Teto do que sobra depois de 40 anos de descaso, partindo do melhor caso
+    // possível. Um piso de decaimento faria isto falhar — que é o ponto.
+    const teto = INITIAL_RELATION.max - 40 * RELATION_ANNUAL_DECAY
+    for (const person of sobreviventes) {
+      expect(person.relation, person.name).toBeLessThanOrEqual(Math.max(0, teto))
     }
   })
 })

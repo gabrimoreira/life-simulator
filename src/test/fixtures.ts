@@ -24,6 +24,7 @@ export function makeCharacter(overrides: Partial<Character> = {}): Character {
     career: null,
     careerHistory: {},
     enrollment: null,
+    assets: [],
     flags: {},
     alive: true,
     deathCause: null,
@@ -44,6 +45,7 @@ export function makeState(overrides: Partial<GameState> = {}): GameState {
     firedEventIds: [],
     lastFiredYear: {},
     lastActionYear: {},
+    lastRelationActionYear: {},
     choiceLog: [],
     pendingEventIds: [],
     turnPhase: 'idle',
@@ -60,6 +62,8 @@ export function makeContent(
     actions: [],
     careers: [],
     courses: [],
+    assets: [],
+    relationActions: [],
     maleNames: ['João', 'Pedro'],
     femaleNames: ['Ana', 'Maria'],
     surnames: ['Silva', 'Souza'],
@@ -82,4 +86,16 @@ export function makeEvent(overrides: Partial<GameEvent> = {}): GameEvent {
     ],
     ...overrides,
   }
+}
+
+/**
+ * Descarta os eventos do turno sem resolve-los.
+ *
+ * Limpar so `pendingEventIds` NAO basta: `turnPhase` continua em 'resolving' e
+ * o proximo `advanceYear` retorna cedo. Dois testes ficaram anos rodando como
+ * no-op por causa disso — passavam porque a assercao tambem valia no ano 1.
+ */
+export function skipPendingEvents(state: GameState): void {
+  state.pendingEventIds = []
+  state.turnPhase = 'idle'
 }
