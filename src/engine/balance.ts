@@ -69,6 +69,15 @@ export const HIGHSCHOOL_MIN_INTELLIGENCE = 25
 
 export const AGE_FINANCIALLY_INDEPENDENT = 18
 
+/** Idade a partir da qual sair de uma carreira conta como aposentadoria. */
+export const AGE_RETIREMENT_MIN = 58
+/**
+ * Fracao do ultimo salario que vira renda vitalicia. Sem isso, aposentar-se
+ * jogava a renda para a informalidade e era puro prejuizo — o jogo pedia para
+ * o jogador nunca parar de trabalhar.
+ */
+export const PENSION_RATE = 0.55
+
 export interface ClassProfile {
   label: string
   /** Renda anual liquida antes da independencia (mesada da familia). */
@@ -183,10 +192,17 @@ export const PERFORMANCE_DRIFT = 0.15
 export const PERFORMANCE_FROM_INTELLIGENCE = 0.6
 export const PERFORMANCE_FROM_CHARISMA = 0.4
 
-/** Chance de promocao quando tempo e requisitos ja passaram. */
-export const PROMOTION_BASE_CHANCE = 0.16
-/** Quanto o desempenho acima de 50 soma na chance de promocao. */
-export const PROMOTION_PERFORMANCE_WEIGHT = 0.5
+/**
+ * Chance de promocao quando tempo e requisitos ja passaram, e o quanto o
+ * desempenho acima de 50 pesa nela.
+ *
+ * Com 0.16 e 0.5, quem se dedicava ao maximo ainda esperava ~3 anos por
+ * promocao ALEM do minimo do nivel — sete anos por degrau, trinta e cinco para
+ * chegar ao topo. Na pratica a mediana travava no meio da trilha e "se dedicar
+ * ao trabalho" nao pagava. Agora vai de 20% (sem esforco) a ~68% (maximo).
+ */
+export const PROMOTION_BASE_CHANCE = 0.2
+export const PROMOTION_PERFORMANCE_WEIGHT = 1.2
 
 /** Abaixo deste desempenho o emprego comeca a correr risco. */
 export const FIRE_PERFORMANCE_THRESHOLD = 20

@@ -2,7 +2,24 @@ import { describe, expect, it } from 'vitest'
 import { GAME_CONTENT } from '../content'
 import { makeCharacter, makeContent, makeState } from '../test/fixtures'
 import { availableActions, performAction } from '../engine/actions'
-import { AGE_FINANCIALLY_INDEPENDENT, CLASS_PROFILES, SUBSISTENCE_COST } from './balance'
+import {
+  AGE_FINANCIALLY_INDEPENDENT,
+  AGE_RETIREMENT_MIN,
+  CLASS_PROFILES,
+  PENSION_RATE,
+  SUBSISTENCE_COST,
+} from './balance'
+import { hireInto, leaveCareer } from './careers'
+import type { CareerTrack } from './types'
+
+const TRILHA_TESTE: CareerTrack = {
+  id: 'clt',
+  name: 'Corporativo',
+  kind: 'clt',
+  entryLabel: 'Procurar emprego',
+  entryHint: 'Previsível.',
+  levels: [{ title: 'Analista', salary: 40_000, minYears: 0, requirements: [] }],
+}
 import { applyEconomy, costOfLiving } from './economy'
 import { enroll } from './education'
 import { createGame } from './generate'
@@ -209,5 +226,41 @@ describe('amortização de dívida', () => {
     const state = makeState({ character: makeCharacter({ age: 40, money: 0, debt: 100_000 }) })
     applyEconomy(state, rng(), empty)
     expect(state.character.debt).toBeGreaterThan(100_000)
+  })
+})
+
+describe('aposentadoria', () => {
+  it('quem sai da carreira depois da idade mínima leva uma pensão', () => {
+    const state = makeState({ character: makeCharacter({ age: AGE_RETIREMENT_MIN }) })
+    const content = makeContent([], { careers: [TRILHA_TESTE] })
+    hireInto(state, TRILHA_TESTE)
+
+    leaveCareer(state, content)
+    expect(state.character.pension).toBe(Math.round(40_000 * PENSION_RATE))
+  })
+
+  it('sair antes da idade mínima não gera pensão', () => {
+    const state = makeState({ character: makeCharacter({ age: 30 }) })
+    const content = makeContent([], { careers: [TRILHA_TESTE] })
+    hireInto(state, TRILHA_TESTE)
+
+    leaveCareer(state, content)
+    expect(state.character.pension).toBe(0)
+  })
+
+  it('a pensão vale mais que a informalidade', () => {
+    // Aposentar-se era puro prejuízo: a renda caía para o bico informal e o
+    // jogo pedia, na prática, para o jogador nunca parar de trabalhar.
+    const aposentado = makeState({
+      character: makeCharacter({ age: 70, money: 0, socialClass: 'middle', pension: 60_000 }),
+    })
+    const informal = makeState({
+      character: makeCharacter({ age: 70, money: 0, socialClass: 'middle' }),
+    })
+
+    applyEconomy(aposentado, rng(), empty)
+    applyEconomy(informal, rng(), empty)
+
+    expect(aposentado.character.money).toBeGreaterThan(informal.character.money)
   })
 })

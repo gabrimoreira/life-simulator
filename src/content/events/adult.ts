@@ -331,7 +331,7 @@ export const ADULT_EVENTS: GameEvent[] = [
     weight: 12,
     conditions: [
       { type: 'age', min: 27, max: 44 },
-      { type: 'flag', flag: 'married', value: true },
+      { type: 'hasRelation', kind: 'spouse' },
       { type: 'flag', flag: 'has_child', value: false },
     ],
     text: 'A conversa sobre ter filho parou de ser hipotética.',
@@ -463,7 +463,8 @@ export const ADULT_EVENTS: GameEvent[] = [
             luckBias: 0.4,
             text: 'Você levou a vaga. Salário maior e o dobro de reunião.',
             effects: [
-              { type: 'career', action: 'promote' },
+              { type: 'performance', delta: 22 },
+              { type: 'money', delta: 20_000 },
               { type: 'stat', stat: 'reputation', op: 'delta', value: 10 },
               { type: 'stat', stat: 'happiness', op: 'delta', value: -4 },
             ],
@@ -486,7 +487,8 @@ export const ADULT_EVENTS: GameEvent[] = [
             luckBias: -0.4,
             text: 'Funcionou. Você levou a vaga e ninguém soube como.',
             effects: [
-              { type: 'career', action: 'promote' },
+              { type: 'performance', delta: 22 },
+              { type: 'money', delta: 20_000 },
               { type: 'stat', stat: 'reputation', op: 'delta', value: 5 },
               { type: 'stat', stat: 'happiness', op: 'delta', value: -8 },
             ],

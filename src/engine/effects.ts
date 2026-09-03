@@ -4,6 +4,7 @@
 import { DEBT_CEILING, STAT_MAX, STAT_MIN } from './balance'
 import { assetName, buyAsset, findAsset, sellAsset } from './assets'
 import { clampPerformance, hireInto, leaveCareer, recordCareerBest } from './careers'
+import { evaluateAll } from './conditions'
 import { courseName, dropOut, enroll, studyYear } from './education'
 import type { ContentPack } from './content-pack'
 import { EDUCATION_LABELS, STAT_LABELS, relationLabel } from './labels'
@@ -178,6 +179,11 @@ export function applyEffect(
           const track = content.careers.find((t) => t.id === career.trackId)
           const next = track?.levels[career.level + 1]
           if (!next) return null
+          // Respeita a tabela de requisitos. Sem isto, qualquer evento com um
+          // efeito de promocao furava a progressao inteira: um personagem sem
+          // diploma chegava a Analista senior, e a educacao deixava de valer
+          // qualquer coisa para a carreira.
+          if (!evaluateAll(next.requirements, state)) return null
           career.level += 1
           career.yearsInLevel = 0
           recordCareerBest(state, career.trackId, career.level)
@@ -186,7 +192,7 @@ export function applyEffect(
         case 'quit':
         case 'fire': {
           if (!career) return null
-          leaveCareer(state)
+          leaveCareer(state, content)
           return {
             label: 'Carreira',
             text: action === 'quit' ? 'largou o emprego' : 'demitido',

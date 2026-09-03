@@ -251,3 +251,24 @@ describe('nome de quem chega na família', () => {
     expect(child.name.split(' ').length).toBeGreaterThan(1)
   })
 })
+
+describe('viuvez', () => {
+  it('a morte do cônjuge desfaz o casamento', () => {
+    // A flag ficava presa em true para sempre, e `look_for_love` — que exige
+    // `married: false` — trancava o viúvo fora de qualquer relação nova.
+    const state = withPerson(person({ kind: 'spouse', age: 108 }))
+    state.character.flags['married'] = true
+
+    applyRelationYear(state, createRng(2))
+
+    expect(state.relations[0]?.alive).toBe(false)
+    expect(state.character.flags['married']).toBe(false)
+  })
+
+  it('a morte de outro parente não mexe no estado civil', () => {
+    const state = withPerson(person({ kind: 'mother', age: 108 }))
+    state.character.flags['married'] = true
+    applyRelationYear(state, createRng(2))
+    expect(state.character.flags['married']).toBe(true)
+  })
+})

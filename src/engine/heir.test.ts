@@ -254,22 +254,26 @@ describe('alcançabilidade da linhagem', () => {
     expect(comFilho / vidas.length).toBeGreaterThan(0.6)
   })
 
-  it('quem prioriza carreira paga por isso em filhos', () => {
-    // Os pontos de ação existem para forçar essa escolha. Se os dois planos
-    // dessem o mesmo resultado, não haveria decisão nenhuma no meio.
-    const familia = Array.from({ length: 30 }, (_, i) =>
+  it('gastar todo ponto de ação na carreira custa a família', () => {
+    // Os pontos de ação existem para forçar essa escolha. Se os planos dessem
+    // o mesmo resultado, não haveria decisão nenhuma no meio.
+    //
+    // A comparação é com o plano que consome os TRÊS pontos em carreira. Um
+    // plano de carreira que ainda sobra um ponto para namorar não paga preço
+    // nenhum — e essa era a versão frouxa que este teste media antes.
+    const familia = Array.from({ length: 40 }, (_, i) =>
       vive(i + 1, ['Procurar emprego', 'Procurar um relacionamento']),
     ).filter(canContinue).length
 
-    const carreira = Array.from({ length: 30 }, (_, i) =>
+    const carreira = Array.from({ length: 40 }, (_, i) =>
       vive(i + 1, [
         'Cursar mais um ano',
         'Procurar emprego',
         'Se dedicar ao trabalho',
-        'Procurar um relacionamento',
+        'Fazer networking',
       ]),
     ).filter(canContinue).length
 
-    expect(carreira).toBeLessThan(familia)
+    expect(carreira).toBeLessThan(familia * 0.7)
   })
 })

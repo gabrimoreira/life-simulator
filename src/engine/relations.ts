@@ -58,6 +58,11 @@ export function applyRelationYear(state: GameState, rng: Rng): TimelineEntry[] {
     if (!rng.chance(relativeMortalityChance(person.age))) continue
 
     person.alive = false
+    // Viuvez desfaz o casamento. Sem isto a flag ficava presa em true para
+    // sempre, e `look_for_love` — que exige `married: false` — trancava o
+    // viúvo fora de qualquer relacionamento novo pelo resto da vida.
+    if (person.kind === 'spouse') state.character.flags['married'] = false
+
     const grief = Math.round((person.relation / 100) * GRIEF_MAX_HAPPINESS_LOSS)
     setStat(state.character, 'happiness', state.character.stats.happiness - grief)
 

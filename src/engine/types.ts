@@ -137,6 +137,8 @@ export interface Character {
   career: CareerState | null
   /** Nivel mais alto ja alcancado em cada trilha. Sobrevive a demissao. */
   careerHistory: Record<string, number>
+  /** Renda anual vitalicia de quem se aposentou. 0 = nunca se aposentou. */
+  pension: number
   /** null = nao esta estudando nada agora. */
   enrollment: Enrollment | null
   assets: OwnedAsset[]

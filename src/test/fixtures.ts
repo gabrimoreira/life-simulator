@@ -23,6 +23,7 @@ export function makeCharacter(overrides: Partial<Character> = {}): Character {
     education: 'highschool',
     career: null,
     careerHistory: {},
+    pension: 0,
     enrollment: null,
     assets: [],
     flags: {},

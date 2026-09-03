@@ -2,6 +2,7 @@
 // promocao moram aqui.
 
 import {
+  AGE_RETIREMENT_MIN,
   BANKRUPTCY_CHANCE,
   CAREER_RESTART_PENALTY,
   BANKRUPTCY_DEBT_RATIO,
@@ -14,6 +15,7 @@ import {
   PERFORMANCE_FROM_INTELLIGENCE,
   PERFORMANCE_START,
   PROMOTION_BASE_CHANCE,
+  PENSION_RATE,
   PROMOTION_PERFORMANCE_WEIGHT,
 } from './balance'
 import { evaluateAll } from './conditions'
@@ -101,7 +103,18 @@ export function hireInto(state: GameState, track: CareerTrack): void {
   recordCareerBest(state, track.id, level)
 }
 
-export function leaveCareer(state: GameState): void {
+/**
+ * Sai da carreira. Quem sai depois da idade de aposentadoria leva uma renda
+ * vitalicia proporcional ao ultimo salario; quem sai antes, nao.
+ */
+export function leaveCareer(state: GameState, content: ContentPack): void {
+  const level = currentLevel(state, content)
+  if (level && state.character.age >= AGE_RETIREMENT_MIN) {
+    state.character.pension = Math.max(
+      state.character.pension,
+      Math.round(level.salary * PENSION_RATE),
+    )
+  }
   state.character.career = null
 }
 
@@ -168,7 +181,7 @@ export function applyCareerYear(
     if (rng.chance(BANKRUPTCY_CHANCE)) {
       const debt = Math.round(level.salary * BANKRUPTCY_DEBT_RATIO)
       state.character.debt = Math.min(DEBT_CEILING, state.character.debt + debt)
-      leaveCareer(state)
+      leaveCareer(state, content)
       notes.push(
         makeNote(
           state,
@@ -187,7 +200,7 @@ export function applyCareerYear(
   // Demissao por desempenho.
   if (track.kind === 'clt' && career.performance < FIRE_PERFORMANCE_THRESHOLD) {
     if (rng.chance(FIRE_CHANCE)) {
-      leaveCareer(state)
+      leaveCareer(state, content)
       notes.push(
         makeNote(state, `Você foi demitid{o} de ${level.title.toLowerCase()}.`, 'career', [
           { label: 'Carreira', text: 'encerrada', tone: 'bad' },

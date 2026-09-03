@@ -68,7 +68,8 @@ export function applyEconomy(state: GameState, rng: Rng, content: ContentPack): 
   // ainda foi ganho.
   const hadCareer = c.career !== null
   const career = applyCareerYear(state, rng, content)
-  const income = hadCareer ? career.income : profile.baseIncome
+  // Sem carreira, vale o melhor entre a aposentadoria e a informalidade.
+  const income = hadCareer ? career.income : Math.max(c.pension, profile.baseIncome)
   const cost = costOfLiving(state, income)
 
   addMoney(c, income - cost)
