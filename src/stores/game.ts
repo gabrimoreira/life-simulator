@@ -5,13 +5,16 @@ import { computed, ref } from 'vue'
 import { GAME_CONTENT } from '../content'
 import { CLASS_PROFILES } from '../engine/balance'
 import { ACTION_GROUP_LABELS, availableActions } from '../engine/actions'
-import type { ActionGroup } from '../engine/types'
+import type { ActionGroup, Person } from '../engine/types'
+import { netWorth, ownedWithDef } from '../engine/assets'
 import { careerTitle, currentLevel } from '../engine/careers'
+import { canContinue, createHeir, heirCandidates } from '../engine/heir'
+import { livingRelations, relationActionsFor } from '../engine/relations'
 import { courseName } from '../engine/education'
 import { firstFailure } from '../engine/conditions'
 import { createGame } from '../engine/generate'
 import { interpolate } from '../engine/text'
-import { advanceYear, chooseOption, currentEvent, runAction } from '../engine/turn'
+import { advanceYear, chooseOption, currentEvent, runAction, runRelationAction } from '../engine/turn'
 import type { EventOption, GameState, Gender } from '../engine/types'
 import { CURRENT_SAVE_VERSION } from '../save/adapter'
 import type { SaveAdapter } from '../save/adapter'
@@ -104,7 +107,7 @@ export const useGameStore = defineStore('game', () => {
     if (!current) return []
 
     const all = availableActions(current, GAME_CONTENT)
-    const order: ActionGroup[] = ['career', 'education', 'health', 'social', 'crime']
+    const order: ActionGroup[] = ['career', 'education', 'assets', 'health', 'social', 'crime']
 
     return order
       .map((key) => ({
@@ -136,6 +139,37 @@ export const useGameStore = defineStore('game', () => {
     }
   })
 
+  const people = computed<Person[]>(() => (state.value ? livingRelations(state.value) : []))
+
+  const assets = computed(() => (state.value ? ownedWithDef(state.value, GAME_CONTENT) : []))
+
+  const worth = computed(() => (state.value ? netWorth(state.value) : 0))
+
+  const heirs = computed(() => (state.value ? heirCandidates(state.value) : []))
+
+  const canContinueLineage = computed(() => (state.value ? canContinue(state.value) : false))
+
+  function actionsForPerson(person: Person): ReturnType<typeof relationActionsFor> {
+    if (!state.value) return []
+    return relationActionsFor(state.value, GAME_CONTENT, person)
+  }
+
+  async function actOnPerson(personId: string, actionId: string): Promise<void> {
+    if (!state.value) return
+    if (!runRelationAction(state.value, GAME_CONTENT, personId, actionId)) return
+    await persist()
+  }
+
+  /** Recomeça como um filho, herdando parte do patrimônio e dos atributos. */
+  async function continueAsHeir(heirId: string): Promise<void> {
+    if (!state.value) return
+    const heir = createHeir(state.value, heirId)
+    if (!heir) return
+    state.value = heir
+    activeTab.value = 'life'
+    await persist()
+  }
+
   async function act(actionId: string): Promise<void> {
     if (!state.value) return
     if (!runAction(state.value, GAME_CONTENT, actionId)) return
@@ -159,6 +193,14 @@ export const useGameStore = defineStore('game', () => {
     pendingEventText,
     pendingOptions,
     actionGroups,
+    people,
+    assets,
+    worth,
+    heirs,
+    canContinueLineage,
+    actionsForPerson,
+    actOnPerson,
+    continueAsHeir,
     jobTitle,
     currentSalary,
     studying,
