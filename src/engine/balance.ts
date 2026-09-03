@@ -287,3 +287,14 @@ export const INHERITANCE_SHARE = 0.7
  */
 export const HEIR_STAT_INHERITANCE = 0.45
 export const HEIR_STAT_NOISE = 12
+
+
+// --- Prisao -----------------------------------------------------------------
+
+/** Cada ano preso cobra isto de saude e de felicidade. */
+export const PRISON_HEALTH_COST = 5
+export const PRISON_HAPPINESS_COST = 12
+/** E custa reputacao, uma vez, na entrada. */
+export const PRISON_REPUTATION_COST = 30
+/** Relacoes esfriam mais rapido com voce preso. */
+export const PRISON_RELATION_DECAY = 6

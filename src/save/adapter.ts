@@ -3,7 +3,7 @@
 
 import type { GameState } from '../engine/types'
 
-export const CURRENT_SAVE_VERSION = 3
+export const CURRENT_SAVE_VERSION = 4
 
 export interface PersistedSave {
   saveVersion: number

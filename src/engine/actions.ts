@@ -15,6 +15,7 @@ import { firstFailure } from './conditions'
 import type { ContentPack } from './content-pack'
 import { applyEffects } from './effects'
 import { pickOutcome } from './events'
+import { isInPrison, mentionsPrison } from './prison'
 import { courseName, dropOut, enroll, studyYear } from './education'
 import type { Rng } from './rng'
 import { formatMoney } from './text'
@@ -196,10 +197,13 @@ function onCooldown(state: GameState, spec: ActionSpec): number | null {
 export function availableActions(state: GameState, content: ContentPack): ActionView[] {
   if (!state.character.alive) return []
 
+  const locked = isInPrison(state)
   const specs = [...derivedActions(state, content), ...contentActions(content)]
   const views: ActionView[] = []
 
   for (const spec of specs) {
+    // Mesma regra dos eventos: preso, só existe o que fala de prisão.
+    if (locked !== mentionsPrison(spec.conditions)) continue
     if (firstFailure(spec.conditions, state) !== null) continue
 
     const wait = onCooldown(state, spec)
@@ -306,6 +310,7 @@ export function performAction(
   if (!spec) return null
 
   // A UI já desabilita o que não pode; o engine não confia nisso.
+  if (isInPrison(state) !== mentionsPrison(spec.conditions)) return null
   if (firstFailure(spec.conditions, state) !== null) return null
   if (spec.requirements && firstFailure(spec.requirements, state) !== null) return null
   if (onCooldown(state, spec) !== null) return null

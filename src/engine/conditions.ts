@@ -64,6 +64,9 @@ export function evaluate(condition: Condition, state: GameState): boolean {
     case 'enrolled':
       return (c.enrollment !== null) === condition.value
 
+    case 'inPrison':
+      return (c.prison !== null) === condition.value
+
     case 'ownsAsset':
       return c.assets.some((owned) => {
         if (condition.assetId !== undefined && owned.assetId !== condition.assetId) return false
@@ -166,6 +169,9 @@ export function describe(condition: Condition): string {
 
     case 'enrolled':
       return condition.value ? 'Requer estar matriculado' : 'Você já está estudando'
+
+    case 'inPrison':
+      return condition.value ? 'Só na cadeia' : 'Não dá para fazer isso preso'
 
     case 'ownsAsset':
       return 'Requer ter um bem específico'

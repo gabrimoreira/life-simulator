@@ -9,6 +9,7 @@ import { courseName, dropOut, enroll, studyYear } from './education'
 import type { ContentPack } from './content-pack'
 import { EDUCATION_LABELS, STAT_LABELS, relationLabel } from './labels'
 import { createPerson } from './people'
+import { jail, release } from './prison'
 import type { Rng } from './rng'
 import { formatMoney } from './text'
 import { assertNever } from './types'
@@ -261,6 +262,21 @@ export function applyEffect(
       if (!person || person.kind === effect.kind) return null
       person.kind = effect.kind
       return { label: relationLabel(effect.kind, person.gender), text: person.name.split(' ')[0] ?? person.name, tone: 'good' }
+    }
+
+    case 'jail': {
+      const wasInside = state.character.prison !== null
+      // A nota rica de condenacao e escrita por `jail()`; aqui so o resumo.
+      jail(state, content, effect.years, effect.reason)
+      return {
+        label: wasInside ? 'Pena' : 'Preso',
+        text: `${wasInside ? '+' : ''}${effect.years} anos`,
+        tone: 'bad',
+      }
+    }
+
+    case 'release': {
+      return release(state) !== null ? { label: 'Solto', text: 'liberdade', tone: 'good' } : null
     }
 
     case 'death': {

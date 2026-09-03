@@ -72,6 +72,33 @@ describe('compatibilidade de forma', () => {
   })
 })
 
+describe('migração v3 -> v4', () => {
+  /** Um save v3 é o v4 sem nada que a Fase 4 acrescentou. */
+  function v3Save(): Record<string, unknown> {
+    const save = JSON.parse(JSON.stringify(makeSave()))
+    delete save.state.achievements
+    delete save.state.character.pension
+    delete save.state.character.prison
+    return { ...save, saveVersion: 3 }
+  }
+
+  it('preenche pensão, prisão e conquistas', () => {
+    const depois = migrate(v3Save())
+    expect(depois?.saveVersion).toBe(CURRENT_SAVE_VERSION)
+    expect(depois?.state.character.pension).toBe(0)
+    expect(depois?.state.character.prison).toBeNull()
+    expect(depois?.state.achievements).toEqual([])
+  })
+
+  it('sem pensão numérica o saldo virava NaN no primeiro ano', () => {
+    const migrado = migrate(v3Save())
+    if (!migrado) throw new Error('migração falhou')
+    migrado.state.character.career = null
+    advanceYear(migrado.state, GAME_CONTENT)
+    expect(Number.isFinite(migrado.state.character.money)).toBe(true)
+  })
+})
+
 describe('migração v2 -> v3', () => {
   /** Um save v2 é o v3 sem nada que a Fase 3 acrescentou. */
   function v2Save(): Record<string, unknown> {
@@ -86,6 +113,8 @@ describe('migração v2 -> v3', () => {
     expect(depois?.saveVersion).toBe(CURRENT_SAVE_VERSION)
     expect(depois?.state.character.assets).toEqual([])
     expect(depois?.state.lastRelationActionYear).toEqual({})
+    expect(depois?.state.character.pension).toBe(0)
+    expect(depois?.state.achievements).toEqual([])
     expect(depois?.state.character.name).toBe(makeSave().state.character.name)
   })
 
@@ -98,7 +127,7 @@ describe('migração v2 -> v3', () => {
   })
 })
 
-describe('migração v1 -> v3, em cadeia', () => {
+describe('migração v1 -> v4, em cadeia', () => {
   /** Um save v1 é o v2 sem nada que a Fase 2 acrescentou. */
   function v1Save(): Record<string, unknown> {
     const save = JSON.parse(JSON.stringify(makeSave()))
@@ -110,6 +139,9 @@ describe('migração v1 -> v3, em cadeia', () => {
     delete save.state.character.careerHistory
     delete save.state.character.assets
     delete save.state.lastRelationActionYear
+    delete save.state.achievements
+    delete save.state.character.pension
+    delete save.state.character.prison
     return { ...save, saveVersion: 1 }
   }
 
@@ -125,6 +157,8 @@ describe('migração v1 -> v3, em cadeia', () => {
     // A cadeia inteira roda: v1 -> v2 -> v3.
     expect(depois?.state.character.assets).toEqual([])
     expect(depois?.state.lastRelationActionYear).toEqual({})
+    expect(depois?.state.character.pension).toBe(0)
+    expect(depois?.state.achievements).toEqual([])
     // Ninguém era famoso antes de a fama existir.
     expect(depois?.state.character.stats.fame).toBe(0)
     // E nada do save antigo se perdeu no caminho.

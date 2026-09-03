@@ -4,6 +4,7 @@
 import { ADULT_EVENTS } from './adult'
 import { CALLBACK_EVENTS } from './callbacks'
 import { CAREER_EVENTS } from './career'
+import { PRISON_EVENTS } from './prison'
 import { CHILDHOOD_EVENTS } from './childhood'
 import { ELDER_EVENTS } from './elder'
 import { RANDOM_EVENTS } from './random'
@@ -18,6 +19,7 @@ export const ALL_EVENTS: GameEvent[] = [
   ...ADULT_EVENTS,
   ...CAREER_EVENTS,
   ...CALLBACK_EVENTS,
+  ...PRISON_EVENTS,
   ...ELDER_EVENTS,
   ...RANDOM_EVENTS,
 ]

@@ -21,6 +21,7 @@ import { applySchooling } from './education'
 import { applyEffects } from './effects'
 import { findEvent, pickOutcome, selectEvents } from './events'
 import { performAction } from './actions'
+import { applyPrisonYear, isInPrison } from './prison'
 import { applyRelationYear, performRelationAction } from './relations'
 import { createRng } from './rng'
 import type { Rng } from './rng'
@@ -80,7 +81,12 @@ export function advanceYear(state: GameState, content: ContentPack): void {
 
   withRng(state, (rng) => applyAging(state, rng))
   const relationNotes = withRng(state, (rng) => applyRelationYear(state, rng))
-  const economy = withRng(state, (rng) => applyEconomy(state, rng, content))
+  // Preso nao tem renda nem custo de vida: e sustentado pelo Estado. A cadeia
+  // cobra em tempo, saude e gente que se afasta, nao em dinheiro.
+  const prisonNotes = applyPrisonYear(state)
+  const economy = isInPrison(state)
+    ? { summary: null, notes: [] }
+    : withRng(state, (rng) => applyEconomy(state, rng, content))
   const assets = withRng(state, (rng) => applyAssetYear(state, rng, content))
 
   state.timeline.push({
@@ -90,7 +96,7 @@ export function advanceYear(state: GameState, content: ContentPack): void {
     summary: joinSummary(economy.summary, assets.upkeep),
   })
 
-  for (const note of [...economy.notes, ...assets.notes, ...relationNotes]) {
+  for (const note of [...prisonNotes, ...economy.notes, ...assets.notes, ...relationNotes]) {
     state.timeline.push(note)
   }
 

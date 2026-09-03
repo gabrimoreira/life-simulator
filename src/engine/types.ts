@@ -54,7 +54,13 @@ export type Gender = 'male' | 'female'
 
 export type RelationKind = 'mother' | 'father' | 'sibling' | 'friend' | 'partner' | 'spouse' | 'child'
 
-export type CareerKind = 'clt' | 'business' | 'celebrity'
+export type CareerKind =
+  | 'clt'
+  | 'business'
+  | 'celebrity'
+  | 'crime'
+  | 'politics'
+  | 'academia'
 
 export interface CareerState {
   trackId: string
@@ -75,6 +81,13 @@ export interface Enrollment {
   yearsLeft: number
   annualCost: number
   financed: boolean
+}
+
+export interface PrisonState {
+  yearsLeft: number
+  reason: string
+  /** Anos ja cumpridos, para a timeline e as conquistas. */
+  yearsServed: number
 }
 
 export type ActionGroup =
@@ -103,6 +116,7 @@ export type EventCategory =
   | 'career'
   | 'relationship'
   | 'health'
+  | 'crime'
   | 'random'
 
 // ---------------------------------------------------------------------------
@@ -139,6 +153,8 @@ export interface Character {
   careerHistory: Record<string, number>
   /** Renda anual vitalicia de quem se aposentou. 0 = nunca se aposentou. */
   pension: number
+  /** null = solto. Preso, a vida roda num sub-loop com pool proprio. */
+  prison: PrisonState | null
   /** null = nao esta estudando nada agora. */
   enrollment: Enrollment | null
   assets: OwnedAsset[]
@@ -191,6 +207,8 @@ export interface GameState {
   lastActionYear: Record<string, number>
   /** Cooldown de acao de relacao, por `<personId>:<actionId>`. */
   lastRelationActionYear: Record<string, number>
+  /** Ids de conquistas ja obtidas. */
+  achievements: string[]
   choiceLog: ChoiceRecord[]
   pendingEventIds: string[]
   turnPhase: TurnPhase
@@ -224,6 +242,7 @@ export type Condition =
   | { type: 'careerLevel'; min?: number; max?: number }
   | { type: 'performance'; min?: number; max?: number }
   | { type: 'enrolled'; value: boolean }
+  | { type: 'inPrison'; value: boolean }
   | { type: 'ownsAsset'; assetId?: string; kind?: AssetKind }
   | { type: 'netWorth'; min?: number; max?: number }
   | { type: 'relationLevel'; kind: RelationKind; min?: number; max?: number }
@@ -248,6 +267,8 @@ export type Effect =
   | { type: 'asset'; action: 'buy' | 'sell'; assetId: string }
   /** Converte uma relacao existente em outro tipo: namorado vira conjuge. */
   | { type: 'relationKind'; target: RelationRef; kind: RelationKind }
+  | { type: 'jail'; years: number; reason: string }
+  | { type: 'release' }
   | { type: 'death'; cause: string }
 
 export interface Outcome {

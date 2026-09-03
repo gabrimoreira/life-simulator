@@ -19,6 +19,7 @@ const HAND_WRITTEN: Record<string, string> = {
   retired: 'Aposentado',
   wrote_memoir: 'Escreveu suas memórias',
   criminal_record: 'Ficha suja',
+  underworld_ties: 'Contatos no crime',
 }
 
 /** Rótulos de curso saem do próprio catálogo, para não sair de sincronia. */
