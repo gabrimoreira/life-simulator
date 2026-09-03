@@ -71,7 +71,15 @@ export function createPerson(
   const gender = overrides.gender ?? genderForKind(kind, rng)
   const age = overrides.age ?? ageForKind(kind, state.character.age, rng)
   const relation = overrides.relation ?? rng.int(INITIAL_RELATION.min, INITIAL_RELATION.max)
-  const name = overrides.name ?? randomFullName(gender, rng, content, namesInUse(state))
+  // Filho carrega o sobrenome de quem o teve. Sem isto nascia "Ravi Machado"
+  // na familia Prado, e a arvore inteira deixava de fazer sentido na tela.
+  const surname =
+    kind === 'child' ? state.character.name.split(' ').slice(1).join(' ') : undefined
+  const name =
+    overrides.name ??
+    (surname !== undefined && surname !== ''
+      ? `${randomFirstName(gender, rng, content, namesInUse(state))} ${surname}`
+      : randomFullName(gender, rng, content, namesInUse(state)))
 
   return {
     // Deterministico: depende so do estado, nunca de um contador global.
