@@ -22,7 +22,7 @@ export const ADULT_EVENTS: GameEvent[] = [
               { type: 'money', delta: -30000 },
               { type: 'stat', stat: 'happiness', op: 'delta', value: 22 },
               { type: 'stat', stat: 'health', op: 'delta', value: 6 },
-              { type: 'flag', flag: 'has_career', value: false },
+              { type: 'career', action: 'quit' },
             ],
           },
           {
@@ -31,7 +31,7 @@ export const ADULT_EVENTS: GameEvent[] = [
             effects: [
               { type: 'money', delta: -40000 },
               { type: 'stat', stat: 'happiness', op: 'delta', value: -12 },
-              { type: 'flag', flag: 'has_career', value: false },
+              { type: 'career', action: 'quit' },
             ],
           },
         ],
@@ -260,10 +260,10 @@ export const ADULT_EVENTS: GameEvent[] = [
     id: 'adult_burnout',
     category: 'health',
     weight: 10,
-    cooldown: 6,
+    cooldown: 10,
     conditions: [
       { type: 'age', min: 30, max: 55 },
-      { type: 'flag', flag: 'has_career', value: true },
+      { type: 'hasCareer', value: true },
     ],
     text: 'Faz meses que você trabalha sem sentir nada. Nem cansaço, nem satisfação. Só faz.',
     options: [
@@ -285,7 +285,7 @@ export const ADULT_EVENTS: GameEvent[] = [
             effects: [
               { type: 'money', delta: -12000 },
               { type: 'stat', stat: 'reputation', op: 'delta', value: -8 },
-              { type: 'flag', flag: 'has_career', value: false },
+              { type: 'career', action: 'fire' },
             ],
           },
         ],
@@ -450,7 +450,7 @@ export const ADULT_EVENTS: GameEvent[] = [
     cooldown: 7,
     conditions: [
       { type: 'age', min: 30, max: 55 },
-      { type: 'flag', flag: 'has_career', value: true },
+      { type: 'hasCareer', value: true },
     ],
     text: 'Abriu uma vaga de chefia acima de você. Tem outro candidato interno.',
     options: [
@@ -463,7 +463,7 @@ export const ADULT_EVENTS: GameEvent[] = [
             luckBias: 0.4,
             text: 'Você levou a vaga. Salário maior e o dobro de reunião.',
             effects: [
-              { type: 'money', delta: 35000 },
+              { type: 'career', action: 'promote' },
               { type: 'stat', stat: 'reputation', op: 'delta', value: 10 },
               { type: 'stat', stat: 'happiness', op: 'delta', value: -4 },
             ],
@@ -486,7 +486,7 @@ export const ADULT_EVENTS: GameEvent[] = [
             luckBias: -0.4,
             text: 'Funcionou. Você levou a vaga e ninguém soube como.',
             effects: [
-              { type: 'money', delta: 35000 },
+              { type: 'career', action: 'promote' },
               { type: 'stat', stat: 'reputation', op: 'delta', value: 5 },
               { type: 'stat', stat: 'happiness', op: 'delta', value: -8 },
             ],

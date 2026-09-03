@@ -11,65 +11,38 @@ export const YOUNG_ADULT_EVENTS: GameEvent[] = [
     conditions: [
       { type: 'age', min: 18, max: 23 },
       { type: 'education', level: 'highschool', atLeast: true },
+      { type: 'enrolled', value: false },
+      { type: 'not', condition: { type: 'education', level: 'bachelor', atLeast: true } },
     ],
-    text: 'Saiu o resultado. Você passou numa federal, longe de casa, e numa particular perto.',
+    text: 'Saiu o resultado do vestibular. Você passou em duas coisas diferentes, e só dá para escolher uma.',
     options: [
       {
-        text: 'Ir para a federal',
-        requirements: [{ type: 'stat', stat: 'intelligence', min: 55 }],
-        outcomes: [
-          {
-            chance: 0.75,
-            text: 'Você se formou. Foram cinco anos duros e valeram cada um.',
-            effects: [
-              { type: 'education', level: 'bachelor' },
-              { type: 'stat', stat: 'intelligence', op: 'delta', value: 14 },
-              { type: 'stat', stat: 'charisma', op: 'delta', value: 6 },
-              { type: 'addRelation', kind: 'friend' },
-              { type: 'flag', flag: 'graduated', value: true },
-            ],
-          },
-          {
-            chance: 0.25,
-            text: 'Você trancou no terceiro período e não voltou.',
-            effects: [
-              { type: 'stat', stat: 'intelligence', op: 'delta', value: 5 },
-              { type: 'stat', stat: 'happiness', op: 'delta', value: -10 },
-            ],
-          },
-        ],
-      },
-      {
-        text: 'Financiar a particular',
-        outcomes: [
-          {
-            chance: 0.8,
-            text: 'Você se formou com o diploma na mão e o financiamento nas costas.',
-            effects: [
-              { type: 'education', level: 'bachelor' },
-              { type: 'stat', stat: 'intelligence', op: 'delta', value: 10 },
-              { type: 'debt', delta: 90000 },
-              { type: 'flag', flag: 'graduated', value: true },
-              { type: 'flag', flag: 'student_debt', value: true },
-            ],
-          },
-          {
-            chance: 0.2,
-            text: 'Você não conseguiu pagar e trancou. A dívida ficou.',
-            effects: [
-              { type: 'debt', delta: 40000 },
-              { type: 'stat', stat: 'happiness', op: 'delta', value: -14 },
-              { type: 'flag', flag: 'student_debt', value: true },
-            ],
-          },
-        ],
-      },
-      {
-        text: 'Não fazer faculdade',
+        text: 'Engenharia, na federal',
+        requirements: [{ type: 'stat', stat: 'intelligence', min: 60 }],
         outcomes: [
           {
             chance: 1,
-            text: 'Você decidiu que faculdade não era para você e foi procurar trabalho.',
+            text: 'Você se matriculou em Engenharia. Agora é aguentar os anos.',
+            effects: [{ type: 'enroll', courseId: 'engenharia' }],
+          },
+        ],
+      },
+      {
+        text: 'Administração, na particular',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você se matriculou em Administração. A mensalidade vai doer.',
+            effects: [{ type: 'enroll', courseId: 'administracao' }],
+          },
+        ],
+      },
+      {
+        text: 'Nenhuma das duas',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você rasgou os dois resultados e foi procurar trabalho.',
             effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: 3 }],
           },
         ],
@@ -107,7 +80,7 @@ export const YOUNG_ADULT_EVENTS: GameEvent[] = [
           {
             chance: 0.6,
             luckBias: 0.4,
-            text: 'Você caiu numa casa boa. Um dos colegas virou amig{o} para a vida.',
+            text: 'Você caiu numa casa boa. Um dos colegas virou amizade para a vida.',
             effects: [
               { type: 'money', delta: -2000 },
               { type: 'stat', stat: 'happiness', op: 'delta', value: 8 },
@@ -150,7 +123,7 @@ export const YOUNG_ADULT_EVENTS: GameEvent[] = [
     cooldown: 4,
     conditions: [
       { type: 'age', min: 18, max: 29 },
-      { type: 'flag', flag: 'has_career', value: false },
+      { type: 'hasCareer', value: false },
     ],
     text: 'Apareceu uma vaga de verdade, com carteira assinada. A entrevista é na quinta.',
     options: [
@@ -163,10 +136,9 @@ export const YOUNG_ADULT_EVENTS: GameEvent[] = [
             luckBias: 0.4,
             text: 'Você passou. Primeiro emprego formal, primeiro contracheque de verdade.',
             effects: [
-              { type: 'money', delta: 14000 },
               { type: 'stat', stat: 'happiness', op: 'delta', value: 12 },
               { type: 'stat', stat: 'charisma', op: 'delta', value: 4 },
-              { type: 'flag', flag: 'has_career', value: true },
+              { type: 'career', action: 'hire', trackId: 'clt' },
             ],
           },
           {
@@ -184,9 +156,8 @@ export const YOUNG_ADULT_EVENTS: GameEvent[] = [
             luckBias: 0.8,
             text: 'Você improvisou tudo e passou. O entrevistador gostou do seu jeito.',
             effects: [
-              { type: 'money', delta: 12000 },
               { type: 'stat', stat: 'charisma', op: 'delta', value: 7 },
-              { type: 'flag', flag: 'has_career', value: true },
+              { type: 'career', action: 'hire', trackId: 'clt' },
             ],
           },
           {

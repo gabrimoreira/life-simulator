@@ -2,6 +2,7 @@
 // exige editar UM arquivo — este aqui só muda quando nasce uma categoria nova.
 
 import { ADULT_EVENTS } from './adult'
+import { CAREER_EVENTS } from './career'
 import { CHILDHOOD_EVENTS } from './childhood'
 import { ELDER_EVENTS } from './elder'
 import { RANDOM_EVENTS } from './random'
@@ -14,6 +15,7 @@ export const ALL_EVENTS: GameEvent[] = [
   ...SCHOOL_EVENTS,
   ...YOUNG_ADULT_EVENTS,
   ...ADULT_EVENTS,
+  ...CAREER_EVENTS,
   ...ELDER_EVENTS,
   ...RANDOM_EVENTS,
 ]
