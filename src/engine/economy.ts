@@ -4,9 +4,12 @@ import {
   AGE_FINANCIALLY_INDEPENDENT,
   CLASS_PROFILES,
   COST_OF_LIVING_INCOME_SHARE,
+  INHERITED_LIFESTYLE_CAP,
   DEBT_CEILING,
   DEBT_INTEREST_RATE,
+  DEBT_PAYDOWN_BUFFER_YEARS,
   STUDENT_COST_OF_LIVING_SHARE,
+  SUBSISTENCE_COST,
 } from './balance'
 import { applyCareerYear } from './careers'
 import type { ContentPack } from './content-pack'
@@ -26,7 +29,12 @@ export interface EconomyYear {
  * social e uma fatia da renda. Sem isso, salario alto vira saldo infinito.
  */
 export function costOfLiving(state: GameState, income: number): number {
-  const floor = CLASS_PROFILES[state.character.socialClass].costOfLiving
+  // O padrao de vida da familia e uma expectativa, nao uma sentenca: ele desce
+  // ate o que a renda aguenta, mas nunca abaixo da subsistencia.
+  const inherited = CLASS_PROFILES[state.character.socialClass].costOfLiving
+  const affordable = Math.max(SUBSISTENCE_COST, income * INHERITED_LIFESTYLE_CAP)
+  const floor = Math.min(inherited, affordable)
+
   const full = Math.max(floor, income * COST_OF_LIVING_INCOME_SHARE)
   const share = state.character.enrollment !== null ? STUDENT_COST_OF_LIVING_SHARE : 1
   return Math.round(full * share)
@@ -35,6 +43,15 @@ export function costOfLiving(state: GameState, income: number): number {
 export function applyEconomy(state: GameState, rng: Rng, content: ContentPack): EconomyYear {
   const c = state.character
   const profile = CLASS_PROFILES[c.socialClass]
+
+  // Amortiza antes de cobrar juros: quem tem caixa sobrando paga a divida.
+  if (c.debt > 0 && c.money > 0) {
+    const reserva = SUBSISTENCE_COST * DEBT_PAYDOWN_BUFFER_YEARS
+    const disponivel = Math.max(0, c.money - reserva)
+    const pago = Math.min(c.debt, disponivel)
+    c.money -= pago
+    c.debt -= pago
+  }
 
   if (c.debt > 0) {
     c.debt = Math.min(DEBT_CEILING, Math.round(c.debt * (1 + DEBT_INTEREST_RATE)))

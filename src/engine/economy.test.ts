@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { GAME_CONTENT } from '../content'
 import { makeCharacter, makeContent, makeState } from '../test/fixtures'
 import { availableActions, performAction } from '../engine/actions'
-import { AGE_FINANCIALLY_INDEPENDENT, CLASS_PROFILES } from './balance'
+import { AGE_FINANCIALLY_INDEPENDENT, CLASS_PROFILES, SUBSISTENCE_COST } from './balance'
 import { applyEconomy, costOfLiving } from './economy'
 import { enroll } from './education'
 import { createGame } from './generate'
@@ -15,10 +15,24 @@ const rng = () => createRng(1)
 const empty = makeContent()
 
 describe('custo de vida', () => {
-  it('nunca fica abaixo do piso da classe social', () => {
+  it('nunca fica abaixo da subsistência', () => {
     const state = makeState({ character: makeCharacter({ socialClass: 'middle' }) })
-    const floor = CLASS_PROFILES.middle.costOfLiving
-    expect(costOfLiving(state, 0)).toBe(floor)
+    expect(costOfLiving(state, 0)).toBe(SUBSISTENCE_COST)
+  })
+
+  it('o padrão de vida herdado desce até o que a renda aguenta', () => {
+    // Nascer rico te torna caro, mas não te condena: um filho de classe alta
+    // com salário de analista ficava no vermelho a vida inteira, sem saída.
+    const rico = makeState({ character: makeCharacter({ socialClass: 'rich' }) })
+    const pobre = makeState({ character: makeCharacter({ socialClass: 'poor' }) })
+
+    expect(costOfLiving(rico, 60_000)).toBeGreaterThan(costOfLiving(pobre, 60_000))
+    expect(costOfLiving(rico, 60_000)).toBeLessThan(CLASS_PROFILES.rich.costOfLiving)
+  })
+
+  it('quem ganha muito não é limitado pelo teto da origem', () => {
+    const pobre = makeState({ character: makeCharacter({ socialClass: 'poor' }) })
+    expect(costOfLiving(pobre, 500_000)).toBe(Math.round(500_000 * 0.42))
   })
 
   it('cresce junto com a renda — dinheiro alto não vira saldo parado', () => {
@@ -168,5 +182,32 @@ describe('teto de dívida', () => {
     })
     for (let i = 0; i < 60; i++) applyEconomy(state, rng(), empty)
     expect(state.character.debt).toBeLessThanOrEqual(400_000)
+  })
+})
+
+describe('amortização de dívida', () => {
+  it('quem tem caixa sobrando quita a dívida em vez de pagar juros', () => {
+    // Um herdeiro com R$ 2,2 milhões em caixa e R$ 50 mil de dívida rendendo
+    // juros ano após ano foi o que revelou isto num playthrough.
+    const state = makeState({
+      character: makeCharacter({ age: 40, money: 2_000_000, debt: 50_000 }),
+    })
+    applyEconomy(state, rng(), empty)
+    expect(state.character.debt).toBe(0)
+  })
+
+  it('mantém uma reserva: não zera a conta para quitar', () => {
+    const state = makeState({
+      character: makeCharacter({ age: 40, money: 30_000, debt: 200_000 }),
+    })
+    applyEconomy(state, rng(), empty)
+    expect(state.character.debt).toBeGreaterThan(0)
+    expect(state.character.money).toBeGreaterThanOrEqual(0)
+  })
+
+  it('sem caixa, a dívida segue rendendo juros', () => {
+    const state = makeState({ character: makeCharacter({ age: 40, money: 0, debt: 100_000 }) })
+    applyEconomy(state, rng(), empty)
+    expect(state.character.debt).toBeGreaterThan(100_000)
   })
 })
