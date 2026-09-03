@@ -9,7 +9,9 @@ import {
   HAPPINESS_MEAN_REVERSION,
   HEALTH_BASELINE_DECLINE,
   HEALTH_PEAK_AGE,
+  CHRONIC_HEALTH_PENALTY,
   HEALTH_RECOVERY_RATE,
+  TRAINED_HEALTH_BONUS,
   INTELLIGENCE_SCHOOL_AGES,
   INTELLIGENCE_SCHOOL_GAIN,
   LOOKS_DECAY_FACTOR,
@@ -22,18 +24,26 @@ import {
   RELATION_ANNUAL_DECAY,
 } from './balance'
 import { setStat } from './effects'
+import { FLAG_CHRONIC_CONDITION, FLAG_TRAINS_REGULARLY } from './flags'
 import type { Rng } from './rng'
 import type { GameState } from './types'
 
-/** Teto de saude para a idade. 100 ate o pico, caindo depois. */
-export function healthBaseline(age: number): number {
-  return Math.max(0, 100 - Math.max(0, age - HEALTH_PEAK_AGE) * HEALTH_BASELINE_DECLINE)
+/**
+ * Teto de saude para a idade, deslocado pelo que a pessoa faz da vida.
+ * Treinar levanta o teto; uma condicao cronica o abaixa.
+ */
+export function healthBaseline(age: number, flags: Record<string, boolean> = {}): number {
+  const base = 100 - Math.max(0, age - HEALTH_PEAK_AGE) * HEALTH_BASELINE_DECLINE
+  const trained = flags[FLAG_TRAINS_REGULARLY] === true ? TRAINED_HEALTH_BONUS : 0
+  const chronic = flags[FLAG_CHRONIC_CONDITION] === true ? CHRONIC_HEALTH_PENALTY : 0
+  return Math.max(0, base + trained - chronic)
 }
 
 export function applyAging(state: GameState, rng: Rng): void {
   const c = state.character
 
-  setStat(c, 'health', c.stats.health + (healthBaseline(c.age) - c.stats.health) * HEALTH_RECOVERY_RATE)
+  const baseline = healthBaseline(c.age, c.flags)
+  setStat(c, 'health', c.stats.health + (baseline - c.stats.health) * HEALTH_RECOVERY_RATE)
 
   if (c.age >= LOOKS_DECAY_START_AGE) {
     const loss = (c.age - LOOKS_DECAY_START_AGE) * LOOKS_DECAY_FACTOR

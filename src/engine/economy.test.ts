@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { GAME_CONTENT } from '../content'
 import { makeCharacter, makeContent, makeState } from '../test/fixtures'
 import { availableActions, performAction } from '../engine/actions'
+import { netWorth } from './assets'
 import {
   AGE_FINANCIALLY_INDEPENDENT,
   AGE_RETIREMENT_MIN,
@@ -164,7 +165,10 @@ describe('vida de quem joga com um plano', () => {
   const sample = Array.from({ length: 40 }, (_, i) => viveComPlano(i + 1))
 
   it('quase ninguém termina no vermelho', () => {
-    const broke = sample.filter((s) => s.character.money - s.character.debt < 0)
+    // `netWorth` e não `money - debt`: quem financia um imóvel fica com a
+    // dívida no passivo E o apartamento no ativo. Medir só o caixa acusaria
+    // de falido justamente quem fez a compra mais sensata da vida.
+    const broke = sample.filter((s) => netWorth(s) < 0)
     expect(broke.length / sample.length).toBeLessThan(0.15)
   })
 

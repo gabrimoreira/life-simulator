@@ -45,6 +45,11 @@ export const HEALTH_PEAK_AGE = 25
 export const HEALTH_BASELINE_DECLINE = 1.05
 /** Fracao da distancia ate o teto percorrida por ano. */
 export const HEALTH_RECOVERY_RATE = 0.18
+/** Quem treina com regularidade envelhece mais devagar. */
+export const TRAINED_HEALTH_BONUS = 6
+/** Condicao cronica: teto de saude menor e conta medica todo ano. */
+export const CHRONIC_HEALTH_PENALTY = 12
+export const CHRONIC_ANNUAL_COST = 9_000
 
 /** Felicidade regride a media com esta fracao por ano. */
 export const HAPPINESS_MEAN_REVERSION = 0.08

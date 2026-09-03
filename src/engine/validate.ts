@@ -2,12 +2,15 @@
 // deve derrubar o CI, nao o jogo do jogador.
 
 import { KNOWN_TOKENS, extractTokens } from './text'
+import type { ContentPack } from './content-pack'
+import { ENGINE_READ_FLAGS } from './flags'
 import type {
   AssetDef,
   CareerTrack,
   Condition,
   Course,
   GameAction,
+  Effect,
   GameEvent,
   Outcome,
   RelationAction,
@@ -284,4 +287,87 @@ export function validateRelationActions(actions: RelationAction[]): string[] {
   }
 
   return problems
+}
+
+
+// ---------------------------------------------------------------------------
+// Saude do conteudo como um todo
+// ---------------------------------------------------------------------------
+
+function walkConditionFlags(condition: Condition, read: Set<string>): void {
+  switch (condition.type) {
+    case 'flag':
+      read.add(condition.flag)
+      break
+    case 'not':
+      walkConditionFlags(condition.condition, read)
+      break
+    case 'anyOf':
+      condition.conditions.forEach((inner) => walkConditionFlags(inner, read))
+      break
+    default:
+      break
+  }
+}
+
+function walkConditions(conditions: Condition[] | undefined, read: Set<string>): void {
+  conditions?.forEach((condition) => walkConditionFlags(condition, read))
+}
+
+function walkEffects(effects: Effect[], written: Set<string>): void {
+  for (const effect of effects) {
+    if (effect.type === 'flag') written.add(effect.flag)
+  }
+}
+
+function walkOutcomes(outcomes: Outcome[], written: Set<string>): void {
+  outcomes.forEach((outcome) => walkEffects(outcome.effects, written))
+}
+
+/**
+ * Flags que o conteudo escreve e ninguem le.
+ *
+ * Uma flag write-only e uma promessa quebrada: o Perfil mostra "Ficha suja" e
+ * nada no jogo se comporta diferente por causa disso. Foram onze de dezesseis
+ * quando isto foi medido pela primeira vez.
+ */
+export function orphanFlags(content: ContentPack): string[] {
+  const written = new Set<string>()
+  const read = new Set<string>(ENGINE_READ_FLAGS)
+
+  for (const event of content.events) {
+    walkConditions(event.conditions, read)
+    for (const option of event.options) {
+      walkConditions(option.requirements, read)
+      walkOutcomes(option.outcomes, written)
+    }
+  }
+
+  for (const action of content.actions) {
+    walkConditions(action.conditions, read)
+    walkConditions(action.requirements, read)
+    walkOutcomes(action.outcomes, written)
+  }
+
+  for (const action of content.relationActions) {
+    walkConditions(action.conditions, read)
+    walkConditions(action.requirements, read)
+    walkOutcomes(action.outcomes, written)
+  }
+
+  for (const track of content.careers) {
+    track.levels.forEach((level) => walkConditions(level.requirements, read))
+    walkEffects(track.annualEffects ?? [], written)
+  }
+
+  for (const course of content.courses) {
+    walkConditions(course.requirements, read)
+    walkEffects(course.completionEffects, written)
+  }
+
+  for (const asset of content.assets) {
+    walkConditions(asset.requirements, read)
+  }
+
+  return [...written].filter((flag) => !read.has(flag)).sort()
 }

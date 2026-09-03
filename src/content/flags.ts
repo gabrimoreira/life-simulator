@@ -14,7 +14,6 @@ const HAND_WRITTEN: Record<string, string> = {
   married: 'Casado',
   trains_regularly: 'Treina com regularidade',
   chronic_condition: 'Condição crônica',
-  owns_property: 'Imóvel próprio',
   has_child: 'Tem filho',
   chose_no_children: 'Optou por não ter filhos',
   retired: 'Aposentado',

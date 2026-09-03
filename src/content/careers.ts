@@ -20,6 +20,8 @@ export const CAREER_TRACKS: CareerTrack[] = [
         requirements: [
           { type: 'age', min: 17 },
           { type: 'education', level: 'highschool', atLeast: true },
+          // Emprego formal faz checagem de antecedentes. Autônomo e artista não.
+          { type: 'not', condition: { type: 'flag', flag: 'criminal_record', value: true } },
         ],
       },
       {

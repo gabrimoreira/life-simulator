@@ -2,6 +2,7 @@
 
 import {
   AGE_FINANCIALLY_INDEPENDENT,
+  CHRONIC_ANNUAL_COST,
   CLASS_PROFILES,
   COST_OF_LIVING_INCOME_SHARE,
   INHERITED_LIFESTYLE_CAP,
@@ -14,6 +15,7 @@ import {
 import { applyCareerYear } from './careers'
 import type { ContentPack } from './content-pack'
 import { addMoney } from './effects'
+import { FLAG_CHRONIC_CONDITION } from './flags'
 import type { Rng } from './rng'
 import { formatMoney } from './text'
 import type { GameState, TimelineEntry } from './types'
@@ -70,11 +72,14 @@ export function applyEconomy(state: GameState, rng: Rng, content: ContentPack): 
   const career = applyCareerYear(state, rng, content)
   // Sem carreira, vale o melhor entre a aposentadoria e a informalidade.
   const income = hadCareer ? career.income : Math.max(c.pension, profile.baseIncome)
-  const cost = costOfLiving(state, income)
+  // Doenca cronica nao e so uma marca no Perfil: ela cobra todo ano.
+  const medical = c.flags[FLAG_CHRONIC_CONDITION] === true ? CHRONIC_ANNUAL_COST : 0
+  const cost = costOfLiving(state, income) + medical
 
   addMoney(c, income - cost)
 
   const parts = [`Renda ${formatMoney(income)}`, `Custo ${formatMoney(cost)}`]
+  if (medical > 0) parts.push(`Saúde ${formatMoney(medical)}`)
   if (c.debt > 0) parts.push(`Dívida ${formatMoney(c.debt)}`)
 
   return { summary: parts.join(' · '), notes: career.notes }

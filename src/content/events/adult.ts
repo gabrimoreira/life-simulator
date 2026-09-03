@@ -148,19 +148,17 @@ export const ADULT_EVENTS: GameEvent[] = [
             luckBias: 0.3,
             text: 'A região valorizou. Foi a melhor decisão financeira que você tomou.',
             effects: [
-              { type: 'money', delta: -60000 },
+              { type: 'asset', action: 'buy', assetId: 'apartment_small' },
               { type: 'stat', stat: 'happiness', op: 'delta', value: 12 },
-              { type: 'flag', flag: 'owns_property', value: true },
             ],
           },
           {
             chance: 0.3,
             text: 'O prédio tinha problema estrutural. Você descobriu depois da escritura.',
             effects: [
-              { type: 'money', delta: -60000 },
-              { type: 'debt', delta: 25000 },
+              { type: 'asset', action: 'buy', assetId: 'apartment_small' },
+              { type: 'debt', delta: 25_000 },
               { type: 'stat', stat: 'happiness', op: 'delta', value: -12 },
-              { type: 'flag', flag: 'owns_property', value: true },
             ],
           },
         ],
@@ -170,12 +168,13 @@ export const ADULT_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 1,
+            // O banco libera, você compra, e a dívida fica. É como funciona.
             text: 'Você assinou o financiamento. Vinte anos de parcela e a chave na mão.',
             effects: [
-              { type: 'money', delta: -20000 },
-              { type: 'debt', delta: 180000 },
+              { type: 'money', delta: 340_000 },
+              { type: 'asset', action: 'buy', assetId: 'apartment_small' },
+              { type: 'debt', delta: 390_000 },
               { type: 'stat', stat: 'happiness', op: 'delta', value: 8 },
-              { type: 'flag', flag: 'owns_property', value: true },
             ],
           },
         ],

@@ -6,6 +6,7 @@ import {
   validateCourses,
   validateEvents,
   validateRelationActions,
+  orphanFlags,
 } from '../engine/validate'
 import { eligibleEvents } from '../engine/events'
 import { makeCharacter, makeState } from '../test/fixtures'
@@ -128,5 +129,13 @@ describe('validateEvents', () => {
       },
     ])
     expect(problems.some((p) => p.includes('travar'))).toBe(true)
+  })
+})
+
+describe('saúde do conteúdo', () => {
+  it('nenhuma flag é escrita sem que alguém a leia', () => {
+    // Onze das dezesseis flags eram write-only quando isto foi medido: o
+    // Perfil exibia "Ficha suja" e nada no jogo se comportava diferente.
+    expect(orphanFlags(GAME_CONTENT)).toEqual([])
   })
 })
