@@ -20,6 +20,8 @@ const HAND_WRITTEN: Record<string, string> = {
   wrote_memoir: 'Escreveu suas memórias',
   criminal_record: 'Ficha suja',
   underworld_ties: 'Contatos no crime',
+  owes_favors: 'Deve favores políticos',
+  philanthropist: 'Filantropo',
 }
 
 /** Rótulos de curso saem do próprio catálogo, para não sair de sincronia. */

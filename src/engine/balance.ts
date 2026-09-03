@@ -213,6 +213,17 @@ export const PROMOTION_PERFORMANCE_WEIGHT = 1.2
 export const FIRE_PERFORMANCE_THRESHOLD = 20
 export const FIRE_CHANCE = 0.3
 
+/**
+ * Chance anual de ser preso trabalhando no crime, multiplicada pelo nivel:
+ * quanto mais alto, mais exposto. Sem isso o crime era a trilha mais rentavel
+ * do jogo e a unica sem mecanismo de ruina — CLT tem demissao, empresario tem
+ * falencia, e o crime tinha so eventos.
+ */
+export const CRIME_JAIL_BASE_CHANCE = 0.045
+export const CRIME_JAIL_LEVEL_FACTOR = 0.6
+/** Pena sorteada, em anos, escalando com o nivel. */
+export const CRIME_SENTENCE_PER_LEVEL = 2
+
 /** Ano em que a receita do negocio fica abaixo desta fracao vira risco real. */
 export const BANKRUPTCY_INCOME_RATIO = 0.4
 export const BANKRUPTCY_CHANCE = 0.16

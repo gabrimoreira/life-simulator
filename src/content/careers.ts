@@ -317,7 +317,7 @@ export const CAREER_TRACKS: CareerTrack[] = [
     name: 'Acadêmica',
     kind: 'academia',
     entryLabel: 'Seguir carreira acadêmica',
-    entryHint: 'Paga pouco e quase ninguém é demitido. Exige pós-graduação.',
+    entryHint: 'Paga bem menos que o mercado e ninguém é demitido. Exige pós.',
     levels: [
       {
         title: 'Professor substituto',
@@ -330,13 +330,13 @@ export const CAREER_TRACKS: CareerTrack[] = [
       },
       {
         title: 'Professor assistente',
-        salary: 82_000,
+        salary: 78_000,
         minYears: 3,
         requirements: [{ type: 'stat', stat: 'intelligence', min: 62 }],
       },
       {
         title: 'Professor adjunto',
-        salary: 128_000,
+        salary: 115_000,
         minYears: 4,
         requirements: [
           { type: 'stat', stat: 'intelligence', min: 72 },
@@ -345,7 +345,7 @@ export const CAREER_TRACKS: CareerTrack[] = [
       },
       {
         title: 'Professor titular',
-        salary: 190_000,
+        salary: 165_000,
         minYears: 5,
         requirements: [
           { type: 'stat', stat: 'intelligence', min: 80 },
@@ -354,7 +354,7 @@ export const CAREER_TRACKS: CareerTrack[] = [
       },
       {
         title: 'Pesquisador de referência',
-        salary: 275_000,
+        salary: 230_000,
         minYears: 6,
         requirements: [
           { type: 'stat', stat: 'intelligence', min: 88 },

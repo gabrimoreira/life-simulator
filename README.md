@@ -139,3 +139,44 @@ corta o próprio padrão de vida até caber, porque ninguém empresta para sempr
 `saveVersion` 2. As migrações rodam sobre o JSON cru e a checagem de forma
 acontece depois, sobre o resultado — o contrário obrigaria a manter o tipo de
 cada versão antiga do `GameState` vivo no código para sempre.
+
+## Prisão
+
+Não há máquina de estados para a cadeia. Toda ação e todo evento já passam por
+`conditions`, então a regra é uma só: **preso, só aparece o que declara
+`inPrison`; solto, só aparece o que não declara.** A vida lá fora some do
+sorteio — matrícula, emprego, compra de bens, tudo.
+
+Quem está preso não tem renda nem custo de vida: é sustentado pelo Estado. A
+cadeia cobra em tempo, saúde e gente que se afasta, não em dinheiro.
+
+## Conquistas
+
+Uma conquista é um punhado de condições declarativas avaliadas no fim de cada
+turno pelo mesmo `evaluateAll` dos eventos. Não há gatilho nem contador
+escondido. A checagem roda **depois** da morte, de propósito: "chegou aos cem"
+e "morreu no vermelho" só fazem sentido no turno em que a vida acaba.
+
+## Flags não podem ser decorativas
+
+`orphanFlags` em `engine/validate.ts` quebra o teste se o conteúdo escrever uma
+flag que ninguém lê. Onze das dezesseis eram write-only quando isso foi medido
+pela primeira vez: o Perfil exibia "Ficha suja" e o jogo se comportava
+exatamente igual.
+
+Flags lidas pelo próprio engine (e não por uma `Condition`) ficam declaradas em
+`engine/flags.ts` — é como o detector sabe que elas têm leitor.
+
+## Como o balanceamento é medido
+
+Não por intuição: por simulação. Perfis de jogador scriptados — aleatório,
+família, carreira, otimizado, crime, academia — cem vidas cada, olhando
+mediana, p90, mortes no vermelho e herdeiros.
+
+Foi assim que apareceram os problemas que a leitura do código não mostrava: o
+efeito de promoção furando a tabela de requisitos, o crime sendo a trilha mais
+rentável do jogo por não ter mecanismo de ruína nenhum, e o padrão de vida
+herdado condenando quem nasce rico.
+
+A forma importa mais que a mediana. Academia tem p50 alto e p90 baixo (teto
+baixo, piso alto); corporativo tem o inverso. É o desenho, não um desequilíbrio.

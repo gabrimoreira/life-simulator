@@ -420,4 +420,137 @@ export const CHILDHOOD_EVENTS: GameEvent[] = [
       },
     ],
   },
+
+  {
+    id: 'childhood_separation',
+    category: 'relationship',
+    weight: 8,
+    once: true,
+    conditions: [
+      { type: 'age', min: 5, max: 13 },
+      { type: 'hasRelation', kind: 'mother' },
+      { type: 'hasRelation', kind: 'father' },
+    ],
+    text: 'Seus pais sentaram você na sala para conversar. Um deles já tinha feito as malas.',
+    options: [
+      {
+        text: 'Perguntar se a culpa é sua',
+        outcomes: [
+          {
+            chance: 0.6,
+            text: 'Os dois disseram que não, várias vezes, até você acreditar.',
+            effects: [
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -10 },
+              { type: 'relation', target: { by: 'kind', kind: 'mother' }, delta: 8 },
+            ],
+          },
+          {
+            chance: 0.4,
+            text: 'Ninguém soube o que responder, e você tirou suas próprias conclusões.',
+            effects: [
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -20 },
+              { type: 'stat', stat: 'charisma', op: 'delta', value: -4 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Não falar nada',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você não falou nada e foi para o quarto. Passou a não falar muito.',
+            effects: [
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -14 },
+              { type: 'stat', stat: 'charisma', op: 'delta', value: -3 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'childhood_stage',
+    category: 'school',
+    weight: 8,
+    once: true,
+    conditions: [{ type: 'age', min: 7, max: 12 }],
+    text: 'Você foi escolhid{o} para um papel com falas na peça da escola.',
+    options: [
+      {
+        text: 'Subir no palco',
+        outcomes: [
+          {
+            chance: 0.6,
+            text: 'Você errou uma fala e o auditório riu junto, não de você. Foi ótimo.',
+            effects: [
+              { type: 'stat', stat: 'charisma', op: 'delta', value: 10 },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: 8 },
+            ],
+          },
+          {
+            chance: 0.4,
+            text: 'Você congelou no meio e alguém teve que soprar todas as falas.',
+            effects: [
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -10 },
+              { type: 'stat', stat: 'charisma', op: 'delta', value: -3 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Pedir para trocar por algo nos bastidores',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você cuidou da cortina e gostou mais disso do que gostaria de admitir.',
+            effects: [{ type: 'stat', stat: 'intelligence', op: 'delta', value: 4 }],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'childhood_money_lesson',
+    category: 'random',
+    weight: 8,
+    once: true,
+    conditions: [{ type: 'age', min: 8, max: 12 }],
+    text: 'Você juntou moeda por moeda durante meses para comprar uma coisa específica.',
+    options: [
+      {
+        text: 'Comprar o que você queria',
+        outcomes: [
+          {
+            chance: 0.55,
+            text: 'Valeu tudo. Você olhou aquilo por anos lembrando quanto custou juntar.',
+            effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: 12 }],
+          },
+          {
+            chance: 0.45,
+            text: 'Quebrou em duas semanas. Foi a sua primeira lição sobre preço e valor.',
+            effects: [
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -8 },
+              { type: 'stat', stat: 'intelligence', op: 'delta', value: 5 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Continuar guardando',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você continuou guardando. Virou um hábito que ficou.',
+            effects: [
+              { type: 'money', delta: 500 },
+              { type: 'stat', stat: 'intelligence', op: 'delta', value: 3 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 ]

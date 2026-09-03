@@ -7,6 +7,9 @@ import {
   CAREER_RESTART_PENALTY,
   BANKRUPTCY_DEBT_RATIO,
   BANKRUPTCY_INCOME_RATIO,
+  CRIME_JAIL_BASE_CHANCE,
+  CRIME_JAIL_LEVEL_FACTOR,
+  CRIME_SENTENCE_PER_LEVEL,
   DEBT_CEILING,
   FIRE_CHANCE,
   FIRE_PERFORMANCE_THRESHOLD,
@@ -23,6 +26,7 @@ import type { ContentPack } from './content-pack'
 import { applyEffects } from './effects'
 import type { Rng } from './rng'
 import { formatMoney } from './text'
+import { jail } from './prison'
 import { makeNote } from './timeline'
 import type { CareerLevel, CareerTrack, GameState, TimelineEntry } from './types'
 
@@ -193,6 +197,17 @@ export function applyCareerYear(
           ],
         ),
       )
+      return { income, notes }
+    }
+  }
+
+  // Crime nao tem demissao nem falencia: tem cadeia, e a exposicao cresce
+  // com o nivel. E o unico freio da trilha mais rentavel do jogo.
+  if (track.kind === 'crime') {
+    const chance = CRIME_JAIL_BASE_CHANCE * (1 + career.level * CRIME_JAIL_LEVEL_FACTOR)
+    if (rng.chance(chance)) {
+      const years = CRIME_SENTENCE_PER_LEVEL * (career.level + 1) + rng.int(0, 3)
+      notes.push(jail(state, content, years, 'os crimes que você vinha cometendo'))
       return { income, notes }
     }
   }
