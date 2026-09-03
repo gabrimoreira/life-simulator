@@ -5,6 +5,7 @@ import { formatMoney } from './text'
 import { assertNever, EDUCATION_ORDER } from './types'
 import type { Condition, EducationLevel, GameState } from './types'
 
+
 function educationRank(level: EducationLevel): number {
   return EDUCATION_ORDER.indexOf(level)
 }
@@ -44,6 +45,24 @@ export function evaluate(condition: Condition, state: GameState): boolean {
 
     case 'hasRelation':
       return state.relations.some((r) => r.kind === condition.kind && r.alive)
+
+    case 'hasCareer':
+      return (c.career !== null) === condition.value
+
+    case 'careerTrack':
+      return c.career?.trackId === condition.trackId
+
+    case 'careerKind':
+      return c.career?.kind === condition.kind
+
+    case 'careerLevel':
+      return c.career !== null && inRange(c.career.level, condition.min, condition.max)
+
+    case 'performance':
+      return c.career !== null && inRange(c.career.performance, condition.min, condition.max)
+
+    case 'enrolled':
+      return (c.enrollment !== null) === condition.value
 
     case 'not':
       return !evaluate(condition.condition, state)
@@ -112,6 +131,24 @@ export function describe(condition: Condition): string {
 
     case 'hasRelation':
       return 'Requer alguém próximo'
+
+    case 'hasCareer':
+      return condition.value ? 'Requer um trabalho' : 'Você já tem um trabalho'
+
+    case 'careerTrack':
+      return 'Requer outra carreira'
+
+    case 'careerKind':
+      return 'Requer outro tipo de carreira'
+
+    case 'careerLevel':
+      return describeRange('nível de carreira', condition.min, condition.max, plain)
+
+    case 'performance':
+      return describeRange('desempenho', condition.min, condition.max, plain)
+
+    case 'enrolled':
+      return condition.value ? 'Requer estar matriculado' : 'Você já está estudando'
 
     case 'not':
       return `Não pode: ${describe(condition.condition)}`

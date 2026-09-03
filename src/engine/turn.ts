@@ -10,14 +10,16 @@
 // A instancia de Rng nunca escapa daqui: `withRng` garante que `rngState`
 // volta pro save depois de cada operacao.
 
+import { resetActionPoints } from './actions'
 import { applyAging, checkDeath } from './aging'
 import { EVENTS_PER_TURN } from './balance'
 import { firstFailure } from './conditions'
 import type { ContentPack } from './content-pack'
 import { applyEconomy } from './economy'
-import { applyEducation } from './education'
+import { applySchooling } from './education'
 import { applyEffects } from './effects'
 import { findEvent, pickOutcome, selectEvents } from './events'
+import { performAction } from './actions'
 import { createRng } from './rng'
 import type { Rng } from './rng'
 import { interpolate } from './text'
@@ -65,18 +67,22 @@ export function advanceYear(state: GameState, content: ContentPack): void {
   state.character.age += 1
   state.year += 1
 
+  resetActionPoints(state)
+
   withRng(state, (rng) => applyAging(state, rng))
-  const summary = applyEconomy(state)
+  const economy = withRng(state, (rng) => applyEconomy(state, rng, content))
 
   state.timeline.push({
     kind: 'year',
     year: state.year,
     age: state.character.age,
-    summary,
+    summary: economy.summary,
   })
 
-  const educationNote = applyEducation(state)
-  if (educationNote) state.timeline.push(educationNote)
+  for (const note of economy.notes) state.timeline.push(note)
+
+  const schoolingNote = applySchooling(state)
+  if (schoolingNote) state.timeline.push(schoolingNote)
 
   const events = withRng(state, (rng) =>
     selectEvents(state, rng, content, rng.int(EVENTS_PER_TURN.min, EVENTS_PER_TURN.max)),
@@ -95,6 +101,19 @@ export function advanceYear(state: GameState, content: ContentPack): void {
   } else {
     state.turnPhase = 'resolving'
   }
+}
+
+/** Executa uma acao da aba Acoes e joga o resultado na timeline. */
+export function runAction(state: GameState, content: ContentPack, actionId: string): boolean {
+  if (!state.character.alive) return false
+  // Enquanto ha evento pendente o turno esta bloqueado: nao da para agir.
+  if (state.turnPhase === 'resolving') return false
+
+  const note = withRng(state, (rng) => performAction(state, content, rng, actionId))
+  if (!note) return false
+
+  state.timeline.push(note)
+  return true
 }
 
 /** Resolve o evento da frente da fila com a opcao escolhida. */

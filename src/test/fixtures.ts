@@ -21,6 +21,9 @@ export function makeCharacter(overrides: Partial<Character> = {}): Character {
     money: 10_000,
     debt: 0,
     education: 'highschool',
+    career: null,
+    careerHistory: {},
+    enrollment: null,
     flags: {},
     alive: true,
     deathCause: null,
@@ -34,11 +37,13 @@ export function makeState(overrides: Partial<GameState> = {}): GameState {
     seed: 1,
     rngState: 1,
     year: 2020,
+    actionPoints: 3,
     character: makeCharacter(),
     relations: [],
     timeline: [],
     firedEventIds: [],
     lastFiredYear: {},
+    lastActionYear: {},
     choiceLog: [],
     pendingEventIds: [],
     turnPhase: 'idle',
@@ -46,13 +51,20 @@ export function makeState(overrides: Partial<GameState> = {}): GameState {
   }
 }
 
-export function makeContent(events: GameEvent[] = []): ContentPack {
+export function makeContent(
+  events: GameEvent[] = [],
+  extra: Partial<ContentPack> = {},
+): ContentPack {
   return {
     events,
+    actions: [],
+    careers: [],
+    courses: [],
     maleNames: ['João', 'Pedro'],
     femaleNames: ['Ana', 'Maria'],
     surnames: ['Silva', 'Souza'],
     cities: [{ name: 'Recife', uf: 'PE', weight: 1 }],
+    ...extra,
   }
 }
 
