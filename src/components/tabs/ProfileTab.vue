@@ -2,11 +2,16 @@
 import { computed } from 'vue'
 import { FLAG_LABELS } from '../../content/flags'
 import { EDUCATION_LABELS, SOCIAL_CLASS_LABELS, STAT_LABELS } from '../../engine/labels'
-import { VISIBLE_STAT_KEYS } from '../../engine/types'
+import { FAME_VISIBILITY_THRESHOLD, VISIBLE_STAT_KEYS } from '../../engine/types'
 import type { Character } from '../../engine/types'
+import { useGameStore } from '../../stores/game'
 import StatBar from '../StatBar.vue'
 
 const props = defineProps<{ character: Character }>()
+const store = useGameStore()
+
+// Fama só aparece para quem tem alguma: "Fama 0" para um contador é ruído.
+const showFame = computed(() => props.character.stats.fame >= FAME_VISIBILITY_THRESHOLD)
 
 const marks = computed(() =>
   Object.entries(props.character.flags)
@@ -29,7 +34,43 @@ const marks = computed(() =>
           :label="STAT_LABELS[key]"
           :value="character.stats[key]"
         />
+        <StatBar v-if="showFame" :label="STAT_LABELS.fame" :value="character.stats.fame" />
       </div>
+    </section>
+
+    <section class="mt-6">
+      <h2 class="border-b border-rule pb-1 font-serif text-sm tracking-wide uppercase">
+        Trabalho
+      </h2>
+      <dl v-if="store.jobTitle" class="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+        <dt class="text-muted">Cargo</dt>
+        <dd class="text-right">{{ store.jobTitle }}</dd>
+        <dt class="text-muted">Desempenho</dt>
+        <dd class="text-right tabular-nums">{{ character.career?.performance ?? 0 }}</dd>
+        <dt class="text-muted">Tempo no cargo</dt>
+        <dd class="text-right tabular-nums">
+          {{ character.career?.yearsInLevel ?? 0 }}
+          {{ (character.career?.yearsInLevel ?? 0) === 1 ? 'ano' : 'anos' }}
+        </dd>
+      </dl>
+      <p v-else class="mt-2 text-sm text-muted">Sem trabalho no momento.</p>
+    </section>
+
+    <section v-if="store.studying" class="mt-6">
+      <h2 class="border-b border-rule pb-1 font-serif text-sm tracking-wide uppercase">
+        Estudando
+      </h2>
+      <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+        <dt class="text-muted">Curso</dt>
+        <dd class="text-right">{{ store.studying.name }}</dd>
+        <dt class="text-muted">Faltam</dt>
+        <dd class="text-right tabular-nums">
+          {{ store.studying.yearsLeft }}
+          {{ store.studying.yearsLeft === 1 ? 'ano' : 'anos' }}
+        </dd>
+        <dt class="text-muted">Pagamento</dt>
+        <dd class="text-right">{{ store.studying.financed ? 'Financiado' : 'Em dia' }}</dd>
+      </dl>
     </section>
 
     <section class="mt-6">

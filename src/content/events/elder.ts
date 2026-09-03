@@ -21,7 +21,7 @@ export const ELDER_EVENTS: GameEvent[] = [
               { type: 'stat', stat: 'happiness', op: 'delta', value: 14 },
               { type: 'stat', stat: 'health', op: 'delta', value: 5 },
               { type: 'flag', flag: 'retired', value: true },
-              { type: 'flag', flag: 'has_career', value: false },
+              { type: 'career', action: 'quit' },
             ],
           },
           {
@@ -30,7 +30,7 @@ export const ELDER_EVENTS: GameEvent[] = [
             effects: [
               { type: 'stat', stat: 'happiness', op: 'delta', value: -8 },
               { type: 'flag', flag: 'retired', value: true },
-              { type: 'flag', flag: 'has_career', value: false },
+              { type: 'career', action: 'quit' },
             ],
           },
         ],
@@ -45,7 +45,7 @@ export const ELDER_EVENTS: GameEvent[] = [
               { type: 'money', delta: 60000 },
               { type: 'stat', stat: 'health', op: 'delta', value: -6 },
               { type: 'flag', flag: 'retired', value: true },
-              { type: 'flag', flag: 'has_career', value: false },
+              { type: 'career', action: 'quit' },
             ],
           },
           {
@@ -55,7 +55,7 @@ export const ELDER_EVENTS: GameEvent[] = [
               { type: 'money', delta: 20000 },
               { type: 'stat', stat: 'health', op: 'delta', value: -16 },
               { type: 'flag', flag: 'retired', value: true },
-              { type: 'flag', flag: 'has_career', value: false },
+              { type: 'career', action: 'quit' },
             ],
           },
         ],

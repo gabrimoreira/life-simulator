@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { validateEvents } from '../engine/validate'
+import {
+  validateActions,
+  validateCareers,
+  validateCourses,
+  validateEvents,
+} from '../engine/validate'
 import { eligibleEvents } from '../engine/events'
 import { makeCharacter, makeState } from '../test/fixtures'
 import { GAME_CONTENT } from '.'
@@ -8,6 +13,17 @@ import { ALL_EVENTS } from './events'
 describe('conteúdo do jogo', () => {
   it('passa na validação estrutural', () => {
     expect(validateEvents(ALL_EVENTS)).toEqual([])
+    expect(validateActions(GAME_CONTENT.actions)).toEqual([])
+    expect(validateCareers(GAME_CONTENT.careers)).toEqual([])
+    expect(validateCourses(GAME_CONTENT.courses)).toEqual([])
+  })
+
+  it('toda trilha tem um nível de entrada alcançável cedo', () => {
+    for (const track of GAME_CONTENT.careers) {
+      const entry = track.levels[0]
+      expect(entry, track.id).toBeDefined()
+      expect(entry?.minYears, track.id).toBe(0)
+    }
   })
 
   it('tem eventos elegíveis em toda idade jogável', () => {

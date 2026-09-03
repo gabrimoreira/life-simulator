@@ -1,6 +1,7 @@
 // Nascimento: origem, stats iniciais, familia.
 
 import {
+  ACTION_POINTS_PER_TURN,
   CLASS_PROFILES,
   PARENT_AGE_AT_BIRTH,
   PARENT_MIN_AGE_AT_FIRST_CHILD,
@@ -46,7 +47,8 @@ export function createGame(options: NewGameOptions, content: ContentPack): GameS
 
   const stats = {} as Record<StatKey, number>
   for (const key of STAT_KEYS) {
-    stats[key] = clampStat(rollStat(rng) + (profile.statBias[key] ?? 0))
+    // Ninguem nasce famoso. Fama e a unica stat que comeca no chao.
+    stats[key] = key === 'fame' ? rng.int(0, 5) : clampStat(rollStat(rng) + (profile.statBias[key] ?? 0))
   }
 
   const character: Character = {
@@ -61,6 +63,9 @@ export function createGame(options: NewGameOptions, content: ContentPack): GameS
     money: profile.startingMoney,
     debt: 0,
     education: 'none',
+    career: null,
+    careerHistory: {},
+    enrollment: null,
     flags: {},
     alive: true,
     deathCause: null,
@@ -71,11 +76,13 @@ export function createGame(options: NewGameOptions, content: ContentPack): GameS
     seed,
     rngState: rng.getState(),
     year: birthYear,
+    actionPoints: ACTION_POINTS_PER_TURN,
     character,
     relations: [],
     timeline: [],
     firedEventIds: [],
     lastFiredYear: {},
+    lastActionYear: {},
     choiceLog: [],
     pendingEventIds: [],
     turnPhase: 'idle',

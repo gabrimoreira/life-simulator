@@ -7,6 +7,9 @@ export const STAT_MAX = 100
 
 export const MAX_AGE = 110
 
+/** Pontos de acao por turno. E o que impede o jogador de fazer tudo. */
+export const ACTION_POINTS_PER_TURN = 3
+
 /** Eventos sorteados por turno. */
 export const EVENTS_PER_TURN = { min: 1, max: 3 } as const
 
@@ -70,7 +73,10 @@ export interface ClassProfile {
   label: string
   /** Renda anual liquida antes da independencia (mesada da familia). */
   allowance: number
-  /** Renda anual base depois dos 18, sem carreira: bico, informalidade. */
+  /**
+   * Renda anual sem carreira nenhuma: bico, informalidade. E de proposito
+   * pior que o custo de vida — ficar sem trabalho tem que doer devagar.
+   */
   baseIncome: number
   /** Custo de vida anual depois dos 18. */
   costOfLiving: number
@@ -84,7 +90,7 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   poor: {
     label: 'classe baixa',
     allowance: 300,
-    baseIncome: 16_000,
+    baseIncome: 11_000,
     costOfLiving: 14_000,
     startingMoney: 0,
     statBias: { health: -8, intelligence: -5, happiness: -4 },
@@ -93,7 +99,7 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   lowerMiddle: {
     label: 'classe média baixa',
     allowance: 900,
-    baseIncome: 26_000,
+    baseIncome: 16_000,
     costOfLiving: 22_000,
     startingMoney: 500,
     statBias: { health: -3, intelligence: -1 },
@@ -102,8 +108,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   middle: {
     label: 'classe média',
     allowance: 2_400,
-    baseIncome: 42_000,
-    costOfLiving: 35_000,
+    baseIncome: 24_000,
+    costOfLiving: 33_000,
     startingMoney: 2_000,
     statBias: {},
     weight: 25,
@@ -111,8 +117,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   upperMiddle: {
     label: 'classe média alta',
     allowance: 6_000,
-    baseIncome: 70_000,
-    costOfLiving: 58_000,
+    baseIncome: 38_000,
+    costOfLiving: 55_000,
     startingMoney: 12_000,
     statBias: { health: 4, intelligence: 5, looks: 3 },
     weight: 13,
@@ -120,8 +126,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   rich: {
     label: 'classe alta',
     allowance: 18_000,
-    baseIncome: 140_000,
-    costOfLiving: 110_000,
+    baseIncome: 70_000,
+    costOfLiving: 100_000,
     startingMoney: 80_000,
     statBias: { health: 8, intelligence: 6, looks: 6, reputation: 8 },
     weight: 4,
@@ -162,3 +168,59 @@ export const INITIAL_RELATION = { min: 55, max: 90 } as const
  */
 export const RELATION_ANNUAL_DECAY = 1
 export const RELATION_DECAY_FLOOR = 30
+
+
+// --- Carreira ---------------------------------------------------------------
+
+export const PERFORMANCE_START = 50
+/** Fracao da distancia ate a baseline percorrida por ano, sem esforco. */
+export const PERFORMANCE_DRIFT = 0.15
+/** Baseline de desempenho = intelligence * A + charisma * B. */
+export const PERFORMANCE_FROM_INTELLIGENCE = 0.6
+export const PERFORMANCE_FROM_CHARISMA = 0.4
+
+/** Chance de promocao quando tempo e requisitos ja passaram. */
+export const PROMOTION_BASE_CHANCE = 0.16
+/** Quanto o desempenho acima de 50 soma na chance de promocao. */
+export const PROMOTION_PERFORMANCE_WEIGHT = 0.5
+
+/** Abaixo deste desempenho o emprego comeca a correr risco. */
+export const FIRE_PERFORMANCE_THRESHOLD = 20
+export const FIRE_CHANCE = 0.3
+
+/** Ano em que a receita do negocio fica abaixo desta fracao vira risco real. */
+export const BANKRUPTCY_INCOME_RATIO = 0.4
+export const BANKRUPTCY_CHANCE = 0.16
+/** Falencia deixa divida proporcional ao tamanho do negocio. */
+export const BANKRUPTCY_DEBT_RATIO = 0.5
+
+/**
+ * Degraus perdidos ao recomecar numa trilha em que voce ja trabalhou. Ser
+ * demitido custa caro, mas um ex-diretor nao volta a ser estagiario — a
+ * experiencia continua no curriculo.
+ */
+export const CAREER_RESTART_PENALTY = 2
+
+// --- Custo de vida ----------------------------------------------------------
+
+/**
+ * Quem ganha mais gasta mais. O custo de vida e o maior entre o piso da classe
+ * social e esta fracao da renda — sem isso, salario alto viraria dinheiro
+ * infinito acumulado sem nenhuma decisao no meio.
+ */
+export const COST_OF_LIVING_INCOME_SHARE = 0.42
+
+/**
+ * Estudante vive como estudante: republica, casa dos pais, arroz e feijao.
+ * Sem isso, cursar uma faculdade paga enquanto se paga custo de vida cheio
+ * com salario de estagiario nao fecha para ninguem.
+ */
+export const STUDENT_COST_OF_LIVING_SHARE = 0.55
+
+// --- Educacao ---------------------------------------------------------------
+
+/** Chance de largar o curso num ano em que a felicidade esta no chao. */
+export const DROPOUT_UNHAPPY_THRESHOLD = 15
+export const DROPOUT_CHANCE = 0.25
+/** Estudar cansa. */
+export const STUDY_HAPPINESS_COST = 2

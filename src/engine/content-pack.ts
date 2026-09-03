@@ -1,7 +1,7 @@
 // O engine nunca importa `content/` diretamente: recebe um ContentPack.
 // Isso e o que deixa o motor testavel com pools falsos minusculos.
 
-import type { GameEvent } from './types'
+import type { CareerTrack, Course, GameAction, GameEvent } from './types'
 
 export interface CityEntry {
   name: string
@@ -12,6 +12,9 @@ export interface CityEntry {
 
 export interface ContentPack {
   events: GameEvent[]
+  actions: GameAction[]
+  careers: CareerTrack[]
+  courses: Course[]
   maleNames: string[]
   femaleNames: string[]
   surnames: string[]

@@ -13,6 +13,7 @@ export const STAT_LABELS: Record<StatKey, string> = {
   charisma: 'Carisma',
   happiness: 'Felicidade',
   reputation: 'Reputação',
+  fame: 'Fama',
   luck: 'Sorte',
 }
 

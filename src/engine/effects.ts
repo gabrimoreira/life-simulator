@@ -1,7 +1,9 @@
 // Aplicador de efeitos declarativos. Muta o estado e devolve a linha que a
 // timeline mostra. Clamp de stat acontece aqui e em nenhum outro lugar.
 
-import { STAT_MAX, STAT_MIN } from './balance'
+import { DEBT_CEILING, STAT_MAX, STAT_MIN } from './balance'
+import { clampPerformance, hireInto, leaveCareer, recordCareerBest } from './careers'
+import { courseName, dropOut, enroll, studyYear } from './education'
 import type { ContentPack } from './content-pack'
 import { EDUCATION_LABELS, STAT_LABELS, relationLabel } from './labels'
 import { createPerson } from './people'
@@ -24,6 +26,11 @@ export function setStat(character: Character, stat: keyof Character['stats'], va
 /**
  * Dinheiro nunca fica negativo: o que falta vira divida. Entrada de dinheiro
  * abate a divida antes de virar saldo.
+ *
+ * A divida para no teto porque ninguem empresta para sempre. Passado esse
+ * ponto o gasto simplesmente nao acontece — a pessoa corta o proprio padrao
+ * de vida ate caber. Sem isso, 70 anos de deficit produzem um numero de
+ * milhoes que nao significa mais nada na tela.
  */
 export function addMoney(character: Character, delta: number): void {
   if (delta >= 0) {
@@ -36,10 +43,12 @@ export function addMoney(character: Character, delta: number): void {
   const cost = -delta
   if (character.money >= cost) {
     character.money -= cost
-  } else {
-    character.debt += cost - character.money
-    character.money = 0
+    return
   }
+
+  const shortfall = cost - character.money
+  character.money = 0
+  character.debt = Math.min(DEBT_CEILING, character.debt + shortfall)
 }
 
 function findRelation(state: GameState, ref: RelationRef): Person | undefined {
@@ -84,7 +93,7 @@ export function applyEffect(
 
     case 'debt': {
       if (effect.delta === 0) return null
-      character.debt = Math.max(0, character.debt + effect.delta)
+      character.debt = Math.max(0, Math.min(DEBT_CEILING, character.debt + effect.delta))
       return {
         label: 'Dívida',
         text: `${effect.delta > 0 ? '+' : '−'}${formatMoney(Math.abs(effect.delta))}`,
@@ -137,6 +146,79 @@ export function applyEffect(
         label: relationLabel(person.kind, person.gender),
         text: 'saiu da sua vida',
         tone: 'bad',
+      }
+    }
+
+    case 'career': {
+      const career = state.character.career
+      switch (effect.action) {
+        case 'hire': {
+          const track = effect.trackId
+            ? content.careers.find((t) => t.id === effect.trackId)
+            : undefined
+          if (!track || career !== null) return null
+          hireInto(state, track)
+          return { label: 'Carreira', text: track.name, tone: 'good' }
+        }
+        case 'promote': {
+          if (!career) return null
+          const track = content.careers.find((t) => t.id === career.trackId)
+          const next = track?.levels[career.level + 1]
+          if (!next) return null
+          career.level += 1
+          career.yearsInLevel = 0
+          recordCareerBest(state, career.trackId, career.level)
+          return { label: 'Cargo', text: next.title, tone: 'good' }
+        }
+        case 'quit':
+        case 'fire': {
+          if (!career) return null
+          leaveCareer(state)
+          return {
+            label: 'Carreira',
+            text: effect.action === 'quit' ? 'largou o emprego' : 'demitido',
+            tone: 'bad',
+          }
+        }
+        default:
+          return assertNever(effect.action, 'applyEffect/career')
+      }
+    }
+
+    case 'performance': {
+      const career = state.character.career
+      if (!career) return null
+      const before = career.performance
+      career.performance = clampPerformance(career.performance + effect.delta)
+      const delta = career.performance - before
+      if (delta === 0) return null
+      return { label: 'Desempenho', text: signed(delta), tone: delta > 0 ? 'good' : 'bad' }
+    }
+
+    case 'enroll': {
+      return enroll(state, content, effect.courseId)
+        ? { label: 'Matrícula', text: courseName(content, effect.courseId), tone: 'good' }
+        : null
+    }
+
+    case 'study': {
+      // A nota rica de "cursar um ano" e escrita por `studyYear`; aqui o efeito
+      // so existe para conteudo que queira empurrar um ano de curso de brinde.
+      return studyYear(state, content, rng) !== null
+        ? { label: 'Curso', text: 'mais um ano', tone: 'neutral' }
+        : null
+    }
+
+    case 'dropOut': {
+      return dropOut(state) ? { label: 'Curso', text: 'abandonado', tone: 'bad' } : null
+    }
+
+    case 'actionPoints': {
+      state.actionPoints = Math.max(0, state.actionPoints + effect.delta)
+      return {
+        label: 'Pontos de ação',
+        text: signed(effect.delta),
+        tone: effect.delta > 0 ? 'good' : 'bad',
       }
     }
 

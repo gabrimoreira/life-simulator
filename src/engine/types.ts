@@ -7,6 +7,7 @@ export type StatKey =
   | 'charisma'
   | 'happiness'
   | 'reputation'
+  | 'fame'
   | 'luck'
 
 export const STAT_KEYS: readonly StatKey[] = [
@@ -16,6 +17,7 @@ export const STAT_KEYS: readonly StatKey[] = [
   'charisma',
   'happiness',
   'reputation',
+  'fame',
   'luck',
 ]
 
@@ -28,6 +30,12 @@ export const VISIBLE_STAT_KEYS: readonly StatKey[] = [
   'happiness',
   'reputation',
 ]
+
+/**
+ * Fama so aparece no Perfil acima disso. Todo mundo nasce com 0..5 de fama, e
+ * "Fama 2" para um contador e ruido, nao informacao.
+ */
+export const FAME_VISIBILITY_THRESHOLD = 12
 
 export type EducationLevel = 'none' | 'elementary' | 'highschool' | 'bachelor' | 'postgrad'
 
@@ -45,6 +53,31 @@ export type SocialClass = 'poor' | 'lowerMiddle' | 'middle' | 'upperMiddle' | 'r
 export type Gender = 'male' | 'female'
 
 export type RelationKind = 'mother' | 'father' | 'sibling' | 'friend' | 'partner' | 'spouse' | 'child'
+
+export type CareerKind = 'clt' | 'business' | 'celebrity'
+
+export interface CareerState {
+  trackId: string
+  /** Desnormalizado da trilha: evita o avaliador de condicoes ter que carregar
+   *  o catalogo inteiro so para saber se voce e CLT ou empresario. */
+  kind: CareerKind
+  /** Indice do nivel dentro da trilha. */
+  level: number
+  yearsInLevel: number
+  yearsInTrack: number
+  /** 0..100. Sobe trabalhando, cai vacilando; e o motor da promocao. */
+  performance: number
+}
+
+export interface Enrollment {
+  courseId: string
+  targetLevel: EducationLevel
+  yearsLeft: number
+  annualCost: number
+  financed: boolean
+}
+
+export type ActionGroup = 'health' | 'education' | 'career' | 'social' | 'crime'
 
 export type EventCategory =
   | 'childhood'
@@ -82,6 +115,12 @@ export interface Character {
   money: number
   debt: number
   education: EducationLevel
+  /** null = desempregado. Carreira e conteudo; o estado do cargo mora aqui. */
+  career: CareerState | null
+  /** Nivel mais alto ja alcancado em cada trilha. Sobrevive a demissao. */
+  careerHistory: Record<string, number>
+  /** null = nao esta estudando nada agora. */
+  enrollment: Enrollment | null
   flags: Record<string, boolean>
   alive: boolean
   deathCause: string | null
@@ -119,12 +158,16 @@ export interface GameState {
   /** Estado serializado do mulberry32. Reproduz a vida inteira junto do `choiceLog`. */
   rngState: number
   year: number
+  /** Pontos de acao restantes no turno. Recarregam todo ano. */
+  actionPoints: number
   character: Character
   relations: Person[]
   timeline: TimelineEntry[]
   firedEventIds: string[]
   /** Ultimo ano em que cada evento disparou, para respeitar `cooldown`. */
   lastFiredYear: Record<string, number>
+  /** Idem para acoes. Namespace separado: ids de acao e de evento nao colidem. */
+  lastActionYear: Record<string, number>
   choiceLog: ChoiceRecord[]
   pendingEventIds: string[]
   turnPhase: TurnPhase
@@ -145,6 +188,12 @@ export type Condition =
   | { type: 'socialClass'; oneOf: SocialClass[] }
   | { type: 'education'; level: EducationLevel; atLeast: boolean }
   | { type: 'hasRelation'; kind: RelationKind }
+  | { type: 'hasCareer'; value: boolean }
+  | { type: 'careerTrack'; trackId: string }
+  | { type: 'careerKind'; kind: CareerKind }
+  | { type: 'careerLevel'; min?: number; max?: number }
+  | { type: 'performance'; min?: number; max?: number }
+  | { type: 'enrolled'; value: boolean }
   | { type: 'not'; condition: Condition }
   | { type: 'anyOf'; conditions: Condition[] }
 
@@ -157,6 +206,12 @@ export type Effect =
   | { type: 'relation'; target: RelationRef; delta: number }
   | { type: 'addRelation'; kind: RelationKind }
   | { type: 'removeRelation'; target: RelationRef }
+  | { type: 'career'; action: 'hire' | 'quit' | 'fire' | 'promote'; trackId?: string }
+  | { type: 'performance'; delta: number }
+  | { type: 'enroll'; courseId: string }
+  | { type: 'study' }
+  | { type: 'dropOut' }
+  | { type: 'actionPoints'; delta: number }
   | { type: 'death'; cause: string }
 
 export interface Outcome {
@@ -175,6 +230,71 @@ export interface EventOption {
   text: string
   /** Se falhar, a opcao aparece desabilitada com o motivo vindo de `describe()`. */
   requirements?: Condition[]
+  outcomes: Outcome[]
+}
+
+export interface CareerLevel {
+  title: string
+  /** Renda anual bruta do nivel. */
+  salary: number
+  /**
+   * Volatilidade da renda, 0..0.95. 0 = salario fixo (CLT). Empresario e
+   * celebridade ganham muito mais na media e muito menos nos anos ruins.
+   */
+  volatility?: number
+  /** Para ser promovido A ESTE nivel. No nivel 0, e o requisito de entrada. */
+  requirements: Condition[]
+  /** Anos minimos no nivel anterior antes da promocao ficar possivel. */
+  minYears: number
+}
+
+export interface CareerTrack {
+  id: string
+  name: string
+  kind: CareerKind
+  /** Como o jogador entra: e o texto do botao na aba Acoes. */
+  entryLabel: string
+  entryHint: string
+  /** Efeitos aplicados todo ano so por estar na trilha (fama, desgaste). */
+  annualEffects?: Effect[]
+  levels: CareerLevel[]
+}
+
+export interface Course {
+  id: string
+  name: string
+  /** Nivel de escolaridade que o curso concede ao terminar. */
+  grants: EducationLevel
+  years: number
+  /** Custo anual. 0 = publica. */
+  annualCost: number
+  requirements: Condition[]
+  /** Efeitos aplicados na CONCLUSAO. A flag do curso e adicionada sozinha. */
+  completionEffects: Effect[]
+}
+
+/** Flag setada quando um curso e concluido: `course_<id>`. */
+export function courseFlag(courseId: string): string {
+  return `course_${courseId}`
+}
+
+/**
+ * Acao da aba Acoes. Reusa Outcome/Effect do evento de proposito: acao e
+ * evento sao a mesma coisa, so muda quem puxa o gatilho.
+ */
+export interface GameAction {
+  id: string
+  group: ActionGroup
+  label: string
+  /** Uma linha explicando o que a acao faz, mostrada abaixo do titulo. */
+  hint: string
+  /** Pontos de acao consumidos. */
+  cost: number
+  /** Se falhar, a acao nem aparece na lista. */
+  conditions: Condition[]
+  /** Se falhar, a acao aparece desabilitada com o motivo. */
+  requirements?: Condition[]
+  cooldown?: number
   outcomes: Outcome[]
 }
 

@@ -22,8 +22,8 @@ dois importa Vue, e adicionar 200 eventos novos não deve tocar uma linha de
 ```
 src/
   engine/       motor puro e testável — tipos, rng seedado, condições,
-                efeitos, seleção de eventos, turno, envelhecimento
-  content/      dados puros: eventos, nomes, cidades, rótulos
+                efeitos, eventos, ações, carreira, educação, economia, turno
+  content/      dados puros: eventos, ações, trilhas, cursos, nomes, cidades
   save/         SaveAdapter (localStorage hoje, IndexedDB depois) + migrações
   stores/       Pinia: adapta o engine ao Vue e persiste
   components/   UI
@@ -82,3 +82,60 @@ inclusive atravessando um save/load no meio.
 ### Balanceamento
 
 Todo número mágico mora em `src/engine/balance.ts`.
+
+## Ações e pontos de ação
+
+Cada turno dá 3 pontos de ação. Uma ação é a mesma coisa que um evento —
+condições, requisitos, outcomes ponderados, efeitos — só muda quem puxa o
+gatilho, então ela reusa `Outcome` e `Effect` sem maquinário novo.
+
+Ações de conteúdo ficam em `src/content/actions.ts`. Já **matricular-se num
+curso**, **cursar mais um ano** e **entrar numa carreira** não são conteúdo: são
+derivadas dos catálogos por `engine/actions.ts`, sob os prefixos `enroll:`,
+`career:` e os ids `study`/`drop_out`. "Você pode se matricular no que tem
+requisito" não é um dado que alguém escreve — é consequência de existirem
+cursos. Por isso o validador rejeita ação de conteúdo com `:` no id.
+
+## Carreira
+
+Uma trilha (`src/content/careers.ts`) é uma lista de níveis com salário,
+requisitos e tempo mínimo. Três coisas movem a progressão:
+
+- **Desempenho** regride sozinho para uma baseline vinda de inteligência e
+  carisma. Subir acima dela custa um ponto de ação por ano.
+- **Nível de entrada** é o mais alto cujos requisitos você já cumpre. Níveis que
+  exigem `performance` são inalcançáveis na entrada, o que limita o teto sem
+  precisar de regra extra.
+- **`careerHistory`** guarda o topo já alcançado em cada trilha e sobrevive à
+  demissão: quem já foi diretor volta dois degraus abaixo, não como estagiário.
+
+Renda com `volatility > 0` (empresário, celebridade) varia para os dois lados e
+pode virar falência.
+
+## Educação
+
+Fundamental e Médio são automáticos. Graduação e pós são matrícula mais um ano
+de estudo por vez, cada ano custando um ponto de ação — o custo de oportunidade
+é a decisão. Pular um ano não reprova, só não forma. A mensalidade sai do caixa
+sempre que houver caixa; o resto vira dívida.
+
+Concluir um curso concede o nível de escolaridade e a flag `course_<id>`, que
+eventos e carreiras podem exigir.
+
+## Economia
+
+`baseIncome` é a renda de quem não tem carreira nenhuma, e é deliberadamente
+pior que qualquer primeiro degrau — ficar sem trabalho tem que doer devagar.
+
+O custo de vida é o maior entre o piso da classe social e uma fatia da renda:
+sem isso, salário alto vira saldo infinito sem nenhuma decisão no meio.
+Estudante paga uma fração disso.
+
+A dívida tem teto. Passado o teto o gasto simplesmente não acontece — a pessoa
+corta o próprio padrão de vida até caber, porque ninguém empresta para sempre.
+
+## Save
+
+`saveVersion` 2. As migrações rodam sobre o JSON cru e a checagem de forma
+acontece depois, sobre o resultado — o contrário obrigaria a manter o tipo de
+cada versão antiga do `GameState` vivo no código para sempre.

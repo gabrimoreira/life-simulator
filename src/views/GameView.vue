@@ -23,7 +23,7 @@ const showAdvance = computed(
 
 <template>
   <div class="flex h-full flex-col">
-    <AppHeader :character="state.character" />
+    <AppHeader :character="state.character" :action-points="state.actionPoints" />
 
     <main class="relative min-h-0 flex-1">
       <TimelineFeed v-if="store.activeTab === 'life'" :entries="state.timeline" />
