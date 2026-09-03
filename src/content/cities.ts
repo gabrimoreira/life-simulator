@@ -1,0 +1,36 @@
+// Cidades natais, com peso aproximando a distribuicao populacional brasileira.
+
+import type { CityEntry } from '../engine/content-pack'
+
+export const CITIES: CityEntry[] = [
+  { name: 'São Paulo', uf: 'SP', weight: 60 },
+  { name: 'Rio de Janeiro', uf: 'RJ', weight: 34 },
+  { name: 'Brasília', uf: 'DF', weight: 15 },
+  { name: 'Salvador', uf: 'BA', weight: 14 },
+  { name: 'Fortaleza', uf: 'CE', weight: 13 },
+  { name: 'Belo Horizonte', uf: 'MG', weight: 13 },
+  { name: 'Manaus', uf: 'AM', weight: 11 },
+  { name: 'Curitiba', uf: 'PR', weight: 10 },
+  { name: 'Recife', uf: 'PE', weight: 10 },
+  { name: 'Goiânia', uf: 'GO', weight: 9 },
+  { name: 'Porto Alegre', uf: 'RS', weight: 8 },
+  { name: 'Belém', uf: 'PA', weight: 8 },
+  { name: 'Guarulhos', uf: 'SP', weight: 7 },
+  { name: 'Campinas', uf: 'SP', weight: 6 },
+  { name: 'São Luís', uf: 'MA', weight: 6 },
+  { name: 'Maceió', uf: 'AL', weight: 5 },
+  { name: 'Natal', uf: 'RN', weight: 5 },
+  { name: 'Teresina', uf: 'PI', weight: 5 },
+  { name: 'Campo Grande', uf: 'MS', weight: 5 },
+  { name: 'João Pessoa', uf: 'PB', weight: 4 },
+  { name: 'Uberlândia', uf: 'MG', weight: 3 },
+  { name: 'Feira de Santana', uf: 'BA', weight: 3 },
+  { name: 'Cuiabá', uf: 'MT', weight: 3 },
+  { name: 'Aracaju', uf: 'SE', weight: 3 },
+  { name: 'Juiz de Fora', uf: 'MG', weight: 2 },
+  { name: 'Londrina', uf: 'PR', weight: 2 },
+  { name: 'Caxias do Sul', uf: 'RS', weight: 2 },
+  { name: 'Petrolina', uf: 'PE', weight: 2 },
+  { name: 'Imperatriz', uf: 'MA', weight: 1 },
+  { name: 'Marabá', uf: 'PA', weight: 1 },
+]
