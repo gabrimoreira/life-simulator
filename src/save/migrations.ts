@@ -1,5 +1,5 @@
-// Migração de save. A v1 era identidade; a v2 é a primeira de verdade — a
-// Fase 2 acrescentou carreira, matrícula, fama e pontos de ação ao estado.
+// Migração de save. A v1 era identidade; a v2 acrescentou carreira, matrícula,
+// fama e pontos de ação; a v3 trouxe bens e ações de relação.
 //
 // As migrações rodam sobre o JSON cru e a checagem de forma acontece DEPOIS,
 // sobre o resultado. Fazer o contrário obrigaria a manter o tipo de cada
@@ -32,6 +32,16 @@ const MIGRATIONS: Record<number, (state: RawState) => RawState> = {
       },
     }
   },
+
+  2: (state) => {
+    const character = isRecord(state['character']) ? { ...state['character'] } : {}
+    return {
+      ...state,
+      lastRelationActionYear: {},
+      // Ninguém tinha bens antes de existirem bens.
+      character: { ...character, assets: [] },
+    }
+  },
 }
 
 function isRecord(value: unknown): value is RawState {
@@ -51,6 +61,8 @@ function looksLikeState(value: unknown): value is GameState {
     typeof value['actionPoints'] === 'number' &&
     isRecord(value['lastFiredYear']) &&
     isRecord(value['lastActionYear']) &&
+    isRecord(value['lastRelationActionYear']) &&
+    Array.isArray(character['assets']) &&
     isRecord(character['stats']) &&
     typeof (character['stats'] as RawState)['fame'] === 'number' &&
     'career' in character &&

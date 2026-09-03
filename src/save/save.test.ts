@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GAME_CONTENT } from '../content'
+import { skipPendingEvents } from '../test/fixtures'
 import { createGame } from '../engine/generate'
 import { advanceYear } from '../engine/turn'
 import { ACTION_POINTS_PER_TURN } from '../engine/balance'
@@ -56,7 +57,7 @@ describe('economia de longo prazo', () => {
     for (let i = 0; i < 70; i++) {
       if (!state.character.alive) break
       advanceYear(state, GAME_CONTENT)
-      state.pendingEventIds = []
+      skipPendingEvents(state)
     }
     expect(state.character.debt).toBeLessThanOrEqual(400_000)
   })
@@ -71,7 +72,33 @@ describe('compatibilidade de forma', () => {
   })
 })
 
-describe('migração v1 -> v2', () => {
+describe('migração v2 -> v3', () => {
+  /** Um save v2 é o v3 sem nada que a Fase 3 acrescentou. */
+  function v2Save(): Record<string, unknown> {
+    const save = JSON.parse(JSON.stringify(makeSave()))
+    delete save.state.lastRelationActionYear
+    delete save.state.character.assets
+    return { ...save, saveVersion: 2 }
+  }
+
+  it('preenche bens e cooldown de relação sem perder o resto', () => {
+    const depois = migrate(v2Save())
+    expect(depois?.saveVersion).toBe(CURRENT_SAVE_VERSION)
+    expect(depois?.state.character.assets).toEqual([])
+    expect(depois?.state.lastRelationActionYear).toEqual({})
+    expect(depois?.state.character.name).toBe(makeSave().state.character.name)
+  })
+
+  it('o save migrado continua jogável', () => {
+    const migrado = migrate(v2Save())
+    if (!migrado) throw new Error('migração falhou')
+    expect(() => {
+      advanceYear(migrado.state, GAME_CONTENT)
+    }).not.toThrow()
+  })
+})
+
+describe('migração v1 -> v3, em cadeia', () => {
   /** Um save v1 é o v2 sem nada que a Fase 2 acrescentou. */
   function v1Save(): Record<string, unknown> {
     const save = JSON.parse(JSON.stringify(makeSave()))
@@ -80,6 +107,9 @@ describe('migração v1 -> v2', () => {
     delete save.state.character.career
     delete save.state.character.enrollment
     delete save.state.character.stats.fame
+    delete save.state.character.careerHistory
+    delete save.state.character.assets
+    delete save.state.lastRelationActionYear
     return { ...save, saveVersion: 1 }
   }
 
@@ -92,6 +122,9 @@ describe('migração v1 -> v2', () => {
     expect(depois?.state.lastActionYear).toEqual({})
     expect(depois?.state.character.career).toBeNull()
     expect(depois?.state.character.enrollment).toBeNull()
+    // A cadeia inteira roda: v1 -> v2 -> v3.
+    expect(depois?.state.character.assets).toEqual([])
+    expect(depois?.state.lastRelationActionYear).toEqual({})
     // Ninguém era famoso antes de a fama existir.
     expect(depois?.state.character.stats.fame).toBe(0)
     // E nada do save antigo se perdeu no caminho.
@@ -108,7 +141,7 @@ describe('migração v1 -> v2', () => {
     expect(migrado.state.character.age).toBeGreaterThan(0)
   })
 
-  it('um save v2 passa direto, sem migração', () => {
+  it('um save na versão atual passa direto, sem migração', () => {
     const save = makeSave()
     expect(migrate(JSON.parse(JSON.stringify(save)))).toEqual(save)
   })
