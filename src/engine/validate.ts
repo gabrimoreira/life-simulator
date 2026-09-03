@@ -2,7 +2,16 @@
 // deve derrubar o CI, nao o jogo do jogador.
 
 import { KNOWN_TOKENS, extractTokens } from './text'
-import type { CareerTrack, Condition, Course, GameAction, GameEvent, Outcome } from './types'
+import type {
+  AssetDef,
+  CareerTrack,
+  Condition,
+  Course,
+  GameAction,
+  GameEvent,
+  Outcome,
+  RelationAction,
+} from './types'
 
 const CHANCE_TOLERANCE = 0.001
 const MIN_OPTIONS = 2
@@ -207,6 +216,71 @@ export function validateCourses(courses: Course[]): string[] {
     course.requirements.forEach((c, i) =>
       checkCondition(c, `${where}.requirements[${i}]`, problems),
     )
+  }
+
+  return problems
+}
+
+
+export function validateAssets(assets: AssetDef[]): string[] {
+  const problems: string[] = []
+  const seen = new Set<string>()
+
+  for (const asset of assets) {
+    const where = `ativo "${asset.id}"`
+
+    if (seen.has(asset.id)) problems.push(`${where}: id duplicado`)
+    seen.add(asset.id)
+
+    if (asset.name.trim() === '') problems.push(`${where}: name vazio`)
+    if (asset.hint.trim() === '') problems.push(`${where}: hint vazio`)
+    if (asset.price <= 0) problems.push(`${where}: price deve ser > 0`)
+    if (asset.upkeepRate < 0) problems.push(`${where}: upkeepRate negativo`)
+    if (asset.volatility < 0) problems.push(`${where}: volatility negativa`)
+    // Um ativo que valoriza sem cobrar nada e sem risco e dinheiro de graca:
+    // o jogo nao tem inflacao, entao o retorno aqui e real, nao nominal.
+    if (asset.appreciation > 0.06 && asset.upkeepRate === 0 && asset.volatility < 0.15) {
+      problems.push(`${where}: valoriza forte sem custo nem risco`)
+    }
+
+    asset.requirements.forEach((c, i) =>
+      checkCondition(c, `${where}.requirements[${i}]`, problems),
+    )
+  }
+
+  return problems
+}
+
+export function validateRelationActions(actions: RelationAction[]): string[] {
+  const problems: string[] = []
+  const seen = new Set<string>()
+
+  for (const action of actions) {
+    const where = `acao de relacao "${action.id}"`
+
+    if (seen.has(action.id)) problems.push(`${where}: id duplicado`)
+    seen.add(action.id)
+
+    if (action.kinds.length === 0) problems.push(`${where}: sem tipos de relacao`)
+    if (action.label.trim() === '') problems.push(`${where}: label vazio`)
+    if (action.hint.trim() === '') problems.push(`${where}: hint vazio`)
+    if (action.cost < 0) problems.push(`${where}: cost negativo`)
+    if (action.cooldown !== undefined && action.cooldown <= 0) {
+      problems.push(`${where}: cooldown deve ser > 0`)
+    }
+    if (
+      action.minRelation !== undefined &&
+      action.maxRelation !== undefined &&
+      action.minRelation > action.maxRelation
+    ) {
+      problems.push(`${where}: minRelation > maxRelation, a acao nunca aparece`)
+    }
+
+    action.conditions?.forEach((c, i) => checkCondition(c, `${where}.conditions[${i}]`, problems))
+    action.requirements?.forEach((c, i) =>
+      checkCondition(c, `${where}.requirements[${i}]`, problems),
+    )
+    checkOutcomes(action.outcomes, where, problems)
   }
 
   return problems

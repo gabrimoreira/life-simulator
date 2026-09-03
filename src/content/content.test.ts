@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   validateActions,
+  validateAssets,
   validateCareers,
   validateCourses,
   validateEvents,
+  validateRelationActions,
 } from '../engine/validate'
 import { eligibleEvents } from '../engine/events'
 import { makeCharacter, makeState } from '../test/fixtures'
@@ -16,6 +18,8 @@ describe('conteúdo do jogo', () => {
     expect(validateActions(GAME_CONTENT.actions)).toEqual([])
     expect(validateCareers(GAME_CONTENT.careers)).toEqual([])
     expect(validateCourses(GAME_CONTENT.courses)).toEqual([])
+    expect(validateAssets(GAME_CONTENT.assets)).toEqual([])
+    expect(validateRelationActions(GAME_CONTENT.relationActions)).toEqual([])
   })
 
   it('toda trilha tem um nível de entrada alcançável cedo', () => {
