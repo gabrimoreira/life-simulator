@@ -46,6 +46,8 @@ export interface ActionSpec {
   conditions: Condition[]
   requirements?: Condition[]
   cooldown?: number
+  /** Ver `GameAction.confirm`. */
+  confirm?: string
   /** null = ação derivada, resolvida por regra em vez de outcomes sorteados. */
   outcomes: Outcome[] | null
 }
@@ -59,6 +61,8 @@ export interface ActionView {
   enabled: boolean
   /** Motivo do bloqueio, ou null quando a ação está liberada. */
   reason: string | null
+  /** Pergunta de confirmação, quando a ação é irreversível. */
+  confirm?: string
 }
 
 export const ACTION_GROUP_LABELS: Record<ActionGroup, string> = {
@@ -97,6 +101,7 @@ function derivedActions(state: GameState, content: ContentPack): ActionSpec[] {
       hint: 'Você para de pagar e perde tudo o que já cursou.',
       cost: 0,
       conditions: [],
+      confirm: `Largar ${name} agora apaga os anos que você já cursou. Tem certeza?`,
       outcomes: null,
     })
   } else {
@@ -206,6 +211,7 @@ function contentActions(content: ContentPack): ActionSpec[] {
     conditions: action.conditions,
     ...(action.requirements ? { requirements: action.requirements } : {}),
     ...(action.cooldown !== undefined ? { cooldown: action.cooldown } : {}),
+    ...(action.confirm !== undefined ? { confirm: action.confirm } : {}),
     outcomes: action.outcomes,
   }))
 }
@@ -259,6 +265,7 @@ export function availableActions(state: GameState, content: ContentPack): Action
       cost: spec.cost,
       enabled: reason === null,
       reason,
+      ...(spec.confirm !== undefined ? { confirm: spec.confirm } : {}),
     })
   }
 

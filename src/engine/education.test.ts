@@ -201,4 +201,31 @@ describe('cursar', () => {
     }
     expect(dropped).toBe(true)
   })
+
+  it('uma segunda graduação não rebaixa quem já é pós-graduado', () => {
+    // `c.education = course.grants` sobrescrevia o nível em vez de subir: um
+    // mestre que fizesse Direito voltava a `bachelor` e perdia a elegibilidade
+    // da trilha acadêmica, que exige `postgrad`. Nada no jogo avisava.
+    const state = makeState({ character: makeCharacter({ money: 500_000 }) })
+    state.character.education = 'postgrad'
+
+    enroll(state, content, 'direito')
+    const shared = createRng(3)
+    for (let i = 0; i < 5 && state.character.enrollment; i++) studyYear(state, content, shared)
+
+    expect(state.character.enrollment).toBeNull()
+    expect(state.character.flags[courseFlag('direito')]).toBe(true)
+    expect(state.character.education).toBe('postgrad')
+  })
+
+  it('mas uma graduação ainda promove quem só tinha o médio', () => {
+    const state = makeState({ character: makeCharacter({ money: 500_000 }) })
+    expect(state.character.education).toBe('highschool')
+
+    enroll(state, content, 'direito')
+    const shared = createRng(3)
+    for (let i = 0; i < 5 && state.character.enrollment; i++) studyYear(state, content, shared)
+
+    expect(state.character.education).toBe('bachelor')
+  })
 })

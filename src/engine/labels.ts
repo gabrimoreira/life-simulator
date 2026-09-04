@@ -33,16 +33,6 @@ export const SOCIAL_CLASS_LABELS: Record<SocialClass, string> = {
   rich: 'Classe alta',
 }
 
-export const RELATION_LABELS: Record<RelationKind, string> = {
-  mother: 'Mãe',
-  father: 'Pai',
-  sibling: 'Irmão/Irmã',
-  friend: 'Amigo/Amiga',
-  partner: 'Namorado/Namorada',
-  spouse: 'Cônjuge',
-  child: 'Filho/Filha',
-}
-
 export function relationLabel(kind: RelationKind, gender: 'male' | 'female'): string {
   const male = gender === 'male'
   switch (kind) {

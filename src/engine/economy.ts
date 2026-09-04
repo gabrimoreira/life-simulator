@@ -10,6 +10,8 @@ import {
   DEBT_INTEREST_RATE,
   DEBT_PAYDOWN_BUFFER_YEARS,
   STUDENT_COST_OF_LIVING_SHARE,
+  SPOUSE_COST_FACTOR,
+  SPOUSE_INCOME_SHARE,
   SUBSISTENCE_COST,
 } from './balance'
 import { applyCareerYear } from './careers'
@@ -39,7 +41,27 @@ export function costOfLiving(state: GameState, income: number): number {
 
   const full = Math.max(floor, income * COST_OF_LIVING_INCOME_SHARE)
   const share = state.character.enrollment !== null ? STUDENT_COST_OF_LIVING_SHARE : 1
-  return Math.round(full * share)
+  // Duas pessoas custam mais que uma. É a contrapartida da renda conjunta:
+  // sem ela, casar seria dinheiro de graça.
+  const household = hasSpouse(state) ? SPOUSE_COST_FACTOR : 1
+  return Math.round(full * share * household)
+}
+
+/** Cônjuge vivo. A flag `married` sozinha mente: ela sobrevive à viuvez. */
+function hasSpouse(state: GameState): boolean {
+  return state.relations.some((person) => person.kind === 'spouse' && person.alive)
+}
+
+/**
+ * O que o cônjuge põe na mesa.
+ *
+ * Escala com a relação porque casamento ruim rende menos — gente que não se
+ * fala não divide conta direito. Zero para quem não tem cônjuge vivo.
+ */
+export function spouseIncome(state: GameState, ownIncome: number): number {
+  const spouse = state.relations.find((person) => person.kind === 'spouse' && person.alive)
+  if (!spouse) return 0
+  return Math.round(ownIncome * SPOUSE_INCOME_SHARE * (spouse.relation / 100))
 }
 
 export function applyEconomy(state: GameState, rng: Rng, content: ContentPack): EconomyYear {
@@ -71,14 +93,19 @@ export function applyEconomy(state: GameState, rng: Rng, content: ContentPack): 
   const hadCareer = c.career !== null
   const career = applyCareerYear(state, rng, content)
   // Sem carreira, vale o melhor entre a aposentadoria e a informalidade.
-  const income = hadCareer ? career.income : Math.max(c.pension, profile.baseIncome)
+  const own = hadCareer ? career.income : Math.max(c.pension, profile.baseIncome)
+  const spouse = spouseIncome(state, own)
+  const income = own + spouse
   // Doenca cronica nao e so uma marca no Perfil: ela cobra todo ano.
   const medical = c.flags[FLAG_CHRONIC_CONDITION] === true ? CHRONIC_ANNUAL_COST : 0
-  const cost = costOfLiving(state, income) + medical
+  // Sobre a renda PROPRIA: o padrão de vida é ditado pela posição de quem
+  // vive, e o que o cônjuge traz entra como folga em vez de virar expectativa.
+  const cost = costOfLiving(state, own) + medical
 
   addMoney(c, income - cost)
 
   const parts = [`Renda ${formatMoney(income)}`, `Custo ${formatMoney(cost)}`]
+  if (spouse > 0) parts.splice(1, 0, `Cônjuge ${formatMoney(spouse)}`)
   if (medical > 0) parts.push(`Saúde ${formatMoney(medical)}`)
   if (c.debt > 0) parts.push(`Dívida ${formatMoney(c.debt)}`)
 

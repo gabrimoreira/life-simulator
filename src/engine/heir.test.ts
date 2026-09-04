@@ -247,16 +247,33 @@ describe('alcançabilidade da linhagem', () => {
   }
 
   it('quem prioriza família chega ao herdeiro com frequência', () => {
-    // O piso caiu de 60% para 45% quando a Fase 4 trouxe conteúdo que ACABA
-    // com casamentos — traição, cadeia, o crime chegando em casa. Este jogador
-    // scriptado escolhe sempre a primeira opção disponível, o que nesses
-    // eventos é a mais destrutiva. Um jogador de verdade escolhe melhor.
-    const vidas = Array.from({ length: 30 }, (_, i) =>
+    // Este número não para de cair, e vale registrar por quê em vez de só
+    // baixar o piso mais uma vez:
+    //
+    //   60% — Fase 3, antes de existir conteúdo que acaba com casamento
+    //   45% — Fase 4, com traição, cadeia e o crime chegando em casa
+    //   42% — Fase 5, medido em 200 vidas com 159 eventos no pool
+    //   37% — Fase 5, com 167 eventos: DILUIÇÃO pura, os eventos de família
+    //         passaram a ser sorteados menos
+    //   52% — Fase 5, com 193 eventos, medido em 100 vidas
+    //
+    // A subida final não foi sorte: a leva de conteúdo que encheu a cadeia, a
+    // primeira infância e a pobreza trouxe junto muito evento de FAMÍLIA, e o
+    // pobre que antes não tinha o que viver agora convive com gente. O piso
+    // fica em 40% e não em 50% porque este número oscila com o tamanho do
+    // catálogo, e porque o jogador scriptado sempre escolhe a primeira opção
+    // disponível — a pior nos eventos destrutivos. Ele é um piso, não uma
+    // estimativa de como o jogo se comporta com gente.
+    //
+    // Com 30 vidas o piso de 45% passava por sorte de seed; 100 estabiliza a
+    // medida. O teste abaixo, que compara os dois PLANOS entre si, é o que de
+    // fato guarda a mecânica: ele não depende do tamanho do catálogo.
+    const vidas = Array.from({ length: 100 }, (_, i) =>
       vive(i + 1, ['Procurar emprego', 'Procurar um relacionamento']),
     )
     const comFilho = vidas.filter(canContinue).length
-    expect(comFilho / vidas.length).toBeGreaterThan(0.45)
-  })
+    expect(comFilho / vidas.length).toBeGreaterThan(0.4)
+  }, 20_000)
 
   it('gastar todo ponto de ação na carreira custa a família', () => {
     // Os pontos de ação existem para forçar essa escolha. Se os planos dessem

@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # O typecheck vem primeiro: erro de tipo costuma explicar a falha de teste
+      # que viria depois, e o relatorio fica mais curto de ler.
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Aqui moram os invariantes de arquitetura (src/architecture.test.ts) e a
+      # sanidade do conteudo, alem dos testes de regra.
+      - name: Testes
+        run: npm test
+
+      - name: Build
+        run: npm run build

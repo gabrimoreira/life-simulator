@@ -66,6 +66,7 @@ export function createGame(options: NewGameOptions, content: ContentPack): GameS
     career: null,
     careerHistory: {},
     pension: 0,
+    unhappyYears: 0,
     prison: null,
     enrollment: null,
     assets: [],

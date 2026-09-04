@@ -3,12 +3,13 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { GAME_CONTENT } from '../content'
+import { FLAG_LABELS } from '../content/flags'
 import { CLASS_PROFILES } from '../engine/balance'
 import { ACTION_GROUP_LABELS, availableActions } from '../engine/actions'
 import type { ActionGroup, Person } from '../engine/types'
-import { earnedAchievements } from '../engine/achievements'
+import { achievementCatalog, earnedAchievements } from '../engine/achievements'
 import { netWorth, ownedWithDef } from '../engine/assets'
-import { careerTitle, currentLevel } from '../engine/careers'
+import { careerTitle, currentLevel, peakCareer } from '../engine/careers'
 import { canContinue, createHeir, heirCandidates } from '../engine/heir'
 import { livingRelations, relationActionsFor } from '../engine/relations'
 import { courseName } from '../engine/education'
@@ -16,7 +17,7 @@ import { firstFailure } from '../engine/conditions'
 import { createGame } from '../engine/generate'
 import { interpolate } from '../engine/text'
 import { advanceYear, chooseOption, currentEvent, runAction, runRelationAction } from '../engine/turn'
-import type { EventOption, GameState, Gender } from '../engine/types'
+import type { EventOption, GameState, Gender, TimelineEntry } from '../engine/types'
 import { CURRENT_SAVE_VERSION } from '../save/adapter'
 import type { SaveAdapter } from '../save/adapter'
 import { createLocalStorageAdapter } from '../save/local-storage-adapter'
@@ -25,6 +26,22 @@ export interface ActionGroupView {
   key: ActionGroup
   label: string
   actions: ReturnType<typeof availableActions>
+}
+
+/**
+ * Troca id de flag por rótulo nos motivos de bloqueio.
+ *
+ * `conditions.ts` monta "Requer: course_medicina" porque é engine e não pode
+ * importar `content/` — os rótulos são conteúdo. Traduzir aqui é justamente o
+ * trabalho do store, que é a camada que liga os dois. Sem isto o jogador lia
+ * o id cru da flag na tela.
+ */
+function humanize(reason: string | null): string | null {
+  if (reason === null) return reason
+  return reason.replace(/(Requer|Impedido por): ([a-z0-9_]+)/g, (whole, prefixo: string, flag: string) => {
+    const label = FLAG_LABELS[flag]
+    return label === undefined ? whole : `${prefixo}: ${label.toLowerCase()}`
+  })
 }
 
 export interface OptionStatus {
@@ -38,6 +55,15 @@ export const useGameStore = defineStore('game', () => {
 
   const state = ref<GameState | null>(null)
   const ready = ref(false)
+
+  /**
+   * O que a última ação produziu, para ser mostrado onde ela foi clicada.
+   *
+   * `runAction` escreve a nota na timeline, que só é renderizada na aba Vida:
+   * clicar "Treinar" na aba Ações mudava apenas o contador de pontos, e o
+   * resultado do dado ia parar numa tela que o jogador não estava olhando.
+   */
+  const lastResult = ref<TimelineEntry | null>(null)
   const activeTab = ref<'life' | 'actions' | 'relations' | 'assets' | 'profile'>('life')
 
   const character = computed(() => state.value?.character ?? null)
@@ -65,7 +91,7 @@ export const useGameStore = defineStore('game', () => {
       return {
         text: interpolate(option.text, current),
         enabled: reason === null,
-        reason,
+        reason: humanize(reason),
       }
     })
   })
@@ -85,14 +111,25 @@ export const useGameStore = defineStore('game', () => {
     ready.value = true
   }
 
-  async function newGame(name: string, gender: Gender): Promise<void> {
-    state.value = createGame({ name, gender }, GAME_CONTENT)
+  async function newGame(name: string, gender: Gender, seed?: number): Promise<void> {
+    // A seed sempre existiu em `GameState` e nunca foi exibida nem aceita: o
+    // engine é determinístico por design e não havia como repetir uma vida.
+    state.value = createGame(seed === undefined ? { name, gender } : { name, gender, seed }, GAME_CONTENT)
+    lastResult.value = null
     activeTab.value = 'life'
     await persist()
   }
 
+  /** A nota recém-escrita na timeline, se a última coisa gravada foi uma. */
+  function captureResult(): void {
+    const timeline = state.value?.timeline
+    const last = timeline?.[timeline.length - 1]
+    lastResult.value = last !== undefined && last.kind === 'note' ? last : null
+  }
+
   async function nextYear(): Promise<void> {
     if (!state.value) return
+    lastResult.value = null
     advanceYear(state.value, GAME_CONTENT)
     await persist()
   }
@@ -114,21 +151,55 @@ export const useGameStore = defineStore('game', () => {
       .map((key) => ({
         key,
         label: ACTION_GROUP_LABELS[key],
-        actions: all.filter((action) => action.group === key),
+        actions: all
+          .filter((action) => action.group === key)
+          .map((action) => ({ ...action, reason: humanize(action.reason) })),
       }))
       .filter((group) => group.actions.length > 0)
   })
 
   const jobTitle = computed(() => (state.value ? careerTitle(state.value, GAME_CONTENT) : null))
 
-  /** Salário base do cargo atual, ou a renda informal de quem não tem cargo. */
-  const currentSalary = computed(() => {
+  /** Para o balanço final: o cargo mais alto de toda a vida, não o último. */
+  const peakJob = computed(() => (state.value ? peakCareer(state.value, GAME_CONTENT) : null))
+
+  /** Números que só fazem sentido depois que a vida acabou. */
+  const lifeSummary = computed(() => {
     const current = state.value
-    if (!current) return 0
-    const level = currentLevel(current, GAME_CONTENT)
-    if (level) return level.salary
-    return CLASS_PROFILES[current.character.socialClass].baseIncome
+    if (!current) return null
+    const children = current.relations.filter((p) => p.kind === 'child')
+    return {
+      peakJob: peakJob.value,
+      children: children.length,
+      married: current.character.flags['married'] === true,
+      yearsJailed: current.character.prison?.yearsServed ?? 0,
+      hadRecord: current.character.flags['criminal_record'] === true,
+    }
   })
+
+  /**
+   * De onde vem o dinheiro do ano, com o mesmo critério da economia.
+   *
+   * Mostrava só `baseIncome` sob o rótulo "Renda informal", inclusive para
+   * quem tinha se aposentado: a economia pagava `max(pension, baseIncome)`
+   * (economy.ts) e a tela exibia outro número, sem nunca dizer a palavra
+   * pensão. Aposentar-se tinha consequência financeira invisível.
+   */
+  const income = computed<{ label: string; value: number }>(() => {
+    const current = state.value
+    if (!current) return { label: 'Renda', value: 0 }
+
+    const level = currentLevel(current, GAME_CONTENT)
+    if (level) return { label: 'Salário base', value: level.salary }
+
+    const informal = CLASS_PROFILES[current.character.socialClass].baseIncome
+    const pension = current.character.pension
+    return pension > informal
+      ? { label: 'Pensão', value: pension }
+      : { label: 'Renda informal', value: informal }
+  })
+
+  const currentSalary = computed(() => income.value.value)
 
   const studying = computed(() => {
     const enrollment = state.value?.character.enrollment
@@ -152,16 +223,25 @@ export const useGameStore = defineStore('game', () => {
     state.value ? earnedAchievements(state.value, GAME_CONTENT) : [],
   )
 
+  /** Catálogo inteiro, para o jogador saber o que ainda falta caçar. */
+  const allAchievements = computed(() =>
+    state.value ? achievementCatalog(state.value, GAME_CONTENT) : [],
+  )
+
   const canContinueLineage = computed(() => (state.value ? canContinue(state.value) : false))
 
   function actionsForPerson(person: Person): ReturnType<typeof relationActionsFor> {
     if (!state.value) return []
-    return relationActionsFor(state.value, GAME_CONTENT, person)
+    return relationActionsFor(state.value, GAME_CONTENT, person).map((action) => ({
+      ...action,
+      reason: humanize(action.reason),
+    }))
   }
 
   async function actOnPerson(personId: string, actionId: string): Promise<void> {
     if (!state.value) return
     if (!runRelationAction(state.value, GAME_CONTENT, personId, actionId)) return
+    captureResult()
     await persist()
   }
 
@@ -178,6 +258,7 @@ export const useGameStore = defineStore('game', () => {
   async function act(actionId: string): Promise<void> {
     if (!state.value) return
     if (!runAction(state.value, GAME_CONTENT, actionId)) return
+    captureResult()
     await persist()
   }
 
@@ -191,6 +272,7 @@ export const useGameStore = defineStore('game', () => {
     state,
     ready,
     activeTab,
+    lastResult,
     character,
     alive,
     hasGame,
@@ -203,11 +285,15 @@ export const useGameStore = defineStore('game', () => {
     worth,
     heirs,
     achievements,
+    allAchievements,
     canContinueLineage,
     actionsForPerson,
     actOnPerson,
     continueAsHeir,
     jobTitle,
+    peakJob,
+    lifeSummary,
+    income,
     currentSalary,
     studying,
     act,

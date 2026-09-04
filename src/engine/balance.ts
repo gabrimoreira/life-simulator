@@ -55,6 +55,50 @@ export const CHRONIC_ANNUAL_COST = 9_000
 export const HAPPINESS_MEAN_REVERSION = 0.08
 export const HAPPINESS_MEAN = 50
 
+/**
+ * Abaixo disto o ano conta como ano ruim, e o contador de anos seguidos sobe.
+ *
+ * O spec pede eventos de crise "se a felicidade zerar por VARIOS turnos", e
+ * ate a Fase 6 so existiam dois gates instantaneos de felicidade baixa. Um
+ * gate instantaneo dispara no primeiro ano ruim de uma vida boa; a crise que
+ * interessa e a que se acumula. Reverter a media (`HAPPINESS_MEAN_REVERSION`)
+ * puxa todo mundo de volta para 50, entao ficar abaixo de 30 por anos exige
+ * que alguma coisa esteja empurrando para baixo o tempo todo.
+ */
+export const HAPPINESS_CRISIS_THRESHOLD = 30
+
+/**
+ * Casamento com consequencia continua.
+ *
+ * Ate a Fase 6 casar mudava uma flag e nada mais: nao havia renda conjunta nem
+ * custo de divorcio, entao a decisao mais consequente de uma vida nao aparecia
+ * em lugar nenhum na economia.
+ *
+ * O conjuge contribui uma fracao da renda, escalada pela relacao — casamento
+ * ruim rende menos, e nao por moralismo: gente que nao se fala nao divide
+ * conta direito. Em troca a casa custa mais, mas so um pouco: duas pessoas
+ * dividindo teto nao pagam 35% mais aluguel, e a primeira versao disto
+ * multiplicava o PISO do custo de vida por 1,35, o que fazia casar piorar o
+ * saldo em todas as cinco classes sociais.
+ *
+ * O custo de vida tambem e calculado sobre a renda PROPRIA, nao sobre a da
+ * casa: o padrao de vida de alguem e ditado pela posicao dele, e a renda do
+ * conjuge entra como folga. Sem isso o teto de padrao herdado absorvia a
+ * contribuicao inteira e casar nao mudava nada.
+ */
+export const SPOUSE_INCOME_SHARE = 0.45
+export const SPOUSE_COST_FACTOR = 1.15
+
+/**
+ * Fracao do patrimonio que vai embora no divorcio.
+ *
+ * Metade seria o numero legal e o errado para um jogo: o custo real de um
+ * divorcio inclui advogado, mudanca e a venda apressada do que nao dava para
+ * dividir. Quem tem filho paga mais, e por muito tempo.
+ */
+export const DIVORCE_ASSET_SHARE = 0.5
+export const DIVORCE_EXTRA_COST_WITH_CHILD = 0.12
+
 /** Aparencia cai devagar depois desta idade. */
 export const LOOKS_DECAY_START_AGE = 35
 export const LOOKS_DECAY_FACTOR = 0.045
@@ -152,7 +196,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
  * Juros anuais sobre divida nao paga. A 12% compostos por 50 anos um
  * financiamento estudantil de 90 mil vira 26 milhoes — numero grande demais
  * para significar qualquer coisa. O teto existe porque, na vida real, divida
- * dessa idade e renegociada ou prescreve; modelar isso direito e Fase 2.
+ * dessa idade e renegociada ou prescreve. Modelar renegociacao de verdade
+ * continua fora de escopo: o teto e a aproximacao assumida.
  */
 export const DEBT_INTEREST_RATE = 0.06
 export const DEBT_CEILING = 400_000

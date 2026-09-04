@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { GAME_CONTENT } from '../content'
 import { makeCharacter, makeState } from '../test/fixtures'
 import { describe as describeCondition, evaluate, evaluateAll, firstFailure } from './conditions'
-import type { Condition } from './types'
+import type { Condition, GameState } from './types'
 
 describe('evaluate', () => {
   it('age respeita min, max e intervalo', () => {
@@ -110,5 +111,98 @@ describe('describe', () => {
     expect(describeCondition({ type: 'age', min: 18, max: 25 })).toBe(
       'Requer idade entre 18 anos e 25 anos',
     )
+  })
+})
+
+describe('relationLevel com mais de uma pessoa do mesmo tipo', () => {
+  function comDoisFilhos(primeiro: number, segundo: number): GameState {
+    const state = makeState({ character: makeCharacter({ age: 50 }) })
+    state.relations.push(
+      { id: 'c1', name: 'Rui Silva', kind: 'child', gender: 'male', age: 20, relation: primeiro, alive: true },
+      { id: 'c2', name: 'Ana Silva', kind: 'child', gender: 'female', age: 17, relation: segundo, alive: true },
+    )
+    return state
+  }
+
+  it('basta um filho proximo, mesmo que nao seja o primeiro', () => {
+    // Com `.find()` isto reprovava: a resposta vinha do primogenito frio, e a
+    // conquista `devoted` ficava inalcancavel para quem tivesse dois filhos.
+    const state = comDoisFilhos(10, 96)
+    expect(evaluate({ type: 'relationLevel', kind: 'child', min: 95 }, state)).toBe(true)
+  })
+
+  it('continua valendo quando o proximo e o primeiro', () => {
+    const state = comDoisFilhos(96, 10)
+    expect(evaluate({ type: 'relationLevel', kind: 'child', min: 95 }, state)).toBe(true)
+  })
+
+  it('reprova quando nenhum dos dois chega la', () => {
+    const state = comDoisFilhos(40, 50)
+    expect(evaluate({ type: 'relationLevel', kind: 'child', min: 95 }, state)).toBe(false)
+  })
+
+  it('ignora quem morreu', () => {
+    const state = comDoisFilhos(10, 96)
+    state.relations[1]!.alive = false
+    expect(evaluate({ type: 'relationLevel', kind: 'child', min: 95 }, state)).toBe(false)
+  })
+})
+
+describe('relationCount com limiar de proximidade', () => {
+  function comAmigos(...niveis: number[]): GameState {
+    const state = makeState({ character: makeCharacter({ age: 40 }) })
+    niveis.forEach((relation, i) => {
+      state.relations.push({
+        id: `f${i}`,
+        name: `Amigo ${i}`,
+        kind: 'friend',
+        gender: 'male',
+        age: 40,
+        relation,
+        alive: true,
+      })
+    })
+    return state
+  }
+
+  it('sem limiar, conta todo mundo vivo', () => {
+    const state = comAmigos(5, 10, 90)
+    expect(evaluate({ type: 'relationCount', kind: 'friend', min: 3 }, state)).toBe(true)
+  })
+
+  it('com limiar, conta so quem gosta de voce', () => {
+    // Sem isto o gate nao prendia nada: uma vida acumula ~20 amigos porque
+    // ninguem nunca sai da lista, e so ~5 passam de 60 de relacao.
+    const state = comAmigos(5, 10, 90)
+    expect(
+      evaluate({ type: 'relationCount', kind: 'friend', min: 3, minRelation: 60 }, state),
+    ).toBe(false)
+    expect(
+      evaluate({ type: 'relationCount', kind: 'friend', min: 1, minRelation: 60 }, state),
+    ).toBe(true)
+  })
+
+  it('ignora quem morreu, com ou sem limiar', () => {
+    const state = comAmigos(90, 90)
+    state.relations[0]!.alive = false
+    expect(
+      evaluate({ type: 'relationCount', kind: 'friend', min: 2, minRelation: 60 }, state),
+    ).toBe(false)
+  })
+})
+
+describe('a política cobra o que promete', () => {
+  it('todos os níveis acima da entrada exigem rede de contatos', () => {
+    // O `entryHint` prometia "reputação e rede de contatos" desde a Fase 4 e
+    // nenhum dos cinco níveis usava relationCount: o texto mentia.
+    const politica = GAME_CONTENT.careers.find((t) => t.id === 'politics')
+    expect(politica).toBeDefined()
+
+    const semRede = (politica?.levels ?? [])
+      .slice(1)
+      .filter((level) => !level.requirements.some((c) => c.type === 'relationCount'))
+      .map((level) => level.title)
+
+    expect(semRede).toEqual([])
   })
 })

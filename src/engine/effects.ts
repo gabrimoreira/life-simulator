@@ -5,6 +5,7 @@ import { DEBT_CEILING, STAT_MAX, STAT_MIN } from './balance'
 import { assetName, buyAsset, findAsset, sellAsset } from './assets'
 import { clampPerformance, hireInto, leaveCareer, recordCareerBest } from './careers'
 import { evaluateAll } from './conditions'
+import { divorce } from './divorce'
 import { courseName, dropOut, enroll, studyYear } from './education'
 import type { ContentPack } from './content-pack'
 import { EDUCATION_LABELS, STAT_LABELS, relationLabel } from './labels'
@@ -223,7 +224,8 @@ export function applyEffect(
 
     case 'study': {
       // A nota rica de "cursar um ano" e escrita por `studyYear`; aqui o efeito
-      // so existe para conteudo que queira empurrar um ano de curso de brinde.
+      // empurra um ano de brinde, sem gastar o ponto de acao que a acao
+      // "Cursar" cobraria. Usado por `callback_study_ahead`.
       return studyYear(state, content, rng) !== null
         ? { label: 'Curso', text: 'mais um ano', tone: 'neutral' }
         : null
@@ -267,12 +269,24 @@ export function applyEffect(
     case 'jail': {
       const wasInside = state.character.prison !== null
       // A nota rica de condenacao e escrita por `jail()`; aqui so o resumo.
-      jail(state, content, effect.years, effect.reason)
+      // Anos negativos descontam a pena, e nao valem nada para quem esta solto.
+      if (!jail(state, content, effect.years, effect.reason)) return null
+
+      if (effect.years < 0) {
+        return { label: 'Pena', text: `${effect.years} anos`, tone: 'good' }
+      }
       return {
         label: wasInside ? 'Pena' : 'Preso',
         text: `${wasInside ? '+' : ''}${effect.years} anos`,
         tone: 'bad',
       }
+    }
+
+    case 'divorce': {
+      // A nota rica e escrita por `divorce()`; aqui so o resumo.
+      return divorce(state) !== null
+        ? { label: 'Divórcio', text: 'patrimônio partido', tone: 'bad' }
+        : null
     }
 
     case 'release': {

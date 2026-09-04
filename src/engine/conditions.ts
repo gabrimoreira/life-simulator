@@ -2,13 +2,9 @@
 
 import { EDUCATION_LABELS, STAT_LABELS } from './labels'
 import { formatMoney } from './text'
-import { assertNever, EDUCATION_ORDER } from './types'
-import type { Condition, EducationLevel, GameState } from './types'
+import { assertNever, educationRank } from './types'
+import type { Condition, GameState } from './types'
 
-
-function educationRank(level: EducationLevel): number {
-  return EDUCATION_ORDER.indexOf(level)
-}
 
 function inRange(value: number, min: number | undefined, max: number | undefined): boolean {
   if (min !== undefined && value < min) return false
@@ -67,6 +63,9 @@ export function evaluate(condition: Condition, state: GameState): boolean {
     case 'inPrison':
       return (c.prison !== null) === condition.value
 
+    case 'unhappyYears':
+      return inRange(c.unhappyYears, condition.min, condition.max)
+
     case 'ownsAsset':
       return c.assets.some((owned) => {
         if (condition.assetId !== undefined && owned.assetId !== condition.assetId) return false
@@ -79,13 +78,27 @@ export function evaluate(condition: Condition, state: GameState): boolean {
       return inRange(worth, condition.min, condition.max)
     }
 
+    case 'chose':
+      return state.choiceLog.some(
+        (record) =>
+          record.eventId === condition.eventId && record.optionIndex === condition.optionIndex,
+      )
+
     case 'relationLevel': {
-      const person = state.relations.find((r) => r.kind === condition.kind && r.alive)
-      return person !== undefined && inRange(person.relation, condition.min, condition.max)
+      // Qualquer pessoa daquele tipo serve. Com `.find()` a resposta vinha
+      // sempre do PRIMEIRO do array: quem tinha dois filhos e cuidava do
+      // caçula continuava reprovado porque o primogênito estava frio.
+      return state.relations.some(
+        (r) => r.kind === condition.kind && r.alive && inRange(r.relation, condition.min, condition.max),
+      )
     }
 
     case 'relationCount': {
-      const count = state.relations.filter((r) => r.kind === condition.kind && r.alive).length
+      const floor = condition.minRelation
+      const count = state.relations.filter(
+        (r) =>
+          r.kind === condition.kind && r.alive && (floor === undefined || r.relation >= floor),
+      ).length
       return inRange(count, condition.min, condition.max)
     }
 
@@ -163,6 +176,9 @@ export function describe(condition: Condition): string {
     case 'careerTrack':
       return 'Requer outra carreira'
 
+    case 'chose':
+      return 'Depende de uma escolha que você não fez'
+
     case 'careerKind':
       return 'Requer outro tipo de carreira'
 
@@ -178,6 +194,9 @@ export function describe(condition: Condition): string {
     case 'inPrison':
       return condition.value ? 'Só na cadeia' : 'Não dá para fazer isso preso'
 
+    case 'unhappyYears':
+      return describeRange('anos seguidos de infelicidade', condition.min, condition.max, plain)
+
     case 'ownsAsset':
       return 'Requer ter um bem específico'
 
@@ -188,7 +207,9 @@ export function describe(condition: Condition): string {
       return describeRange('relação', condition.min, condition.max, plain)
 
     case 'relationCount':
-      return describeRange('número de pessoas', condition.min, condition.max, plain)
+      return condition.minRelation !== undefined
+        ? describeRange('pessoas próximas', condition.min, condition.max, plain)
+        : describeRange('número de pessoas', condition.min, condition.max, plain)
 
     case 'not':
       return `Não pode: ${describe(condition.condition)}`

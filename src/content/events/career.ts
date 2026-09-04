@@ -417,4 +417,48 @@ export const CAREER_EVENTS: GameEvent[] = [
       },
     ],
   },
+
+  {
+    id: 'career_earned_the_seat',
+    category: 'career',
+    weight: 10,
+    cooldown: 6,
+    conditions: [
+      { type: 'hasCareer', value: true },
+      { type: 'performance', min: 78 },
+      { type: 'careerLevel', min: 1 },
+    ],
+    text: 'A vaga acima da sua abriu, e o seu nome foi o primeiro que apareceu na conversa.',
+    options: [
+      {
+        text: 'Assumir',
+        outcomes: [
+          {
+            chance: 1,
+            // `career: 'promote'` checa os requisitos do nível de destino
+            // desde 210d33e — quem não os cumpre não sobe, e o efeito não vira
+            // um atalho para furar a tabela.
+            text: 'Você assumiu, e a sala mudou de tamanho.',
+            effects: [
+              { type: 'career', action: 'promote' },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: 8 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Indicar outra pessoa',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você indicou quem merecia mais, e todo mundo soube que foi você.',
+            effects: [
+              { type: 'stat', stat: 'reputation', op: 'delta', value: 12 },
+              { type: 'performance', delta: -8 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 ]

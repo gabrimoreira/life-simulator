@@ -104,6 +104,13 @@ export const ASSETS: AssetDef[] = [
   // --- Luxo: o destino do dinheiro de quem já resolveu a vida. -------------
   // Compram felicidade, reputação e fama, e cobram todo ano por isso. É o que
   // impede o patrimônio de virar só um número que sobe sozinho até a morte.
+  //
+  // Os dois itens do topo estavam fora da escala do jogo. Medindo 300 vidas do
+  // perfil mais rentável que existe: patrimônio máximo R$12,8 milhões, R$10
+  // milhões em 3% das vidas, e ninguém chegou a R$20 milhões. O jatinho pedia
+  // R$18 milhões e o time R$40 milhões com R$60 milhões de patrimônio — nenhum
+  // jogador jamais poderia comprar os dois, e com o time morriam também os
+  // dois eventos de luxury.ts que exigem possuí-lo.
   {
     id: 'mansion',
     name: 'Mansão',
@@ -139,7 +146,7 @@ export const ASSETS: AssetDef[] = [
     name: 'Jatinho',
     kind: 'vehicle',
     hint: 'O bem que mais sangra dinheiro por hora parada.',
-    price: 18_000_000,
+    price: 8_000_000,
     upkeepRate: 0.15,
     appreciation: -0.07,
     volatility: 0.04,
@@ -167,13 +174,16 @@ export const ASSETS: AssetDef[] = [
     name: 'Time de futebol',
     kind: 'investment',
     hint: 'Fama garantida, prejuízo quase. A torcida cobra caro.',
-    price: 40_000_000,
+    // O preço fica ABAIXO do jatinho de propósito: a identidade do clube é
+    // fama e prejuízo, não ser o item mais caro da lista. A R$9,5 milhões ele
+    // aparecia em 1 de 300 vidas, o que é decoração com outro nome.
+    price: 6_500_000,
     upkeepRate: 0.12,
     appreciation: 0.02,
     volatility: 0.45,
     requirements: [
       { type: 'age', min: 30 },
-      { type: 'netWorth', min: 60_000_000 },
+      { type: 'netWorth', min: 7_000_000 },
     ],
     annualEffects: [
       { type: 'stat', stat: 'fame', op: 'delta', value: 12 },

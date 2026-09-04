@@ -207,7 +207,8 @@ export function applyCareerYear(
     const chance = CRIME_JAIL_BASE_CHANCE * (1 + career.level * CRIME_JAIL_LEVEL_FACTOR)
     if (rng.chance(chance)) {
       const years = CRIME_SENTENCE_PER_LEVEL * (career.level + 1) + rng.int(0, 3)
-      notes.push(jail(state, content, years, 'os crimes que você vinha cometendo'))
+      const note = jail(state, content, years, 'os crimes que você vinha cometendo')
+      if (note) notes.push(note)
       return { income, notes }
     }
   }
@@ -244,4 +245,26 @@ export function applyCareerYear(
   }
 
   return { income, notes }
+}
+
+/**
+ * O cargo mais alto que a pessoa ja ocupou, em qualquer trilha.
+ *
+ * `careerHistory` guarda isso desde a Fase 2 e nunca foi mostrado a ninguem:
+ * o balanco de uma vida inteira nao dizia se ela chegou a senadora ou parou
+ * de assessora.
+ */
+export function peakCareer(state: GameState, content: ContentPack): string | null {
+  let best: { title: string; salary: number } | null = null
+
+  for (const [trackId, level] of Object.entries(state.character.careerHistory)) {
+    const track = content.careers.find((t) => t.id === trackId)
+    const reached = track?.levels[level]
+    if (!track || !reached) continue
+    if (best === null || reached.salary > best.salary) {
+      best = { title: `${reached.title} (${track.name})`, salary: reached.salary }
+    }
+  }
+
+  return best?.title ?? null
 }

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { GAME_CONTENT } from '../content'
 import { skipPendingEvents } from '../test/fixtures'
-import { advanceYear } from './turn'
+import { advanceYear, chooseOption, currentEvent } from './turn'
 import { createGame } from './generate'
+import { firstFailure } from './conditions'
 import {
   INITIAL_RELATION,
   PARENT_MIN_AGE_AT_FIRST_CHILD,
@@ -122,5 +123,56 @@ describe('decaimento de relação', () => {
     for (const person of sobreviventes) {
       expect(person.relation, person.name).toBeLessThanOrEqual(Math.max(0, teto))
     }
+  })
+})
+
+describe('a semente reproduz a vida inteira', () => {
+  /** Assinatura do que uma vida produziu, do nascimento a morte. */
+  function assinatura(seed: number): string {
+    const state = createGame(
+      { name: 'T', gender: 'male', seed, birthYear: 2000 },
+      GAME_CONTENT,
+    )
+    let guard = 0
+    while (state.character.alive && guard++ < 150) {
+      while (state.pendingEventIds.length > 0) {
+        const event = currentEvent(state, GAME_CONTENT)
+        if (!event) break
+        // A primeira opcao DISPONIVEL: escolher a 0 as cegas estoura em
+        // qualquer evento cuja primeira opcao tenha requisito.
+        let pick = 0
+        for (let i = 0; i < event.options.length; i++) {
+          const option = event.options[i]
+          if (
+            option &&
+            (!option.requirements || firstFailure(option.requirements, state) === null)
+          ) {
+            pick = i
+            break
+          }
+        }
+        chooseOption(state, GAME_CONTENT, pick)
+      }
+      if (!state.character.alive) break
+      advanceYear(state, GAME_CONTENT)
+    }
+    return JSON.stringify({
+      cidade: state.character.city,
+      classe: state.character.socialClass,
+      idadeMorte: state.character.deathAge,
+      causa: state.character.deathCause,
+      familia: state.relations.map((p) => `${p.name}/${p.kind}/${p.age}`),
+      notas: state.timeline.filter((e) => e.kind === 'note').map((e) => e.text),
+    })
+  }
+
+  it('a mesma semente da exatamente a mesma vida', () => {
+    // A seed sempre esteve no save e nunca foi exibida nem aceita de volta:
+    // o engine era deterministico por design e nao havia como usar isso.
+    expect(assinatura(424242)).toBe(assinatura(424242))
+  })
+
+  it('sementes diferentes dao vidas diferentes', () => {
+    expect(assinatura(424242)).not.toBe(assinatura(999))
   })
 })

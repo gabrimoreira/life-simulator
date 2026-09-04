@@ -136,6 +136,9 @@ export const ELDER_EVENTS: GameEvent[] = [
               { type: 'money', delta: -50000 },
               { type: 'stat', stat: 'health', op: 'delta', value: 6 },
               { type: 'stat', stat: 'happiness', op: 'delta', value: -8 },
+              // Um diagnóstico com tratamento longo não some no ano seguinte:
+              // este evento mexia só em stat, e nada no jogo lembrava dele.
+              { type: 'flag', flag: 'chronic_condition', value: true },
             ],
           },
         ],

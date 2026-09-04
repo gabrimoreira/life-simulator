@@ -48,6 +48,16 @@ export const EDUCATION_ORDER: readonly EducationLevel[] = [
   'postgrad',
 ]
 
+/** Posicao na escada de escolaridade. Mora aqui porque a ordem mora aqui. */
+export function educationRank(level: EducationLevel): number {
+  return EDUCATION_ORDER.indexOf(level)
+}
+
+/** O maior entre dois niveis. Escolaridade sobe; nunca desce. */
+export function highestEducation(a: EducationLevel, b: EducationLevel): EducationLevel {
+  return educationRank(a) >= educationRank(b) ? a : b
+}
+
 export type SocialClass = 'poor' | 'lowerMiddle' | 'middle' | 'upperMiddle' | 'rich'
 
 export type Gender = 'male' | 'female'
@@ -158,6 +168,14 @@ export interface Character {
   careerHistory: Record<string, number>
   /** Renda anual vitalicia de quem se aposentou. 0 = nunca se aposentou. */
   pension: number
+  /**
+   * Anos SEGUIDOS com felicidade abaixo de `HAPPINESS_CRISIS_THRESHOLD`.
+   *
+   * Zera no primeiro ano bom. E a unica memoria de duracao que o jogo tem: as
+   * outras condicoes olham o estado do turno, e por isso nao conseguem
+   * distinguir um ano ruim de uma decada ruim.
+   */
+  unhappyYears: number
   /** null = solto. Preso, a vida roda num sub-loop com pool proprio. */
   prison: PrisonState | null
   /** null = nao esta estudando nada agora. */
@@ -243,15 +261,40 @@ export type Condition =
   | { type: 'hasRelation'; kind: RelationKind }
   | { type: 'hasCareer'; value: boolean }
   | { type: 'careerTrack'; trackId: string }
+  /**
+   * Se o jogador escolheu uma opcao especifica de um evento especifico.
+   *
+   * E a unica memoria do jogo que nao e flag booleana. Uma flag responde "isso
+   * aconteceu"; esta responde "voce escolheu isto", que e o que permite um
+   * callback reagir a decisao em vez de ao resultado — e permite cadeias, ja
+   * que o callback tambem e um evento com id e opcoes.
+   */
+  | { type: 'chose'; eventId: string; optionIndex: number }
   | { type: 'careerKind'; kind: CareerKind }
   | { type: 'careerLevel'; min?: number; max?: number }
   | { type: 'performance'; min?: number; max?: number }
   | { type: 'enrolled'; value: boolean }
   | { type: 'inPrison'; value: boolean }
+  /** Anos SEGUIDOS de infelicidade. Ver `Character.unhappyYears`. */
+  | { type: 'unhappyYears'; min?: number; max?: number }
   | { type: 'ownsAsset'; assetId?: string; kind?: AssetKind }
   | { type: 'netWorth'; min?: number; max?: number }
   | { type: 'relationLevel'; kind: RelationKind; min?: number; max?: number }
-  | { type: 'relationCount'; kind: RelationKind; min?: number; max?: number }
+  /**
+   * Quantas pessoas daquele tipo estao vivas.
+   *
+   * `minRelation` restringe a contagem a quem de fato gosta de voce, e existe
+   * porque sem ele a condicao nao prendia nada: uma vida acumula ~20 amigos
+   * (ninguem nunca sai da lista), e "rede de contatos" virava um gate que todo
+   * mundo passa sem fazer nada. Acima de 60 sao ~5; acima de 80, ~1.
+   */
+  | {
+      type: 'relationCount'
+      kind: RelationKind
+      min?: number
+      max?: number
+      minRelation?: number
+    }
   | { type: 'not'; condition: Condition }
   | { type: 'anyOf'; conditions: Condition[] }
 
@@ -275,6 +318,14 @@ export type Effect =
   | { type: 'relationKind'; target: RelationRef; kind: RelationKind }
   | { type: 'jail'; years: number; reason: string }
   | { type: 'release' }
+  /**
+   * Divorcio: parte o patrimonio e limpa o estado civil.
+   *
+   * E regra, nao conteudo — dividir bens envolve vender o que nao se divide, e
+   * o conteudo nao tem como expressar isso com `money`. Ate a Fase 6 terminar
+   * um casamento so removia a pessoa e mexia numa flag.
+   */
+  | { type: 'divorce' }
   | { type: 'death'; cause: string }
 
 export interface Outcome {
@@ -375,6 +426,8 @@ export interface RelationAction {
   maxRelation?: number
   /** Anos minimos entre dois usos NA MESMA pessoa. */
   cooldown?: number
+  /** Ver `GameAction.confirm`. */
+  confirm?: string
   outcomes: Outcome[]
 }
 
@@ -418,6 +471,12 @@ export interface GameAction {
   /** Se falhar, a acao aparece desabilitada com o motivo. */
   requirements?: Condition[]
   cooldown?: number
+  /**
+   * Pergunta de confirmacao. Presente = a acao e irreversivel o bastante para
+   * merecer um segundo toque: largar um curso apaga anos de estudo, romper um
+   * casamento nao tem volta.
+   */
+  confirm?: string
   outcomes: Outcome[]
 }
 

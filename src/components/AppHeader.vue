@@ -9,7 +9,12 @@ const money = computed(() => formatMoney(props.character.money))
 </script>
 
 <template>
-  <header class="border-b border-rule bg-panel px-4 pt-3 pb-2">
+  <!-- `viewport-fit=cover` empurra o conteúdo para baixo das barras do sistema;
+       sem o inset o nome e a idade encostam no notch em standalone. -->
+  <header
+    class="border-b border-rule bg-panel px-4 pt-3 pb-2"
+    :style="{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }"
+  >
     <div class="flex items-baseline justify-between gap-3">
       <h1 class="truncate font-serif text-lg leading-tight font-semibold tracking-wide uppercase">
         {{ character.name }}

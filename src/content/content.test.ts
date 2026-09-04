@@ -7,9 +7,12 @@ import {
   validateCourses,
   validateEvents,
   validateRelationActions,
+  danglingChoices,
   orphanFlags,
 } from '../engine/validate'
+import { firstFailure } from '../engine/conditions'
 import { eligibleEvents } from '../engine/events'
+import { advanceYear, chooseOption, currentEvent } from '../engine/turn'
 import { makeCharacter, makeState } from '../test/fixtures'
 import { createGame } from '../engine/generate'
 import { GAME_CONTENT } from '.'
@@ -139,7 +142,14 @@ describe('saúde do conteúdo', () => {
   it('nenhuma flag é escrita sem que alguém a leia', () => {
     // Onze das dezesseis flags eram write-only quando isto foi medido: o
     // Perfil exibia "Ficha suja" e nada no jogo se comportava diferente.
+    // Hoje são dezoito flags e nenhuma órfã.
     expect(orphanFlags(GAME_CONTENT)).toEqual([])
+  })
+
+  it('nenhuma condição `chose` aponta para um evento ou opção que não existe', () => {
+    // `chose` guarda uma coordenada, não um nome: renomear um evento ou
+    // reordenar suas opções quebra o callback em silêncio.
+    expect(danglingChoices(GAME_CONTENT)).toEqual([])
   })
 })
 
@@ -180,11 +190,126 @@ describe('densidade do sorteio', () => {
     }
   })
 
+  /** Quem o conteúdo esquece: sem dinheiro, sem carreira, sem família, preso. */
+  function personaMagra(
+    age: number,
+    tweak: (state: ReturnType<typeof createGame>) => void = () => {},
+  ): ReturnType<typeof createGame> {
+    const state = createGame({ name: 'T', gender: 'male', seed: 1, birthYear: 2000 }, GAME_CONTENT)
+    state.character.age = age
+    state.character.education = age >= 18 ? 'highschool' : 'none'
+    state.character.money = 0
+    state.character.socialClass = 'poor'
+    state.relations = []
+    tweak(state)
+    return state
+  }
+
+  // O teste antigo media só uma persona rica, casada e empregada — 38 eventos
+  // elegíveis aos 45 — e por isso não enxergava que o mesmo jogo entregava
+  // 20 para quem não venceu. O jogo tinha sete eventos sobre ter iate e
+  // nenhum sobre não ter o que comer.
+  it('quem não venceu na vida também tem o que viver', () => {
+    for (const age of [25, 35, 45, 60]) {
+      const pool = eligibleEvents(personaMagra(age), GAME_CONTENT)
+      expect(pool.length, `pobre sem nada aos ${age} anos`).toBeGreaterThanOrEqual(25)
+    }
+  })
+
+  it('a cadeia não é o mesmo punhado de textos por uma pena inteira', () => {
+    // Penas chegam a 9 anos, e prison_fight ainda soma 3. Com um pool de 4
+    // repetíveis o jogador via os mesmos textos o tempo todo.
+    const preso = personaMagra(30, (state) => {
+      state.character.prison = { yearsLeft: 6, reason: 'roubo', yearsServed: 1 }
+    })
+    expect(eligibleEvents(preso, GAME_CONTENT).length).toBeGreaterThanOrEqual(12)
+  })
+
+  it('a aposentadoria dura décadas e precisa de pool para elas', () => {
+    const aposentado = personaMagra(78, (state) => {
+      state.character.flags['retired'] = true
+      state.character.pension = 30_000
+    })
+    expect(eligibleEvents(aposentado, GAME_CONTENT).length).toBeGreaterThanOrEqual(25)
+  })
+
+  it('os primeiros anos de vida não são turnos vazios', () => {
+    // O jogo começa aos 0. Se o pool for 0, "Avançar ano" só imprime o
+    // cabeçalho do ano, e a primeira impressão do jogo é a de um jogo quebrado.
+    // Era 0 aos 0 anos e 1 dos 1 aos 3: quatro turnos em que "Avançar ano" só
+    // imprimia o cabeçalho, e essa é a primeira impressão que o jogo dá.
+    for (const age of [0, 1, 2, 3]) {
+      expect(eligibleEvents(personaMagra(age), GAME_CONTENT).length, `aos ${age}`).toBeGreaterThanOrEqual(2)
+    }
+  })
+
   it('a infância e a adolescência têm com o que trabalhar', () => {
     // A infância é curta: são poucos turnos, então um pool menor não vira
     // repetição do jeito que viraria numa vida adulta de trinta anos.
     expect(eligibleEvents(personaAos(5), GAME_CONTENT).length).toBeGreaterThanOrEqual(5)
     expect(eligibleEvents(personaAos(10), GAME_CONTENT).length).toBeGreaterThanOrEqual(8)
     expect(eligibleEvents(personaAos(15), GAME_CONTENT).length).toBeGreaterThanOrEqual(12)
+  })
+})
+
+describe('a crise de felicidade acontece de verdade', () => {
+  /** Vive sem plano nenhum, que é o pior caso para a felicidade. */
+  function vidaSemPlano(seed: number): ReturnType<typeof createGame> {
+    const state = createGame({ name: 'T', gender: 'male', seed, birthYear: 2000 }, GAME_CONTENT)
+    let guard = 0
+    let pico = 0
+    while (state.character.alive && guard++ < 150) {
+      while (state.pendingEventIds.length > 0) {
+        const event = currentEvent(state, GAME_CONTENT)
+        if (!event) break
+        let pick = 0
+        for (let i = 0; i < event.options.length; i++) {
+          const option = event.options[i]
+          if (
+            option &&
+            (!option.requirements || firstFailure(option.requirements, state) === null)
+          ) {
+            pick = i
+            break
+          }
+        }
+        chooseOption(state, GAME_CONTENT, pick)
+      }
+      if (!state.character.alive) break
+      pico = Math.max(pico, state.character.unhappyYears)
+      advanceYear(state, GAME_CONTENT)
+    }
+    state.character.unhappyYears = pico
+    return state
+  }
+
+  const amostra = Array.from({ length: 40 }, (_, i) => vidaSemPlano(i + 1))
+
+  it('a sequência de anos infelizes chega aos gates mais fundos', () => {
+    // O spec pede crise "se a felicidade zerar por VÁRIOS turnos". Sem esta
+    // medida, um evento gated em `unhappyYears min 6` poderia ser conteúdo
+    // morto e ninguém notaria — foi exatamente o que aconteceu com o time de
+    // futebol de R$40 milhões.
+    const picos = amostra.map((s) => s.character.unhappyYears)
+    expect(Math.max(...picos), 'maior sequência vista').toBeGreaterThanOrEqual(6)
+  })
+
+  it('mas a infelicidade não é o estado normal da vida', () => {
+    // Se todo mundo vivesse em crise, a crise não significaria nada.
+    const medio = amostra.reduce((sum, s) => sum + s.character.unhappyYears, 0) / amostra.length
+    expect(medio).toBeLessThan(8)
+  })
+
+  it('todo evento de crise é alcançável pelo contador', () => {
+    const crises = ALL_EVENTS.filter((e) => e.id.startsWith('crisis_'))
+    expect(crises.length).toBeGreaterThan(0)
+
+    const maiorGate = Math.max(
+      ...crises.flatMap((e) =>
+        e.conditions.filter((c) => c.type === 'unhappyYears').map((c) => c.min ?? 0),
+      ),
+    )
+    const maiorVisto = Math.max(...amostra.map((s) => s.character.unhappyYears))
+    expect(maiorVisto, `gate mais fundo é ${maiorGate}`).toBeGreaterThanOrEqual(maiorGate)
   })
 })

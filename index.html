@@ -3,12 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+    <!-- Sem `maximum-scale`/`user-scalable=no`: bloquear o pinch-zoom reprova em
+         WCAG 1.4.4, e o spec pediu interface de toque, nunca pediu para tirar o
+         zoom de quem precisa dele para ler. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F4F0E6" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#17150F" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- Sem isto o iOS usa um screenshot da página como ícone da tela inicial. -->
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <title>Vida — Simulador</title>
   </head>
   <body>

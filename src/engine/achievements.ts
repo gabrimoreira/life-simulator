@@ -7,11 +7,28 @@ import type { ContentPack } from './content-pack'
 import { makeNote } from './timeline'
 import type { Achievement, GameState, TimelineEntry } from './types'
 
-export function findAchievement(
-  content: ContentPack,
-  id: string,
-): Achievement | undefined {
-  return content.achievements.find((achievement) => achievement.id === id)
+/** Uma conquista do catálogo, com o que o jogador precisa saber sobre ela. */
+export interface AchievementView {
+  id: string
+  name: string
+  description: string
+  earned: boolean
+}
+
+/**
+ * O catálogo inteiro, obtidas e não obtidas.
+ *
+ * Mostrar só o que já foi conquistado esconde metade do valor da coisa: sem
+ * saber que existem trinta e duas, o jogador não tem por que caçar a próxima.
+ */
+export function achievementCatalog(state: GameState, content: ContentPack): AchievementView[] {
+  const earned = new Set(state.achievements)
+  return content.achievements.map((achievement) => ({
+    id: achievement.id,
+    name: achievement.name,
+    description: achievement.description,
+    earned: earned.has(achievement.id),
+  }))
 }
 
 /** Conquistas já obtidas, na ordem do catálogo. */

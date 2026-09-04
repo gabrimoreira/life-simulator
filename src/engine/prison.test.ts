@@ -5,6 +5,7 @@ import { PRISON_HAPPINESS_COST, PRISON_HEALTH_COST } from './balance'
 import { hireInto } from './careers'
 import { eligibleEvents } from './events'
 import { applyPrisonYear, isInPrison, jail, mentionsPrison, release } from './prison'
+import { relationActionsFor } from './relations'
 import { advanceYear } from './turn'
 import type { CareerTrack, GameAction, GameState } from './types'
 
@@ -105,7 +106,30 @@ describe('ser preso', () => {
 
     expect(state.character.prison?.yearsLeft).toBe(7)
     expect(state.character.prison?.reason).toBe('roubo')
-    if (note.kind === 'note') expect(note.text).toContain('aumentou')
+    if (note?.kind === 'note') expect(note.text).toContain('aumentou')
+  })
+
+  it('anos negativos DESCONTAM a pena em vez de somar', () => {
+    // `Math.max(1, years)` transformava remição por estudo e progressão de
+    // regime em um ano a MAIS de cadeia — o contrário exato do que o texto do
+    // evento prometia ao jogador.
+    const state = preso(6)
+    const note = jail(state, content, -2, 'remição por estudo')
+
+    expect(state.character.prison?.yearsLeft).toBe(4)
+    if (note?.kind === 'note') expect(note.text).toContain('caiu')
+  })
+
+  it('desconto maior que a pena solta em vez de deixar dias negativos', () => {
+    const state = preso(2)
+    jail(state, content, -5, 'progressão de regime')
+    expect(state.character.prison).toBeNull()
+  })
+
+  it('desconto não faz nada para quem está solto', () => {
+    const state = makeState({ character: makeCharacter({ age: 30 }) })
+    expect(jail(state, content, -3, 'nada')).toBeNull()
+    expect(state.character.prison).toBeNull()
   })
 })
 
@@ -166,5 +190,59 @@ describe('o sub-loop', () => {
     const dentro = availableActions(preso(), content).map((a) => a.id)
     expect(dentro.some((id) => id.startsWith('career:'))).toBe(false)
     expect(dentro.some((id) => id.startsWith('enroll:'))).toBe(false)
+  })
+})
+
+describe('o sub-loop cobre tambem as relacoes', () => {
+  const CONVERSAR = {
+    id: 'talk',
+    label: 'Conversar',
+    hint: 'Puxar assunto.',
+    cost: 1,
+    kinds: ['mother'] as const,
+    outcomes: [{ chance: 1, text: 'ok', effects: [] }],
+  }
+  const VISITA = {
+    id: 'visit_prison',
+    label: 'Receber visita',
+    hint: 'Fila e revista.',
+    cost: 1,
+    kinds: ['mother'] as const,
+    conditions: [{ type: 'inPrison' as const, value: true }],
+    outcomes: [{ chance: 1, text: 'ok', effects: [] }],
+  }
+
+  function comMae(): { state: GameState; content: ReturnType<typeof makeContent> } {
+    const content = makeContent([], {
+      relationActions: [{ ...CONVERSAR, kinds: ['mother'] }, { ...VISITA, kinds: ['mother'] }],
+    })
+    const state = makeState({ character: makeCharacter({ age: 30 }) })
+    state.relations.push({
+      id: 'm',
+      name: 'Maria Silva',
+      kind: 'mother',
+      gender: 'female',
+      age: 60,
+      relation: 70,
+      alive: true,
+    })
+    return { state, content }
+  }
+
+  it('livre, ve conversar e nao ve a visita', () => {
+    const { state, content } = comMae()
+    const ids = relationActionsFor(state, content, state.relations[0]!).map((a) => a.id)
+    expect(ids).toContain('talk')
+    expect(ids).not.toContain('visit_prison')
+  })
+
+  it('preso, nao da para pedir em casamento nem ter filho — so o que e da cadeia', () => {
+    // O gate de prisao existia em eventos e acoes, mas nao em applicable():
+    // dava para propor casamento e ter um filho de dentro da cadeia.
+    const { state, content } = comMae()
+    jail(state, content, 4, 'roubo')
+    const ids = relationActionsFor(state, content, state.relations[0]!).map((a) => a.id)
+    expect(ids).toContain('visit_prison')
+    expect(ids).not.toContain('talk')
   })
 })

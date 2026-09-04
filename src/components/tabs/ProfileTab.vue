@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { FLAG_LABELS } from '../../content/flags'
+import { formatMoney } from '../../engine/text'
 import { EDUCATION_LABELS, SOCIAL_CLASS_LABELS, STAT_LABELS } from '../../engine/labels'
 import { FAME_VISIBILITY_THRESHOLD, VISIBLE_STAT_KEYS } from '../../engine/types'
 import type { Character } from '../../engine/types'
@@ -22,7 +23,7 @@ const marks = computed(() =>
 </script>
 
 <template>
-  <div class="h-full overflow-y-auto px-4 py-4">
+  <div class="h-full scroll-pane px-4 pt-4 pb-20">
     <section>
       <h2 class="border-b border-rule pb-1 font-serif text-sm tracking-wide uppercase">
         Atributos
@@ -64,6 +65,22 @@ const marks = computed(() =>
           {{ character.career?.yearsInLevel ?? 0 }}
           {{ (character.career?.yearsInLevel ?? 0) === 1 ? 'ano' : 'anos' }}
         </dd>
+        <!-- `yearsInTrack` era contado todo ano desde a Fase 2 e nunca lido
+             por ninguém: nem regra, nem tela. -->
+        <dt class="text-muted">Tempo na área</dt>
+        <dd class="text-right tabular-nums">
+          {{ character.career?.yearsInTrack ?? 0 }}
+          {{ (character.career?.yearsInTrack ?? 0) === 1 ? 'ano' : 'anos' }}
+        </dd>
+      </dl>
+      <dl
+        v-else-if="character.pension > 0"
+        class="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm"
+      >
+        <dt class="text-muted">Situação</dt>
+        <dd class="text-right">Aposentado</dd>
+        <dt class="text-muted">Pensão anual</dt>
+        <dd class="text-right tabular-nums">{{ formatMoney(character.pension) }}</dd>
       </dl>
       <p v-else class="mt-2 text-sm text-muted">Sem trabalho no momento.</p>
     </section>
@@ -99,15 +116,23 @@ const marks = computed(() =>
       </dl>
     </section>
 
-    <section v-if="store.achievements.length" class="mt-6">
+    <section class="mt-6">
       <h2 class="flex items-baseline justify-between border-b border-rule pb-1 font-serif text-sm tracking-wide uppercase">
         <span>Conquistas</span>
-        <span class="tabular-nums">{{ store.achievements.length }}</span>
+        <span class="tabular-nums">
+          {{ store.achievements.length }}/{{ store.allAchievements.length }}
+        </span>
       </h2>
+      <!-- As trancadas aparecem porque saber que existem é o que faz caçar a
+           próxima; só o nome, para não entregar como se chega lá. -->
       <ul class="mt-2 space-y-2">
-        <li v-for="item in store.achievements" :key="item.id">
-          <span class="block text-sm">{{ item.name }}</span>
-          <span class="block text-[11px] leading-snug text-muted">{{ item.description }}</span>
+        <li v-for="item in store.allAchievements" :key="item.id">
+          <span class="block text-sm" :class="item.earned ? '' : 'text-muted'">
+            {{ item.earned ? item.name : '· · ·' }}
+          </span>
+          <span class="block text-[11px] leading-snug text-muted">
+            {{ item.description }}
+          </span>
         </li>
       </ul>
     </section>

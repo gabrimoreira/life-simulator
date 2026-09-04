@@ -17,7 +17,7 @@ import type { Rng } from './rng'
 import { formatMoney } from './text'
 import { makeNote } from './timeline'
 import { evaluateAll } from './conditions'
-import { courseFlag } from './types'
+import { courseFlag, highestEducation } from './types'
 import type { Course, GameState, PaymentMode, TimelineEntry } from './types'
 
 export function findCourse(content: ContentPack, courseId: string): Course | undefined {
@@ -149,8 +149,12 @@ export function studyYear(
   }
 
   // Conclusão.
+  //
+  // O nível SOBE, nunca desce: `c.education = course.grants` rebaixava para
+  // `bachelor` quem já tinha mestrado e resolvia fazer uma segunda graduação —
+  // e com isso o expulsava da trilha acadêmica, que exige `postgrad`.
   c.enrollment = null
-  c.education = course.grants
+  c.education = highestEducation(c.education, enrollment.targetLevel)
   c.flags[courseFlag(course.id)] = true
   const logs = applyEffects(course.completionEffects, state, rng, content)
 

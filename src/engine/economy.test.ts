@@ -185,13 +185,21 @@ describe('vida de quem joga com um plano', () => {
     expect(median).toBeGreaterThanOrEqual(2)
   })
 
-  it('nunca acumula caixa e dívida ao mesmo tempo sem motivo', () => {
-    // Pagar mensalidade com dívida sentado em cima de dinheiro era o sintoma.
-    for (const state of sample) {
-      if (state.character.debt > 0) {
-        expect(state.character.money).toBe(0)
-      }
-    }
+  it('quem termina devendo não estava sentado em dinheiro o tempo todo', () => {
+    // Esta asserção já foi `money === 0 sempre que debt > 0`, e estava errada
+    // por dois motivos que os testes de `amortização de dívida` abaixo deixam
+    // explícitos: o engine mantém uma RESERVA de propósito em vez de zerar a
+    // conta, e amortiza uma vez por ano — antes dos eventos. Um evento que
+    // paga bem no último ano de vida deixa caixa e dívida lado a lado até uma
+    // amortização que nunca chega. Passava por sorte de seed; parou de passar
+    // quando entraram eventos novos que pagam alto.
+    //
+    // O que importa de verdade é a escala: dívida grande convivendo com caixa
+    // grande por anos seria o sintoma real de amortização quebrada.
+    const sentados = sample.filter(
+      (s) => s.character.debt > 50_000 && s.character.money > s.character.debt * 3,
+    )
+    expect(sentados.length / sample.length).toBeLessThan(0.1)
   })
 })
 

@@ -3,6 +3,12 @@
 // Toda flag escrita pelo conteúdo precisa de alguém que a leia. Sem isso o
 // Perfil vira uma vitrine de marcas decorativas: o jogo diz "Ficha suja" e se
 // comporta exatamente igual. Este arquivo é onde a memória do jogo cobra.
+//
+// Duas memórias diferentes moram aqui. A FLAG responde "isso aconteceu com
+// você" — e é sempre o resultado, não a decisão. A condição `chose` responde
+// "você escolheu isto", e é o que permite cobrar a decisão mesmo quando ela
+// deu certo. Antes da Fase 5 só existia a primeira, e por isso nenhum callback
+// alimentava outro: a cadeia tinha profundidade um.
 
 import type { GameEvent } from '../../engine/types'
 
@@ -436,6 +442,316 @@ export const CALLBACK_EVENTS: GameEvent[] = [
               { type: 'stat', stat: 'happiness', op: 'delta', value: 8 },
               { type: 'relation', target: { by: 'kind', kind: 'child' }, delta: 15 },
             ],
+          },
+        ],
+      },
+    ],
+  },
+
+  // --- Escolhas, não resultados ---------------------------------------------
+
+  {
+    id: 'callback_intern_paid_off',
+    category: 'career',
+    weight: 11,
+    once: true,
+    conditions: [
+      { type: 'age', min: 30, max: 48 },
+      // Opção 1 de young_internship_choice: "O que ensina".
+      { type: 'chose', eventId: 'young_internship_choice', optionIndex: 1 },
+    ],
+    text: 'Quem te orientou naquele estágio virou gente grande e lembrou de você.',
+    options: [
+      {
+        text: 'Atender o telefonema',
+        outcomes: [
+          {
+            chance: 0.65,
+            text: 'Era uma proposta, e das boas. Vinte anos depois, o estágio que não pagava pagou.',
+            effects: [
+              { type: 'performance', delta: 20 },
+              { type: 'money', delta: 60_000 },
+              { type: 'stat', stat: 'reputation', op: 'delta', value: 8 },
+            ],
+          },
+          {
+            chance: 0.35,
+            text: 'Era só um café. Bom café.',
+            effects: [
+              { type: 'stat', stat: 'happiness', op: 'delta', value: 8 },
+              { type: 'stat', stat: 'charisma', op: 'delta', value: 3 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Deixar tocar',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você viu o nome na tela e não atendeu. Nunca soube o que era.',
+            effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: -4 }],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'callback_intern_money_regret',
+    category: 'career',
+    weight: 10,
+    once: true,
+    conditions: [
+      { type: 'age', min: 30, max: 48 },
+      // Opção 0: "O que paga". Note que ela dava dinheiro — o callback cobra a
+      // ESCOLHA, não o resultado ruim, que é justamente o que a flag não faz.
+      { type: 'chose', eventId: 'young_internship_choice', optionIndex: 0 },
+    ],
+    text: 'Um colega da mesma turma te ultrapassou faz tempo. Você sabe exatamente onde a estrada se dividiu.',
+    options: [
+      {
+        text: 'Voltar a estudar por conta',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você comprou os livros e acordou uma hora mais cedo durante um ano inteiro.',
+            effects: [
+              { type: 'stat', stat: 'intelligence', op: 'delta', value: 10 },
+              { type: 'actionPoints', delta: -1 },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -3 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Aceitar que foi a escolha certa na época',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você precisava daquele dinheiro naquele ano. Ninguém escolhe no vácuo.',
+            effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: 7 }],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'callback_crypto_again',
+    category: 'random',
+    weight: 10,
+    once: true,
+    conditions: [
+      { type: 'age', min: 33 },
+      // Opção 0 do pitch: apostou tudo. Deu certo ou não, você é o tipo que aposta.
+      { type: 'chose', eventId: 'ya_crypto_pitch', optionIndex: 0 },
+    ],
+    text: 'O mesmo conhecido reapareceu com a mesma cara e um negócio novo.',
+    options: [
+      {
+        text: 'Entrar de novo',
+        requirements: [{ type: 'money', min: 40_000 }],
+        outcomes: [
+          {
+            chance: 0.15,
+            luckBias: 1,
+            text: 'Contra tudo o que era razoável, deu certo outra vez.',
+            effects: [
+              { type: 'money', delta: 220_000 },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: 15 },
+            ],
+          },
+          {
+            chance: 0.85,
+            text: 'Igualzinho da primeira vez. Você sabia, e entrou assim mesmo.',
+            effects: [
+              { type: 'money', delta: -40_000 },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -15 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Dessa vez não',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você ouviu a conversa inteira por educação e foi embora.',
+            effects: [
+              { type: 'stat', stat: 'intelligence', op: 'delta', value: 4 },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: 3 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'callback_second_order',
+    category: 'random',
+    weight: 9,
+    once: true,
+    conditions: [
+      { type: 'age', min: 45 },
+      // Cadeia de profundidade DOIS: este callback lê a escolha feita dentro
+      // de outro callback. É o que a memória por flag não conseguia fazer.
+      { type: 'chose', eventId: 'callback_intern_paid_off', optionIndex: 1 },
+    ],
+    text: 'Você descobriu, por acaso e tarde demais, o que era aquele telefonema que você não atendeu.',
+    options: [
+      {
+        text: 'Ligar agora',
+        outcomes: [
+          {
+            chance: 0.3,
+            text: 'Atenderam. Foi constrangedor e bom.',
+            effects: [
+              { type: 'stat', stat: 'happiness', op: 'delta', value: 10 },
+              { type: 'stat', stat: 'charisma', op: 'delta', value: 3 },
+            ],
+          },
+          {
+            chance: 0.7,
+            text: 'O número não existe mais.',
+            effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: -8 }],
+          },
+        ],
+      },
+      {
+        text: 'Deixar quieto',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você guardou aquilo junto com as outras coisas que não deu para desfazer.',
+            effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: -5 }],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'callback_night_school',
+    category: 'school',
+    weight: 11,
+    once: true,
+    conditions: [
+      { type: 'age', min: 28, max: 55 },
+      { type: 'education', level: 'highschool', atLeast: false },
+      { type: 'enrolled', value: false },
+    ],
+    text: 'Abriu uma turma de supletivo perto do trabalho, à noite. Dois anos, e você teria o diploma que nunca teve.',
+    options: [
+      {
+        text: 'Fazer',
+        outcomes: [
+          {
+            chance: 0.7,
+            text: 'Você aguentou os dois anos, chegando em casa quase meia-noite.',
+            effects: [
+              // `education` direto: o supletivo não é um curso do catálogo,
+              // é uma escada lateral que sobe o nível sem passar por matrícula.
+              { type: 'education', level: 'highschool' },
+              { type: 'stat', stat: 'intelligence', op: 'delta', value: 8 },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -5 },
+            ],
+          },
+          {
+            chance: 0.3,
+            text: 'Você foi três meses e o cansaço venceu.',
+            effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: -7 }],
+          },
+        ],
+      },
+      {
+        text: 'Deixar para lá',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você olhou o cartaz por duas semanas e um dia ele não estava mais lá.',
+            effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: -3 }],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'callback_study_ahead',
+    category: 'school',
+    weight: 10,
+    cooldown: 4,
+    conditions: [{ type: 'enrolled', value: true }],
+    text: 'Você tem um verão inteiro pela frente e a matéria do ano que vem já está no site.',
+    options: [
+      {
+        text: 'Adiantar tudo',
+        outcomes: [
+          {
+            chance: 0.6,
+            text: 'Você chegou em fevereiro sabendo o que os outros iam aprender em novembro.',
+            effects: [
+              // `study`: empurra um ano de curso de graça, sem gastar o ponto
+              // de ação que a ação "Cursar" cobraria.
+              { type: 'study' },
+              { type: 'stat', stat: 'intelligence', op: 'delta', value: 5 },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -6 },
+            ],
+          },
+          {
+            chance: 0.4,
+            text: 'Você abriu o material em janeiro, leu quatro páginas e foi para a praia.',
+            effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: 8 }],
+          },
+        ],
+      },
+      {
+        text: 'Descansar',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você não pensou em nada disso por três meses, e voltou inteiro.',
+            effects: [
+              { type: 'stat', stat: 'happiness', op: 'delta', value: 10 },
+              { type: 'stat', stat: 'health', op: 'delta', value: 4 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'callback_year_of_air',
+    category: 'random',
+    weight: 9,
+    cooldown: 8,
+    conditions: [
+      { type: 'age', min: 25 },
+      { type: 'stat', stat: 'happiness', min: 70 },
+    ],
+    text: 'Foi um ano em que tudo coube. Você acordava com disposição sobrando.',
+    options: [
+      {
+        text: 'Aproveitar o fôlego',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Deu para fazer mais coisa nesse ano do que nos dois anteriores.',
+            // `actionPoints`: um ano de fôlego é literalmente mais tempo útil.
+            effects: [{ type: 'actionPoints', delta: 1 }],
+          },
+        ],
+      },
+      {
+        text: 'Não fazer nada de especial com ele',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você deixou o ano passar sendo bom, que já é bastante.',
+            effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: 5 }],
           },
         ],
       },

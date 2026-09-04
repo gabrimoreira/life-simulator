@@ -98,6 +98,28 @@ cursos. Por isso o validador rejeita ação de conteúdo com `:` no id.
 
 ## Carreira
 
+Quatorze trilhas em seis tipos. O `kind` é o que a economia e as conquistas
+enxergam; o `trackId` é o que o conteúdo enxerga, e é por isso que existem
+duas condições separadas (`careerKind` e `careerTrack`).
+
+| tipo | trilhas |
+|------|---------|
+| `clt` | Corporativo, Medicina, Advocacia, Engenharia |
+| `business` | Comércio, Alimentação, Tecnologia |
+| `celebrity` | Internet, Música, Atuação, Esporte |
+| `crime` | Crime |
+| `politics` | Política |
+| `academia` | Acadêmica |
+
+As de `business` e `celebrity` existem porque o spec descreve as duas em prosa
+— "abre empresa, **escolhe setor**, injeta capital, contrata" e "**músico, ator,
+streamer, atleta**" — e por cinco fases as duas eram uma escada de salário só.
+Escolher o setor é escolher a trilha; injetar capital e contratar são ações,
+porque são coisas que se faz durante o ano trocando dinheiro por desempenho.
+
+Esporte é a única trilha do jogo com teto de idade na entrada: corpo tem prazo.
+
+
 Uma trilha (`src/content/careers.ts`) é uma lista de níveis com salário,
 requisitos e tempo mínimo. Três coisas movem a progressão:
 
@@ -119,8 +141,31 @@ de estudo por vez, cada ano custando um ponto de ação — o custo de oportunid
 é a decisão. Pular um ano não reprova, só não forma. A mensalidade sai do caixa
 sempre que houver caixa; o resto vira dívida.
 
-Concluir um curso concede o nível de escolaridade e a flag `course_<id>`, que
-eventos e carreiras podem exigir.
+Concluir um curso concede o nível de escolaridade e a flag `course_<id>`.
+
+Por três fases essa flag foi escrita e lida por ninguém: nada perguntava QUAL
+curso você tinha feito, e Medicina — seis anos, R$360.000, exigindo
+inteligência 72 — abria exatamente as mesmas portas que Licenciatura, quatro
+anos e R$32.000. Hoje cada graduação abre alguma coisa:
+
+| curso         | abre |
+|---------------|------|
+| Medicina      | trilha Medicina, a mais bem paga do jogo, que cobra saúde todo ano |
+| Direito       | trilha Advocacia, que escala com carisma |
+| Engenharia    | trilha Engenharia, estável e sem escândalo |
+| Artes Cênicas | atalho na celebridade: sobe de degrau sem a fama exigida |
+| Administração | troca carisma por diploma na subida do empresário |
+| Licenciatura  | entrada na academia sem pós; os níveis seguintes ainda exigem |
+
+Medicina, Advocacia e Engenharia são todas `kind: 'clt'` — são emprego formal,
+com demissão e checagem de antecedentes. O que as separa do corporativo
+genérico é a porta. É também por isso que a condição `careerTrack` existe
+separada de `careerKind`: com quatro trilhas do mesmo tipo, "plantão de vinte
+e quatro horas" não pode aparecer para um analista de escritório.
+
+O nível de escolaridade SOBE e nunca desce. Concluir uma segunda graduação
+rebaixava para `bachelor` quem já tinha mestrado — e com isso o expulsava da
+trilha acadêmica, sem nenhum aviso.
 
 ## Economia
 
@@ -134,9 +179,57 @@ Estudante paga uma fração disso.
 A dívida tem teto. Passado o teto o gasto simplesmente não acontece — a pessoa
 corta o próprio padrão de vida até caber, porque ninguém empresta para sempre.
 
+## Casamento
+
+Por cinco fases casar mudava uma flag e nada mais. A decisão mais consequente
+de uma vida não aparecia em lugar nenhum na economia.
+
+O cônjuge contribui uma fração da renda, escalada pela relação — casamento ruim
+rende menos, e não por moralismo: gente que não se fala não divide conta
+direito. A casa custa um pouco mais em troca. O resultado é a tensão que o
+sistema existe para criar: **casamento bom melhora o ano em todas as cinco
+classes sociais, casamento ruim piora**. Cuidar da relação virou decisão
+econômica, não só sentimental.
+
+Duas armadilhas apareceram montando isso, e as duas estão medidas em teste:
+
+O fator de custo multiplicava o **piso** do custo de vida. Duas pessoas
+dividindo teto não pagam 35% mais aluguel, e o resultado era casar piorar o
+saldo nas cinco classes.
+
+O custo de vida é calculado sobre a renda **própria**, não a da casa. O teto de
+padrão de vida herdado sobe junto com a renda, então somar o cônjuge à base do
+cálculo fazia a contribuição inteira virar despesa e casar não mudar nada.
+
+Divórcio é regra, não conteúdo: dividir bens envolve vender o que não se
+divide, e isso não cabe num efeito `money`. Vende tudo com deságio, parte o
+caixa ao meio, e cobra 12 pontos a mais de quem tem filho. O ex-cônjuge vira
+amigo em vez de sumir — gente com quem se viveu vinte anos não desaparece do
+mundo, e a relação guarda o estrago.
+
+## Crise de felicidade
+
+O spec pede eventos de crise "se a felicidade zerar por vários turnos", e por
+cinco fases existiram apenas dois gates instantâneos de felicidade baixa em 193
+eventos. A diferença importa: um gate instantâneo dispara no primeiro ano ruim
+de uma vida boa, e o que o spec descreve é a espiral.
+
+`Character.unhappyYears` conta anos SEGUIDOS abaixo do limiar e zera no
+primeiro ano bom. É a única memória de duração do jogo — todas as outras
+condições olham o estado do turno, e por isso não distinguem um ano ruim de
+uma década ruim.
+
+Cuidado com o limiar: o nominal é 30, o **efetivo é 27**. A reversão à média
+roda antes da contagem e o stat é arredondado, então `round(0,92x + 4) < 30`
+exige `x <= 27`. Está medido em `aging.test.ts`.
+
+Medido em 200 vidas sem plano nenhum: 88 veem ao menos um evento de crise, a
+maior sequência é de 13 anos, o pico médio é 3,1, e os cinco eventos disparam
+— inclusive o que exige seis anos seguidos.
+
 ## Save
 
-`saveVersion` 2. As migrações rodam sobre o JSON cru e a checagem de forma
+`saveVersion` 6. As migrações rodam sobre o JSON cru e a checagem de forma
 acontece depois, sobre o resultado — o contrário obrigaria a manter o tipo de
 cada versão antiga do `GameState` vivo no código para sempre.
 
@@ -157,6 +250,18 @@ turno pelo mesmo `evaluateAll` dos eventos. Não há gatilho nem contador
 escondido. A checagem roda **depois** da morte, de propósito: "chegou aos cem"
 e "morreu no vermelho" só fazem sentido no turno em que a vida acaba.
 
+## Os invariantes são testados, não conferidos na mão
+
+Zero `any`, `Math.random` só em `rng.ts`, `engine/` sem importar `content/`,
+nem um nem outro importando Vue. Isso era `grep` manual a cada fase, por quem
+lembrasse de rodar — `src/architecture.test.ts` transforma em teste.
+
+E cuidado com o `typecheck`: por três fases o script era `vue-tsc --noEmit`,
+que lê o `tsconfig.json` raiz. Esse arquivo é de solução (`"files": []` mais
+duas `references`), então o comando checava ZERO arquivos e saía limpo. Quem
+segurava tudo era o `build`. Agora é `vue-tsc -b --force`, e é ele que faz o
+`assertNever` funcionar como lista de tarefas quando uma união cresce.
+
 ## Flags não podem ser decorativas
 
 `orphanFlags` em `engine/validate.ts` quebra o teste se o conteúdo escrever uma
@@ -170,7 +275,7 @@ Flags lidas pelo próprio engine (e não por uma `Condition`) ficam declaradas e
 ## Como o balanceamento é medido
 
 Não por intuição: por simulação. Perfis de jogador scriptados — aleatório,
-família, carreira, otimizado, crime, academia — cem vidas cada, olhando
+família, carreira, otimizado, crime, academia, pobre — cem vidas cada, olhando
 mediana, p90, mortes no vermelho e herdeiros.
 
 Foi assim que apareceram os problemas que a leitura do código não mostrava: o
@@ -180,3 +285,56 @@ herdado condenando quem nasce rico.
 
 A forma importa mais que a mediana. Academia tem p50 alto e p90 baixo (teto
 baixo, piso alto); corporativo tem o inverso. É o desenho, não um desequilíbrio.
+
+Última medida, 100 vidas por perfil:
+
+| perfil    | p50 patrimônio | p90 | negativos | herdeiro | morte p50 |
+|-----------|---------------:|----:|----------:|---------:|----------:|
+| aleatório | 701k  | 3,24M | 14 |  4 | 70 |
+| família   | 1,78M | 2,83M |  9 | 52 | 73 |
+| carreira  | 1,89M | 5,75M | 12 | 14 | 69 |
+| otimizado | 4,78M | 9,09M | 17 | 33 | 73 |
+| crime     | 1,22M | 2,98M |  3 |  2 | 66 |
+| academia  | 2,16M | 4,47M | 15 |  7 | 72 |
+| pobre     | 918k  | 4,20M | 12 |  9 | 75 |
+
+O perfil otimizado é o que faz Medicina e entra na trilha da profissão. Ele
+paga 2,5 vezes o corporativo genérico — e tem o maior número de mortes no
+vermelho, porque seis anos e R$360.000 de faculdade cobram antes de pagar.
+
+### Quanto o jogo é capaz de gerar
+
+Medido em 120 vidas por trilha, nas oito mais rentáveis:
+
+| trilha      | p50 | p90 | negativos |
+|-------------|----:|----:|----------:|
+| música      | 6,32M |  9,92M |  0 |
+| internet    | 4,96M |  8,75M |  1 |
+| medicina    | 4,43M |  8,91M | 17 |
+| comércio    | 4,22M |  9,68M |  7 |
+| esporte     | 3,96M | 10,73M |  1 |
+| tecnologia  | 3,95M | 11,20M |  7 |
+| alimentação | 2,58M |  6,25M |  9 |
+| atuação     | 2,38M | 11,41M | 10 |
+
+A forma importa mais que a mediana, e aqui ela aparece: alimentação tem teto
+baixo e chão firme; atuação tem a menor mediana e o maior p90 — é a trilha das
+cem audições; medicina tem o maior número de mortes no vermelho, porque seis
+anos e R$360.000 de faculdade cobram antes de pagar.
+
+**Não existe teto duro.** As trilhas voláteis têm caudas que passam de R$40
+milhões. O que existe é a faixa de p90, entre R$6,2M e R$11,4M, e é contra ela
+que os bens de luxo são precificados — um item comprável só na cauda é o mesmo
+que um item que ninguém compra.
+
+Foi assim que o jatinho de R$18 milhões e o time de futebol de R$40 milhões
+exigindo R$60 milhões de patrimônio apareceram: eram vitrine, e com o time
+morriam os dois eventos que exigem possuí-lo.
+
+A mesma conta vale para idade: com plano voltado a saúde, em 300 vidas a idade
+máxima foi 94 e ninguém passou de 95. A conquista dos cem anos era decoração e
+virou noventa, que acontece em 7% dessas vidas. `MAX_AGE = 110` segue
+inalcançável de propósito — é o teto duro do laço, não uma meta.
+
+Três testes em `education-matters.test.ts` impedem que um bem ou uma conquista
+volte a pedir mais do que o jogo é capaz de produzir.

@@ -150,7 +150,7 @@ describe('migração v2 -> v3', () => {
   })
 })
 
-describe('migração v1 -> v5, em cadeia', () => {
+describe('migração v1 -> v6, em cadeia', () => {
   /** Um save v1 é o v2 sem nada que a Fase 2 acrescentou. */
   function v1Save(): Record<string, unknown> {
     const save = JSON.parse(JSON.stringify(makeSave()))
@@ -165,6 +165,7 @@ describe('migração v1 -> v5, em cadeia', () => {
     delete save.state.achievements
     delete save.state.character.pension
     delete save.state.character.prison
+    delete save.state.character.unhappyYears
     return { ...save, saveVersion: 1 }
   }
 
@@ -201,5 +202,23 @@ describe('migração v1 -> v5, em cadeia', () => {
   it('um save na versão atual passa direto, sem migração', () => {
     const save = makeSave()
     expect(migrate(JSON.parse(JSON.stringify(save)))).toEqual(save)
+  })
+})
+
+describe('v5 -> v6: o contador de infelicidade', () => {
+  it('um save sem `unhappyYears` ganha zero, e não NaN', () => {
+    // `unhappyYears + 1` com undefined vira NaN, e a condição de crise passa a
+    // comparar NaN para sempre — silenciosamente falsa. É o mesmo defeito que
+    // a `pension` teve na v4.
+    const save = JSON.parse(JSON.stringify(makeSave())) as {
+      saveVersion: number
+      state: { character: Record<string, unknown> }
+    }
+    delete save.state.character['unhappyYears']
+    save.saveVersion = 5
+
+    const migrado = migrate(save)
+    expect(migrado?.state.character.unhappyYears).toBe(0)
+    expect(Number.isNaN(migrado?.state.character.unhappyYears)).toBe(false)
   })
 })
