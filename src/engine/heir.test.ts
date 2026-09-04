@@ -1,15 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { GAME_CONTENT } from '../content'
 import { makeCharacter, makeState } from '../test/fixtures'
+import { simulate } from '../test/player'
 import { INHERITANCE_SHARE } from './balance'
 import { buyAsset } from './assets'
 import { canContinue, createHeir, heirCandidates } from './heir'
-import { availableActions, performAction } from './actions'
-import { firstFailure } from './conditions'
-import { createGame } from './generate'
-import { livingRelations, relationActionsFor } from './relations'
-import { createRng } from './rng'
-import { advanceYear, chooseOption, currentEvent, runRelationAction } from './turn'
+import { advanceYear } from './turn'
 import type { GameState, Person } from './types'
 
 function child(overrides: Partial<Person> = {}): Person {
@@ -207,43 +203,13 @@ describe('continuidade', () => {
 describe('alcançabilidade da linhagem', () => {
   const SOCIAL = ['Pedir em casamento', 'Ter um filho', 'Conversar']
 
+  /**
+   * O jogador scriptado mora em `src/test/player.ts` desde a Fase 7 — a mesma
+   * função estava reimplementada aqui, em economy.test.ts e em cada script de
+   * medição, e cada cópia divergia um pouco.
+   */
   function vive(seed: number, prioridade: string[]): GameState {
-    const state = createGame({ name: 'T', gender: 'male', seed, birthYear: 2000 }, GAME_CONTENT)
-    const rng = createRng(seed)
-    let guard = 0
-
-    while (state.character.alive && guard++ < 150) {
-      while (state.pendingEventIds.length > 0) {
-        const event = currentEvent(state, GAME_CONTENT)
-        if (!event) break
-        let pick = 0
-        for (let i = 0; i < event.options.length; i++) {
-          const option = event.options[i]
-          if (option && (!option.requirements || firstFailure(option.requirements, state) === null)) {
-            pick = i
-            break
-          }
-        }
-        chooseOption(state, GAME_CONTENT, pick)
-      }
-      if (!state.character.alive) break
-
-      for (const want of prioridade) {
-        const action = availableActions(state, GAME_CONTENT).find(
-          (a) => a.enabled && a.label.startsWith(want),
-        )
-        if (action) performAction(state, GAME_CONTENT, rng, action.id)
-      }
-      for (const person of livingRelations(state)) {
-        const disponiveis = relationActionsFor(state, GAME_CONTENT, person).filter((a) => a.enabled)
-        for (const want of SOCIAL) {
-          const action = disponiveis.find((a) => a.label.startsWith(want))
-          if (action && runRelationAction(state, GAME_CONTENT, person.id, action.id)) break
-        }
-      }
-      advanceYear(state, GAME_CONTENT)
-    }
-    return state
+    return simulate(seed, GAME_CONTENT, { actions: prioridade, social: SOCIAL })
   }
 
   it('quem prioriza família chega ao herdeiro com frequência', () => {
@@ -296,5 +262,5 @@ describe('alcançabilidade da linhagem', () => {
     ).filter(canContinue).length
 
     expect(carreira).toBeLessThan(familia * 0.7)
-  })
+  }, 20_000)
 })

@@ -10,11 +10,10 @@ import {
   danglingChoices,
   orphanFlags,
 } from '../engine/validate'
-import { firstFailure } from '../engine/conditions'
 import { eligibleEvents } from '../engine/events'
-import { advanceYear, chooseOption, currentEvent } from '../engine/turn'
 import { makeCharacter, makeState } from '../test/fixtures'
 import { createGame } from '../engine/generate'
+import { simulate } from '../test/player'
 import { GAME_CONTENT } from '.'
 import { ALL_EVENTS } from './events'
 
@@ -255,30 +254,12 @@ describe('densidade do sorteio', () => {
 describe('a crise de felicidade acontece de verdade', () => {
   /** Vive sem plano nenhum, que é o pior caso para a felicidade. */
   function vidaSemPlano(seed: number): ReturnType<typeof createGame> {
-    const state = createGame({ name: 'T', gender: 'male', seed, birthYear: 2000 }, GAME_CONTENT)
-    let guard = 0
+    // O pico só existe DURANTE a vida: o contador zera no primeiro ano bom, e
+    // o estado final não lembra do fundo do poço. `onYear` é o que dá acesso.
     let pico = 0
-    while (state.character.alive && guard++ < 150) {
-      while (state.pendingEventIds.length > 0) {
-        const event = currentEvent(state, GAME_CONTENT)
-        if (!event) break
-        let pick = 0
-        for (let i = 0; i < event.options.length; i++) {
-          const option = event.options[i]
-          if (
-            option &&
-            (!option.requirements || firstFailure(option.requirements, state) === null)
-          ) {
-            pick = i
-            break
-          }
-        }
-        chooseOption(state, GAME_CONTENT, pick)
-      }
-      if (!state.character.alive) break
-      pico = Math.max(pico, state.character.unhappyYears)
-      advanceYear(state, GAME_CONTENT)
-    }
+    const state = simulate(seed, GAME_CONTENT, {
+      onYear: (s) => void (pico = Math.max(pico, s.character.unhappyYears)),
+    })
     state.character.unhappyYears = pico
     return state
   }

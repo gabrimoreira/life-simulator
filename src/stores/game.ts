@@ -19,8 +19,9 @@ import { interpolate } from '../engine/text'
 import { advanceYear, chooseOption, currentEvent, runAction, runRelationAction } from '../engine/turn'
 import type { EventOption, GameState, Gender, TimelineEntry } from '../engine/types'
 import { CURRENT_SAVE_VERSION } from '../save/adapter'
-import type { SaveAdapter } from '../save/adapter'
+import type { PersistedSave, SaveAdapter, SaveProblem } from '../save/adapter'
 import { createLocalStorageAdapter } from '../save/local-storage-adapter'
+import { migrate } from '../save/migrations'
 
 export interface ActionGroupView {
   key: ActionGroup
@@ -64,6 +65,16 @@ export const useGameStore = defineStore('game', () => {
    * resultado do dado ia parar numa tela que o jogador não estava olhando.
    */
   const lastResult = ref<TimelineEntry | null>(null)
+
+  /**
+   * O que deu errado com a persistência, se deu.
+   *
+   * Save corrompido era descartado em silêncio: o jogador perdia uma vida de
+   * setenta anos e via a tela de novo jogo, sem nenhuma explicação e sem a
+   * chance de guardar o arquivo. Escrita falhando também era silenciosa — só
+   * se descobria ao recarregar a página.
+   */
+  const saveProblem = ref<SaveProblem | null>(null)
   const activeTab = ref<'life' | 'actions' | 'relations' | 'assets' | 'profile'>('life')
 
   const character = computed(() => state.value?.character ?? null)
@@ -96,20 +107,66 @@ export const useGameStore = defineStore('game', () => {
     })
   })
 
-  async function persist(): Promise<void> {
-    if (!state.value) return
-    await adapter.save({
+  function snapshot(): PersistedSave | null {
+    if (!state.value) return null
+    return {
       saveVersion: CURRENT_SAVE_VERSION,
       savedAt: Date.now(),
       state: JSON.parse(JSON.stringify(state.value)) as GameState,
-    })
+    }
+  }
+
+  async function persist(): Promise<void> {
+    const payload = snapshot()
+    if (!payload) return
+    const problem = await adapter.save(payload)
+    // Uma escrita que volta a funcionar limpa o aviso; uma que falha o mantém.
+    if (problem !== null || saveProblem.value?.kind === 'unwritable') {
+      saveProblem.value = problem
+    }
   }
 
   async function init(): Promise<void> {
-    const saved = await adapter.load()
-    state.value = saved?.state ?? null
+    const { save, problem } = await adapter.load()
+    state.value = save?.state ?? null
+    saveProblem.value = problem
     ready.value = true
   }
+
+  function dismissSaveProblem(): void {
+    saveProblem.value = null
+  }
+
+  /** O save atual como texto, para o jogador guardar onde quiser. */
+  function exportSave(): string | null {
+    const payload = snapshot()
+    return payload === null ? null : JSON.stringify(payload, null, 2)
+  }
+
+  /**
+   * Carrega um save de fora. Passa pela MESMA migração e checagem de forma do
+   * save do navegador — arquivo de terceiro não é mais confiável que
+   * localStorage corrompido.
+   */
+  async function importSave(text: string): Promise<boolean> {
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      return false
+    }
+
+    const migrado = migrate(parsed)
+    if (migrado === null) return false
+
+    state.value = migrado.state
+    lastResult.value = null
+    activeTab.value = 'life'
+    saveProblem.value = null
+    await persist()
+    return true
+  }
+
 
   async function newGame(name: string, gender: Gender, seed?: number): Promise<void> {
     // A seed sempre existiu em `GameState` e nunca foi exibida nem aceita: o
@@ -297,6 +354,10 @@ export const useGameStore = defineStore('game', () => {
     currentSalary,
     studying,
     act,
+    saveProblem,
+    dismissSaveProblem,
+    exportSave,
+    importSave,
     init,
     newGame,
     nextYear,

@@ -6,6 +6,7 @@ import { EDUCATION_LABELS, SOCIAL_CLASS_LABELS, STAT_LABELS } from '../../engine
 import { FAME_VISIBILITY_THRESHOLD, VISIBLE_STAT_KEYS } from '../../engine/types'
 import type { Character } from '../../engine/types'
 import { useGameStore } from '../../stores/game'
+import SaveSection from './SaveSection.vue'
 import StatBar from '../StatBar.vue'
 
 const props = defineProps<{ character: Character }>()
@@ -147,5 +148,7 @@ const marks = computed(() =>
       </ul>
       <p v-else class="mt-2 text-sm text-muted">Nada de notável até agora.</p>
     </section>
+  
+    <SaveSection />
   </div>
 </template>

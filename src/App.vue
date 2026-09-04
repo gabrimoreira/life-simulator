@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import InstallPrompt from './components/InstallPrompt.vue'
+import SaveWarning from './components/SaveWarning.vue'
 import { useGameStore } from './stores/game'
 import DeathView from './views/DeathView.vue'
 import GameView from './views/GameView.vue'
@@ -15,6 +16,10 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto flex h-dvh max-w-[480px] flex-col border-rule sm:border-x">
+    <!-- Acima de tudo: o aviso vale em qualquer tela, inclusive na de novo
+         jogo, que é exatamente onde cai quem acabou de perder um save. -->
+    <SaveWarning />
+
     <template v-if="store.ready">
       <NewGameView
         v-if="!store.state"

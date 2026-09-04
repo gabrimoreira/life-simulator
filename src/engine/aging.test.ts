@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { applyAging, checkDeath, healthBaseline, mortalityChance } from './aging'
 import {
   CHRONIC_HEALTH_PENALTY,
+  FRIEND_ANNUAL_DECAY,
   HAPPINESS_MEAN,
   HEALTH_PEAK_AGE,
   MAX_AGE,
@@ -156,14 +157,29 @@ describe('applyAging', () => {
   it('relacao com quem esta vivo decai, com quem morreu nao', () => {
     const state = makeState({ character: makeCharacter({ age: 40 }) })
     const content = makeContent()
-    const alive = createPerson('friend', state, createRng(2), content, { relation: 80 })
-    const dead = createPerson('friend', state, createRng(3), content, { relation: 80 })
+    const alive = createPerson('mother', state, createRng(2), content, { relation: 80 })
+    const dead = createPerson('mother', state, createRng(3), content, { relation: 80 })
     dead.alive = false
     state.relations.push(alive, dead)
 
     applyAging(state, createRng(1))
     expect(alive.relation).toBe(80 - RELATION_ANNUAL_DECAY)
     expect(dead.relation).toBe(80)
+  })
+
+  it('amizade esfria mais rapido que familia', () => {
+    // Parente distante continua parente; amigo que voce nao ve vira conhecido
+    // e depois vira ninguem. Sem esta diferenca uma vida acumulava 25 amigos.
+    const state = makeState({ character: makeCharacter({ age: 40 }) })
+    const content = makeContent()
+    const irma = createPerson('sibling', state, createRng(2), content, { relation: 80 })
+    const amigo = createPerson('friend', state, createRng(3), content, { relation: 80 })
+    state.relations.push(irma, amigo)
+
+    applyAging(state, createRng(1))
+    expect(irma.relation).toBe(80 - RELATION_ANNUAL_DECAY)
+    expect(amigo.relation).toBe(80 - FRIEND_ANNUAL_DECAY)
+    expect(FRIEND_ANNUAL_DECAY).toBeGreaterThan(RELATION_ANNUAL_DECAY)
   })
 
   it('a relacao nunca fica negativa', () => {

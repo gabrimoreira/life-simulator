@@ -78,6 +78,25 @@ export function applyRelationYear(state: GameState, rng: Rng): TimelineEntry[] {
     )
   }
 
+  // Amizade zerada deixa de ser amizade. Sai da lista DEPOIS do laço de morte
+  // para não competir com ele, e com nota: perder alguém por abandono é uma
+  // consequência da sua escolha de onde gastar os pontos de ação, e sumir em
+  // silêncio esconderia justamente isso.
+  const afastados = state.relations.filter(
+    (person) => person.alive && person.kind === 'friend' && person.relation <= 0,
+  )
+  for (const person of afastados) {
+    notes.push(
+      makeNote(state, `Você e ${person.name.split(' ')[0]} pararam de se falar.`, 'relationship', [
+        { label: 'Amizade', text: 'acabou', tone: 'bad' },
+      ]),
+    )
+  }
+  if (afastados.length > 0) {
+    const perdidos = new Set(afastados.map((person) => person.id))
+    state.relations = state.relations.filter((person) => !perdidos.has(person.id))
+  }
+
   return notes
 }
 

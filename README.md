@@ -179,6 +179,26 @@ Estudante paga uma fração disso.
 A dívida tem teto. Passado o teto o gasto simplesmente não acontece — a pessoa
 corta o próprio padrão de vida até caber, porque ninguém empresta para sempre.
 
+## Amizade acaba
+
+Amigo esfria mais rápido que família e **sai da lista** quando a relação chega
+a zero. Parente distante continua parente; ninguém deixa de ser irmão por não
+se falar. Amigo, sim.
+
+Sem isso uma vida acumulava **vinte e cinco amigos aos 60**, onze deles ainda
+acima de 40 de relação: dezesseis lugares do conteúdo criam amigos, nada os
+removia, e o decaimento de 2 ao ano levava mais de vinte anos para zerar um.
+
+O número não era o problema — o efeito colateral era. Com vinte amigos,
+"rede de contatos" não mede nada, e foi por isso que a primeira tentativa de
+fazer a política cobrar rede não prendeu nada. Hoje são ~10 amigos vivos, com
+p50 de 1 acima de 60 e p90 de 3, e cultivar amizade quase dobra a chance de
+chegar ao senado (22 para 35 em 100 vidas).
+
+Perder um amigo por abandono aparece na timeline. É consequência de onde você
+gastou os pontos de ação, que é a decisão que os pontos existem para forçar —
+sumir em silêncio esconderia justamente isso.
+
 ## Casamento
 
 Por cinco fases casar mudava uma flag e nada mais. A decisão mais consequente
@@ -233,6 +253,24 @@ maior sequência é de 13 anos, o pico médio é 3,1, e os cinco eventos dispara
 acontece depois, sobre o resultado — o contrário obrigaria a manter o tipo de
 cada versão antiga do `GameState` vivo no código para sempre.
 
+O adapter **diz por que falhou**, e essa é a diferença que importa:
+
+| situação | antes | agora |
+|---|---|---|
+| nunca houve save | `null` | `save: null, problem: null` |
+| save corrompido | `null` | `problem: corrupted` **com o texto cru** |
+| armazenamento bloqueado | `null` | `problem: unreadable` |
+| gravação falhou | silêncio | `problem: unwritable` |
+
+As três falhas eram engolidas e devolviam a mesma coisa: o jogador perdia uma
+vida de setenta anos, caía na tela de novo jogo e nunca sabia por quê. O texto
+cru acompanha o save corrompido porque perder a vida sem nem a chance de
+guardar o arquivo é pior que o bug que a corrompeu.
+
+Importar passa pela MESMA migração e checagem de forma: arquivo de terceiro
+não é mais confiável que localStorage corrompido, e um arquivo recusado não
+destrói a vida em curso.
+
 ## Prisão
 
 Não há máquina de estados para a cadeia. Toda ação e todo evento já passam por
@@ -277,6 +315,44 @@ Flags lidas pelo próprio engine (e não por uma `Condition`) ficam declaradas e
 Não por intuição: por simulação. Perfis de jogador scriptados — aleatório,
 família, carreira, otimizado, crime, academia, pobre — cem vidas cada, olhando
 mediana, p90, mortes no vermelho e herdeiros.
+
+### Dois jogadores, não um
+
+`src/test/player.ts` tem duas políticas de escolha, e a distância entre elas é
+a informação:
+
+- **`first`** sempre pega a primeira opção disponível. Nos eventos destrutivos
+  essa é justamente a pior, então ele é um **piso**: o que ele alcança, todo
+  mundo alcança.
+- **`sensible`** pontua cada opção pelo efeito esperado e pega a melhor. Não é
+  esperto — não planeja, não guarda dinheiro, não vê sinergia entre curso e
+  trilha. Só não se sabota.
+
+Por cinco fases só existiu o primeiro, e por isso cada número vinha com a
+ressalva de que o jogador escolhia sempre a pior opção. Um piso sozinho não
+diz se o jogo é difícil ou se o jogador é ruim.
+
+Medido em 100 vidas por combinação:
+
+| plano    | política | p50 patrimônio | negativos | herdeiro | morte p50 |
+|----------|----------|---------------:|----------:|---------:|----------:|
+| carreira | first    | 2,07M | 11 |  9 | 72 |
+| carreira | sensible | 3,19M |  2 | 11 | 72 |
+| medicina | first    | 3,85M | 12 |  7 | 70 |
+| medicina | sensible | 6,28M |  1 |  5 | 70 |
+| família  | first    | 1,92M |  5 | 52 | 72 |
+| família  | sensible | 2,62M |  3 | 61 | 75 |
+
+Duas leituras que só aparecem com os dois lados:
+
+**Morrer no vermelho é quase inteiramente escolha**, não economia dura — 11 em
+100 caem para 2. É a forma certa: um jogo que empobrece quem joga bem estaria
+punindo por existir.
+
+**A idade de morte quase não muda.** Longevidade é estrutural — sai da curva de
+Gompertz e do teto de saúde da idade, não do que se clica. Um teste guarda
+isso: se a diferença crescer, alguma escolha virou um botão de viver mais, e
+isso precisa ser deliberado.
 
 Foi assim que apareceram os problemas que a leitura do código não mostrava: o
 efeito de promoção furando a tabela de requisitos, o crime sendo a trilha mais
