@@ -67,6 +67,38 @@ export const HAPPINESS_MEAN = 50
  */
 export const HAPPINESS_CRISIS_THRESHOLD = 30
 
+/**
+ * Casamento com consequencia continua.
+ *
+ * Ate a Fase 6 casar mudava uma flag e nada mais: nao havia renda conjunta nem
+ * custo de divorcio, entao a decisao mais consequente de uma vida nao aparecia
+ * em lugar nenhum na economia.
+ *
+ * O conjuge contribui uma fracao da renda, escalada pela relacao — casamento
+ * ruim rende menos, e nao por moralismo: gente que nao se fala nao divide
+ * conta direito. Em troca a casa custa mais, mas so um pouco: duas pessoas
+ * dividindo teto nao pagam 35% mais aluguel, e a primeira versao disto
+ * multiplicava o PISO do custo de vida por 1,35, o que fazia casar piorar o
+ * saldo em todas as cinco classes sociais.
+ *
+ * O custo de vida tambem e calculado sobre a renda PROPRIA, nao sobre a da
+ * casa: o padrao de vida de alguem e ditado pela posicao dele, e a renda do
+ * conjuge entra como folga. Sem isso o teto de padrao herdado absorvia a
+ * contribuicao inteira e casar nao mudava nada.
+ */
+export const SPOUSE_INCOME_SHARE = 0.45
+export const SPOUSE_COST_FACTOR = 1.15
+
+/**
+ * Fracao do patrimonio que vai embora no divorcio.
+ *
+ * Metade seria o numero legal e o errado para um jogo: o custo real de um
+ * divorcio inclui advogado, mudanca e a venda apressada do que nao dava para
+ * dividir. Quem tem filho paga mais, e por muito tempo.
+ */
+export const DIVORCE_ASSET_SHARE = 0.5
+export const DIVORCE_EXTRA_COST_WITH_CHILD = 0.12
+
 /** Aparencia cai devagar depois desta idade. */
 export const LOOKS_DECAY_START_AGE = 35
 export const LOOKS_DECAY_FACTOR = 0.045

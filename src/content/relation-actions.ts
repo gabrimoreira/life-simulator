@@ -250,7 +250,7 @@ export const RELATION_ACTIONS: RelationAction[] = [
     hint: 'Acaba com o relacionamento. Sem volta.',
     cost: 0,
     confirm: 'Terminar não tem volta: a pessoa deixa de ser família. Tem certeza?',
-    kinds: ['partner', 'spouse'],
+    kinds: ['partner'],
     outcomes: [
       {
         chance: 1,
@@ -258,7 +258,30 @@ export const RELATION_ACTIONS: RelationAction[] = [
         effects: [
           { type: 'removeRelation', target: { by: 'target' } },
           { type: 'stat', stat: 'happiness', op: 'delta', value: -14 },
-          { type: 'flag', flag: 'married', value: false },
+        ],
+      },
+    ],
+  },
+
+  // Separado de `end_it` porque não é a mesma coisa: namoro acaba, casamento
+  // se desfaz — e desfazer custa metade do patrimônio, ou mais com filho. O
+  // efeito `divorce` é regra, não conteúdo: dividir bens envolve vender o que
+  // não se divide, e isso não cabe num `money`.
+  {
+    id: 'divorce',
+    label: 'Pedir o divórcio',
+    hint: 'Metade do patrimônio vai embora. Mais, se houver filho.',
+    cost: 0,
+    confirm:
+      'O divórcio parte o patrimônio ao meio, vende os bens que não dá para dividir, e custa mais se houver filho. Tem certeza?',
+    kinds: ['spouse'],
+    outcomes: [
+      {
+        chance: 1,
+        text: 'os advogados resolveram o resto.',
+        effects: [
+          { type: 'divorce' },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: -20 },
         ],
       },
     ],

@@ -318,6 +318,14 @@ export type Effect =
   | { type: 'relationKind'; target: RelationRef; kind: RelationKind }
   | { type: 'jail'; years: number; reason: string }
   | { type: 'release' }
+  /**
+   * Divorcio: parte o patrimonio e limpa o estado civil.
+   *
+   * E regra, nao conteudo — dividir bens envolve vender o que nao se divide, e
+   * o conteudo nao tem como expressar isso com `money`. Ate a Fase 6 terminar
+   * um casamento so removia a pessoa e mexia numa flag.
+   */
+  | { type: 'divorce' }
   | { type: 'death'; cause: string }
 
 export interface Outcome {

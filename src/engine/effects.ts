@@ -5,6 +5,7 @@ import { DEBT_CEILING, STAT_MAX, STAT_MIN } from './balance'
 import { assetName, buyAsset, findAsset, sellAsset } from './assets'
 import { clampPerformance, hireInto, leaveCareer, recordCareerBest } from './careers'
 import { evaluateAll } from './conditions'
+import { divorce } from './divorce'
 import { courseName, dropOut, enroll, studyYear } from './education'
 import type { ContentPack } from './content-pack'
 import { EDUCATION_LABELS, STAT_LABELS, relationLabel } from './labels'
@@ -279,6 +280,13 @@ export function applyEffect(
         text: `${wasInside ? '+' : ''}${effect.years} anos`,
         tone: 'bad',
       }
+    }
+
+    case 'divorce': {
+      // A nota rica e escrita por `divorce()`; aqui so o resumo.
+      return divorce(state) !== null
+        ? { label: 'Divórcio', text: 'patrimônio partido', tone: 'bad' }
+        : null
     }
 
     case 'release': {

@@ -157,6 +157,34 @@ Estudante paga uma fração disso.
 A dívida tem teto. Passado o teto o gasto simplesmente não acontece — a pessoa
 corta o próprio padrão de vida até caber, porque ninguém empresta para sempre.
 
+## Casamento
+
+Por cinco fases casar mudava uma flag e nada mais. A decisão mais consequente
+de uma vida não aparecia em lugar nenhum na economia.
+
+O cônjuge contribui uma fração da renda, escalada pela relação — casamento ruim
+rende menos, e não por moralismo: gente que não se fala não divide conta
+direito. A casa custa um pouco mais em troca. O resultado é a tensão que o
+sistema existe para criar: **casamento bom melhora o ano em todas as cinco
+classes sociais, casamento ruim piora**. Cuidar da relação virou decisão
+econômica, não só sentimental.
+
+Duas armadilhas apareceram montando isso, e as duas estão medidas em teste:
+
+O fator de custo multiplicava o **piso** do custo de vida. Duas pessoas
+dividindo teto não pagam 35% mais aluguel, e o resultado era casar piorar o
+saldo nas cinco classes.
+
+O custo de vida é calculado sobre a renda **própria**, não a da casa. O teto de
+padrão de vida herdado sobe junto com a renda, então somar o cônjuge à base do
+cálculo fazia a contribuição inteira virar despesa e casar não mudar nada.
+
+Divórcio é regra, não conteúdo: dividir bens envolve vender o que não se
+divide, e isso não cabe num efeito `money`. Vende tudo com deságio, parte o
+caixa ao meio, e cobra 12 pontos a mais de quem tem filho. O ex-cônjuge vira
+amigo em vez de sumir — gente com quem se viveu vinte anos não desaparece do
+mundo, e a relação guarda o estrago.
+
 ## Crise de felicidade
 
 O spec pede eventos de crise "se a felicidade zerar por vários turnos", e por
