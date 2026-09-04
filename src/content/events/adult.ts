@@ -328,10 +328,15 @@ export const ADULT_EVENTS: GameEvent[] = [
     id: 'adult_have_child',
     category: 'relationship',
     weight: 12,
+    // O cooldown e a leitura de `chose_no_children` existem porque este evento
+    // voltava TODO ANO ate os 44, inclusive para quem ja tinha respondido que
+    // nao queria — e "adiar mais um pouco" custa 8 de relacao a cada vez.
+    cooldown: 3,
     conditions: [
       { type: 'age', min: 27, max: 44 },
       { type: 'hasRelation', kind: 'spouse' },
       { type: 'flag', flag: 'has_child', value: false },
+      { type: 'flag', flag: 'chose_no_children', value: false },
     ],
     text: 'A conversa sobre ter filho parou de ser hipotética.',
     options: [

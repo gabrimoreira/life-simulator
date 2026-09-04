@@ -10,6 +10,7 @@ import { firstFailure } from './conditions'
 import type { ContentPack } from './content-pack'
 import { applyEffects, setStat } from './effects'
 import { pickOutcome } from './events'
+import { mentionsPrison } from './prison'
 import { relationLabel } from './labels'
 import type { Rng } from './rng'
 import { makeNote } from './timeline'
@@ -137,8 +138,14 @@ function remainingCooldown(
 }
 
 function applicable(state: GameState, content: ContentPack, person: Person): RelationAction[] {
+  // Mesma regra dos eventos e das acoes: preso, so aparece o que declara
+  // `inPrison`. Sem isto dava para pedir alguem em casamento e ter um filho de
+  // dentro da cadeia — o sub-loop cobria dois dos tres caminhos, nao os tres.
+  const locked = state.character.prison !== null
+
   return content.relationActions.filter((action) => {
     if (!action.kinds.includes(person.kind)) return false
+    if (locked !== mentionsPrison(action.conditions ?? [])) return false
     if (action.conditions && firstFailure(action.conditions, state) !== null) return false
     return true
   })

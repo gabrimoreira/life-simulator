@@ -20,7 +20,6 @@ import type {
   CareerTrack,
   Course,
   GameAction,
-  GameEvent,
   RelationAction,
 } from './types'
 import { makeContent, makeEvent } from '../test/fixtures'
@@ -338,7 +337,7 @@ describe('orphanFlags', () => {
         {
           id: 'a',
           name: 'Iate',
-          kind: 'luxury',
+          kind: 'property',
           hint: 'Caro.',
           price: 1_000_000,
           upkeepRate: 0.1,

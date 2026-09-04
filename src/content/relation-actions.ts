@@ -9,6 +9,62 @@ const FAMILIA = ['mother', 'father', 'sibling', 'child'] as const
 const TODOS = ['mother', 'father', 'sibling', 'child', 'friend', 'partner', 'spouse'] as const
 
 export const RELATION_ACTIONS: RelationAction[] = [
+  // --- Cadeia --------------------------------------------------------------
+  // Preso, o jogador só enxerga o que declara `inPrison`. Sem estas duas, a
+  // pena seria isolamento total: nem falar com a mãe. A visita é o único
+  // laço que sobrevive, e ela custa caro a quem vem.
+  {
+    id: 'visit_prison',
+    label: 'Receber visita',
+    hint: 'Fila, revista, quarenta minutos. Vale por meses.',
+    cost: 1,
+    kinds: [...FAMILIA, 'spouse', 'partner'],
+    conditions: [{ type: 'inPrison', value: true }],
+    cooldown: 2,
+    outcomes: [
+      {
+        chance: 0.7,
+        text: 'a visita veio, e por quarenta minutos a cadeia ficou do lado de fora.',
+        effects: [
+          { type: 'relation', target: { by: 'target' }, delta: 14 },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: 8 },
+        ],
+      },
+      {
+        chance: 0.3,
+        text: 'a visita veio, viu onde você está, e foi embora mais calada do que chegou.',
+        effects: [
+          { type: 'relation', target: { by: 'target' }, delta: 5 },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: -3 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'write_from_prison',
+    label: 'Escrever uma carta',
+    hint: 'Tempo é o que não falta aqui dentro.',
+    cost: 1,
+    kinds: [...TODOS],
+    conditions: [{ type: 'inPrison', value: true }],
+    outcomes: [
+      {
+        chance: 0.6,
+        text: 'a resposta chegou três semanas depois, e você leu quatro vezes.',
+        effects: [
+          { type: 'relation', target: { by: 'target' }, delta: 9 },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: 4 },
+        ],
+      },
+      {
+        chance: 0.4,
+        text: 'a carta foi. A resposta não veio.',
+        effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: -4 }],
+      },
+    ],
+  },
+
   {
     id: 'talk',
     label: 'Conversar',

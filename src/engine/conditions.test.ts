@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { makeCharacter, makeState } from '../test/fixtures'
 import { describe as describeCondition, evaluate, evaluateAll, firstFailure } from './conditions'
-import type { Condition } from './types'
+import type { Condition, GameState } from './types'
 
 describe('evaluate', () => {
   it('age respeita min, max e intervalo', () => {
@@ -110,5 +110,39 @@ describe('describe', () => {
     expect(describeCondition({ type: 'age', min: 18, max: 25 })).toBe(
       'Requer idade entre 18 anos e 25 anos',
     )
+  })
+})
+
+describe('relationLevel com mais de uma pessoa do mesmo tipo', () => {
+  function comDoisFilhos(primeiro: number, segundo: number): GameState {
+    const state = makeState({ character: makeCharacter({ age: 50 }) })
+    state.relations.push(
+      { id: 'c1', name: 'Rui Silva', kind: 'child', gender: 'male', age: 20, relation: primeiro, alive: true },
+      { id: 'c2', name: 'Ana Silva', kind: 'child', gender: 'female', age: 17, relation: segundo, alive: true },
+    )
+    return state
+  }
+
+  it('basta um filho proximo, mesmo que nao seja o primeiro', () => {
+    // Com `.find()` isto reprovava: a resposta vinha do primogenito frio, e a
+    // conquista `devoted` ficava inalcancavel para quem tivesse dois filhos.
+    const state = comDoisFilhos(10, 96)
+    expect(evaluate({ type: 'relationLevel', kind: 'child', min: 95 }, state)).toBe(true)
+  })
+
+  it('continua valendo quando o proximo e o primeiro', () => {
+    const state = comDoisFilhos(96, 10)
+    expect(evaluate({ type: 'relationLevel', kind: 'child', min: 95 }, state)).toBe(true)
+  })
+
+  it('reprova quando nenhum dos dois chega la', () => {
+    const state = comDoisFilhos(40, 50)
+    expect(evaluate({ type: 'relationLevel', kind: 'child', min: 95 }, state)).toBe(false)
+  })
+
+  it('ignora quem morreu', () => {
+    const state = comDoisFilhos(10, 96)
+    state.relations[1]!.alive = false
+    expect(evaluate({ type: 'relationLevel', kind: 'child', min: 95 }, state)).toBe(false)
   })
 })

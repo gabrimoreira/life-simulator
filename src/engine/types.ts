@@ -48,6 +48,16 @@ export const EDUCATION_ORDER: readonly EducationLevel[] = [
   'postgrad',
 ]
 
+/** Posicao na escada de escolaridade. Mora aqui porque a ordem mora aqui. */
+export function educationRank(level: EducationLevel): number {
+  return EDUCATION_ORDER.indexOf(level)
+}
+
+/** O maior entre dois niveis. Escolaridade sobe; nunca desce. */
+export function highestEducation(a: EducationLevel, b: EducationLevel): EducationLevel {
+  return educationRank(a) >= educationRank(b) ? a : b
+}
+
 export type SocialClass = 'poor' | 'lowerMiddle' | 'middle' | 'upperMiddle' | 'rich'
 
 export type Gender = 'male' | 'female'

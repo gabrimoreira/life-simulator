@@ -2,13 +2,9 @@
 
 import { EDUCATION_LABELS, STAT_LABELS } from './labels'
 import { formatMoney } from './text'
-import { assertNever, EDUCATION_ORDER } from './types'
-import type { Condition, EducationLevel, GameState } from './types'
+import { assertNever, educationRank } from './types'
+import type { Condition, GameState } from './types'
 
-
-function educationRank(level: EducationLevel): number {
-  return EDUCATION_ORDER.indexOf(level)
-}
 
 function inRange(value: number, min: number | undefined, max: number | undefined): boolean {
   if (min !== undefined && value < min) return false
@@ -80,8 +76,12 @@ export function evaluate(condition: Condition, state: GameState): boolean {
     }
 
     case 'relationLevel': {
-      const person = state.relations.find((r) => r.kind === condition.kind && r.alive)
-      return person !== undefined && inRange(person.relation, condition.min, condition.max)
+      // Qualquer pessoa daquele tipo serve. Com `.find()` a resposta vinha
+      // sempre do PRIMEIRO do array: quem tinha dois filhos e cuidava do
+      // caçula continuava reprovado porque o primogênito estava frio.
+      return state.relations.some(
+        (r) => r.kind === condition.kind && r.alive && inRange(r.relation, condition.min, condition.max),
+      )
     }
 
     case 'relationCount': {

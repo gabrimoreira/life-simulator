@@ -106,7 +106,10 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Chegou ao topo da academia.',
     conditions: [
       { type: 'careerKind', kind: 'academia' },
-      { type: 'careerLevel', min: 3 },
+      // A trilha tem 5 níveis (0-4). Pedia 3, que é "Professor titular", e
+      // dizia "topo" — era a única conquista de topo fora do padrão das
+      // outras, que todas apontam para o último índice.
+      { type: 'careerLevel', min: 4 },
     ],
   },
   {

@@ -89,8 +89,8 @@ function drift(value: number, price: number): number {
         Fluxo anual
       </h2>
       <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm tabular-nums">
-        <dt class="text-muted">{{ store.jobTitle ? 'Salário base' : 'Renda informal' }}</dt>
-        <dd class="text-right">{{ formatMoney(store.currentSalary) }}</dd>
+        <dt class="text-muted">{{ store.income.label }}</dt>
+        <dd class="text-right">{{ formatMoney(store.income.value) }}</dd>
         <dt class="text-muted">Custo de vida mínimo</dt>
         <dd class="text-right">{{ formatMoney(livingFloor) }}</dd>
       </dl>

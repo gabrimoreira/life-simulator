@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import InstallPrompt from './components/InstallPrompt.vue'
 import { useGameStore } from './stores/game'
 import DeathView from './views/DeathView.vue'
 import GameView from './views/GameView.vue'
@@ -24,5 +25,9 @@ onMounted(() => {
       />
       <GameView v-else :state="store.state" />
     </template>
+
+    <!-- Fora do v-if de tela: o convite vale em qualquer uma delas, e antes
+         de tudo na primeira, que é onde está quem ainda não instalou. -->
+    <InstallPrompt />
   </div>
 </template>

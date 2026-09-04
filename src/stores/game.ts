@@ -121,14 +121,29 @@ export const useGameStore = defineStore('game', () => {
 
   const jobTitle = computed(() => (state.value ? careerTitle(state.value, GAME_CONTENT) : null))
 
-  /** Salário base do cargo atual, ou a renda informal de quem não tem cargo. */
-  const currentSalary = computed(() => {
+  /**
+   * De onde vem o dinheiro do ano, com o mesmo critério da economia.
+   *
+   * Mostrava só `baseIncome` sob o rótulo "Renda informal", inclusive para
+   * quem tinha se aposentado: a economia pagava `max(pension, baseIncome)`
+   * (economy.ts) e a tela exibia outro número, sem nunca dizer a palavra
+   * pensão. Aposentar-se tinha consequência financeira invisível.
+   */
+  const income = computed<{ label: string; value: number }>(() => {
     const current = state.value
-    if (!current) return 0
+    if (!current) return { label: 'Renda', value: 0 }
+
     const level = currentLevel(current, GAME_CONTENT)
-    if (level) return level.salary
-    return CLASS_PROFILES[current.character.socialClass].baseIncome
+    if (level) return { label: 'Salário base', value: level.salary }
+
+    const informal = CLASS_PROFILES[current.character.socialClass].baseIncome
+    const pension = current.character.pension
+    return pension > informal
+      ? { label: 'Pensão', value: pension }
+      : { label: 'Renda informal', value: informal }
   })
+
+  const currentSalary = computed(() => income.value.value)
 
   const studying = computed(() => {
     const enrollment = state.value?.character.enrollment
@@ -208,6 +223,7 @@ export const useGameStore = defineStore('game', () => {
     actOnPerson,
     continueAsHeir,
     jobTitle,
+    income,
     currentSalary,
     studying,
     act,

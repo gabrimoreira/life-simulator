@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { FLAG_LABELS } from '../../content/flags'
+import { formatMoney } from '../../engine/text'
 import { EDUCATION_LABELS, SOCIAL_CLASS_LABELS, STAT_LABELS } from '../../engine/labels'
 import { FAME_VISIBILITY_THRESHOLD, VISIBLE_STAT_KEYS } from '../../engine/types'
 import type { Character } from '../../engine/types'
@@ -64,6 +65,15 @@ const marks = computed(() =>
           {{ character.career?.yearsInLevel ?? 0 }}
           {{ (character.career?.yearsInLevel ?? 0) === 1 ? 'ano' : 'anos' }}
         </dd>
+      </dl>
+      <dl
+        v-else-if="character.pension > 0"
+        class="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm"
+      >
+        <dt class="text-muted">Situação</dt>
+        <dd class="text-right">Aposentado</dd>
+        <dt class="text-muted">Pensão anual</dt>
+        <dd class="text-right tabular-nums">{{ formatMoney(character.pension) }}</dd>
       </dl>
       <p v-else class="mt-2 text-sm text-muted">Sem trabalho no momento.</p>
     </section>
