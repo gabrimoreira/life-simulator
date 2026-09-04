@@ -136,7 +136,7 @@ corta o próprio padrão de vida até caber, porque ninguém empresta para sempr
 
 ## Save
 
-`saveVersion` 2. As migrações rodam sobre o JSON cru e a checagem de forma
+`saveVersion` 5. As migrações rodam sobre o JSON cru e a checagem de forma
 acontece depois, sobre o resultado — o contrário obrigaria a manter o tipo de
 cada versão antiga do `GameState` vivo no código para sempre.
 

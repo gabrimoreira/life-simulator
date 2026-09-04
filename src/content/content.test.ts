@@ -139,6 +139,7 @@ describe('saúde do conteúdo', () => {
   it('nenhuma flag é escrita sem que alguém a leia', () => {
     // Onze das dezesseis flags eram write-only quando isto foi medido: o
     // Perfil exibia "Ficha suja" e nada no jogo se comportava diferente.
+    // Hoje são dezoito flags e nenhuma órfã.
     expect(orphanFlags(GAME_CONTENT)).toEqual([])
   })
 })

@@ -395,8 +395,9 @@ export const GAME_ACTIONS: GameAction[] = [
   },
 
   // --- Crime ---------------------------------------------------------------
-  // A TRILHA de crime é Fase 4. Estas duas existem para o grupo não ser um
-  // cartaz de "em breve" — dá para roubar, dá para se dar mal.
+  // A trilha de crime existe desde a Fase 4. Estas duas continuam porque são o
+  // crime de quem NÃO fez carreira nele: sem requisito, sem escada, sem
+  // reincidência que valha a pena. Quem leva a sério entra na trilha.
   {
     id: 'petty_theft',
     group: 'crime',

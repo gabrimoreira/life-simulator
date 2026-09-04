@@ -152,7 +152,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
  * Juros anuais sobre divida nao paga. A 12% compostos por 50 anos um
  * financiamento estudantil de 90 mil vira 26 milhoes — numero grande demais
  * para significar qualquer coisa. O teto existe porque, na vida real, divida
- * dessa idade e renegociada ou prescreve; modelar isso direito e Fase 2.
+ * dessa idade e renegociada ou prescreve. Modelar renegociacao de verdade
+ * continua fora de escopo: o teto e a aproximacao assumida.
  */
 export const DEBT_INTEREST_RATE = 0.06
 export const DEBT_CEILING = 400_000

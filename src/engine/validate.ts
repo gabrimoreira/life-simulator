@@ -353,7 +353,8 @@ function walkOutcomes(outcomes: Outcome[], written: Set<string>): void {
  *
  * Uma flag write-only e uma promessa quebrada: o Perfil mostra "Ficha suja" e
  * nada no jogo se comporta diferente por causa disso. Foram onze de dezesseis
- * quando isto foi medido pela primeira vez.
+ * quando isto foi medido pela primeira vez; hoje sao dezoito flags e nenhuma
+ * orfa, e este detector e a unica razao de continuar assim.
  */
 export function orphanFlags(content: ContentPack): string[] {
   const written = new Set<string>()
