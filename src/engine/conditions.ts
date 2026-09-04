@@ -91,7 +91,11 @@ export function evaluate(condition: Condition, state: GameState): boolean {
     }
 
     case 'relationCount': {
-      const count = state.relations.filter((r) => r.kind === condition.kind && r.alive).length
+      const floor = condition.minRelation
+      const count = state.relations.filter(
+        (r) =>
+          r.kind === condition.kind && r.alive && (floor === undefined || r.relation >= floor),
+      ).length
       return inRange(count, condition.min, condition.max)
     }
 
@@ -197,7 +201,9 @@ export function describe(condition: Condition): string {
       return describeRange('relação', condition.min, condition.max, plain)
 
     case 'relationCount':
-      return describeRange('número de pessoas', condition.min, condition.max, plain)
+      return condition.minRelation !== undefined
+        ? describeRange('pessoas próximas', condition.min, condition.max, plain)
+        : describeRange('número de pessoas', condition.min, condition.max, plain)
 
     case 'not':
       return `Não pode: ${describe(condition.condition)}`

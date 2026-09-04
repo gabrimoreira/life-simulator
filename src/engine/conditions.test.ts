@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { GAME_CONTENT } from '../content'
 import { makeCharacter, makeState } from '../test/fixtures'
 import { describe as describeCondition, evaluate, evaluateAll, firstFailure } from './conditions'
 import type { Condition, GameState } from './types'
@@ -144,5 +145,64 @@ describe('relationLevel com mais de uma pessoa do mesmo tipo', () => {
     const state = comDoisFilhos(10, 96)
     state.relations[1]!.alive = false
     expect(evaluate({ type: 'relationLevel', kind: 'child', min: 95 }, state)).toBe(false)
+  })
+})
+
+describe('relationCount com limiar de proximidade', () => {
+  function comAmigos(...niveis: number[]): GameState {
+    const state = makeState({ character: makeCharacter({ age: 40 }) })
+    niveis.forEach((relation, i) => {
+      state.relations.push({
+        id: `f${i}`,
+        name: `Amigo ${i}`,
+        kind: 'friend',
+        gender: 'male',
+        age: 40,
+        relation,
+        alive: true,
+      })
+    })
+    return state
+  }
+
+  it('sem limiar, conta todo mundo vivo', () => {
+    const state = comAmigos(5, 10, 90)
+    expect(evaluate({ type: 'relationCount', kind: 'friend', min: 3 }, state)).toBe(true)
+  })
+
+  it('com limiar, conta so quem gosta de voce', () => {
+    // Sem isto o gate nao prendia nada: uma vida acumula ~20 amigos porque
+    // ninguem nunca sai da lista, e so ~5 passam de 60 de relacao.
+    const state = comAmigos(5, 10, 90)
+    expect(
+      evaluate({ type: 'relationCount', kind: 'friend', min: 3, minRelation: 60 }, state),
+    ).toBe(false)
+    expect(
+      evaluate({ type: 'relationCount', kind: 'friend', min: 1, minRelation: 60 }, state),
+    ).toBe(true)
+  })
+
+  it('ignora quem morreu, com ou sem limiar', () => {
+    const state = comAmigos(90, 90)
+    state.relations[0]!.alive = false
+    expect(
+      evaluate({ type: 'relationCount', kind: 'friend', min: 2, minRelation: 60 }, state),
+    ).toBe(false)
+  })
+})
+
+describe('a política cobra o que promete', () => {
+  it('todos os níveis acima da entrada exigem rede de contatos', () => {
+    // O `entryHint` prometia "reputação e rede de contatos" desde a Fase 4 e
+    // nenhum dos cinco níveis usava relationCount: o texto mentia.
+    const politica = GAME_CONTENT.careers.find((t) => t.id === 'politics')
+    expect(politica).toBeDefined()
+
+    const semRede = (politica?.levels ?? [])
+      .slice(1)
+      .filter((level) => !level.requirements.some((c) => c.type === 'relationCount'))
+      .map((level) => level.title)
+
+    expect(semRede).toEqual([])
   })
 })

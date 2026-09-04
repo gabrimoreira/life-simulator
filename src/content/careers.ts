@@ -299,6 +299,14 @@ export const CAREER_TRACKS: CareerTrack[] = [
         requirements: [
           { type: 'stat', stat: 'charisma', min: 55 },
           { type: 'stat', stat: 'reputation', min: 50 },
+          // O `entryHint` prometia "rede de contatos" desde a Fase 4 e nenhum
+          // dos cinco níveis usava relationCount ou relationLevel: o texto
+          // mentia para o jogador.
+          //
+          // Os números vêm da distribuição medida, não de palpite: uma vida
+          // acumula ~20 amigos, mas só ~5 passam de 60 de relação (p90: 7) e
+          // ~1 passa de 80 (p90: 2). Contar amigos crus não prendia nada.
+          { type: 'relationCount', kind: 'friend', min: 3, minRelation: 60 },
         ],
       },
       {
@@ -310,6 +318,7 @@ export const CAREER_TRACKS: CareerTrack[] = [
           { type: 'stat', stat: 'charisma', min: 65 },
           { type: 'stat', stat: 'reputation', min: 60 },
           { type: 'performance', min: 55 },
+          { type: 'relationCount', kind: 'friend', min: 5, minRelation: 60 },
         ],
       },
       {
@@ -321,6 +330,9 @@ export const CAREER_TRACKS: CareerTrack[] = [
           { type: 'stat', stat: 'charisma', min: 75 },
           { type: 'stat', stat: 'reputation', min: 70 },
           { type: 'performance', min: 65 },
+          { type: 'relationCount', kind: 'friend', min: 5, minRelation: 60 },
+          // Não basta ter gente em volta: alguém tem que te querer bem.
+          { type: 'relationCount', kind: 'friend', min: 1, minRelation: 80 },
         ],
       },
       {
@@ -332,6 +344,8 @@ export const CAREER_TRACKS: CareerTrack[] = [
           { type: 'stat', stat: 'charisma', min: 82 },
           { type: 'stat', stat: 'reputation', min: 78 },
           { type: 'performance', min: 75 },
+          { type: 'relationCount', kind: 'friend', min: 6, minRelation: 60 },
+          { type: 'relationCount', kind: 'friend', min: 2, minRelation: 75 },
         ],
       },
     ],

@@ -270,7 +270,21 @@ export type Condition =
   | { type: 'ownsAsset'; assetId?: string; kind?: AssetKind }
   | { type: 'netWorth'; min?: number; max?: number }
   | { type: 'relationLevel'; kind: RelationKind; min?: number; max?: number }
-  | { type: 'relationCount'; kind: RelationKind; min?: number; max?: number }
+  /**
+   * Quantas pessoas daquele tipo estao vivas.
+   *
+   * `minRelation` restringe a contagem a quem de fato gosta de voce, e existe
+   * porque sem ele a condicao nao prendia nada: uma vida acumula ~20 amigos
+   * (ninguem nunca sai da lista), e "rede de contatos" virava um gate que todo
+   * mundo passa sem fazer nada. Acima de 60 sao ~5; acima de 80, ~1.
+   */
+  | {
+      type: 'relationCount'
+      kind: RelationKind
+      min?: number
+      max?: number
+      minRelation?: number
+    }
   | { type: 'not'; condition: Condition }
   | { type: 'anyOf'; conditions: Condition[] }
 
