@@ -218,7 +218,7 @@ export const MIDLIFE_EVENTS: GameEvent[] = [
       { type: 'hasRelation', kind: 'spouse' },
       { type: 'relationLevel', kind: 'spouse', max: 50 },
     ],
-    text: 'Alguém no trabalho deixou claro que está interessado, e você não desconversou na hora.',
+    text: 'Alguém no trabalho deixou claro que está interessado, e faz meses que você e {conjuge} não conversam sobre nada.',
     options: [
       {
         text: 'Ir adiante',

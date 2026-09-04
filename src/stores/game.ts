@@ -364,6 +364,7 @@ export const useGameStore = defineStore('game', () => {
 
   async function actOnPerson(personId: string, actionId: string): Promise<void> {
     if (!state.value) return
+    lastResult.value = null
     if (!runRelationAction(state.value, GAME_CONTENT, personId, actionId)) return
     captureResult()
     await persist()
@@ -381,6 +382,10 @@ export const useGameStore = defineStore('game', () => {
 
   async function act(actionId: string): Promise<void> {
     if (!state.value) return
+    // Limpa ANTES de tentar: uma ação recusada (sem ponto de ação, cooldown,
+    // requisito) deixava o eco anterior na tela, e o jogador lia o resultado
+    // de outra coisa como se fosse a resposta ao que acabou de clicar.
+    lastResult.value = null
     if (!runAction(state.value, GAME_CONTENT, actionId)) return
     captureResult()
     await persist()

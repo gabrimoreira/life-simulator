@@ -27,11 +27,16 @@ const showAdvance = computed(
     <AppHeader :character="state.character" :action-points="state.actionPoints" />
 
     <main class="relative min-h-0 flex-1">
-      <TimelineFeed v-if="store.activeTab === 'life'" :entries="state.timeline" />
-      <ActionsTab v-else-if="store.activeTab === 'actions'" />
-      <RelationsTab v-else-if="store.activeTab === 'relations'" :relations="state.relations" />
-      <AssetsTab v-else-if="store.activeTab === 'assets'" :character="state.character" />
-      <ProfileTab v-else :character="state.character" />
+      <!-- A `TabBar` declarava `role="tablist"` e não existia painel nenhum do
+           outro lado: um leitor de tela anunciava cinco abas que não
+           controlavam nada. -->
+      <div id="tab-panel" class="h-full" role="tabpanel" :aria-labelledby="`tab-${store.activeTab}`">
+        <TimelineFeed v-if="store.activeTab === 'life'" :entries="state.timeline" />
+        <ActionsTab v-else-if="store.activeTab === 'actions'" />
+        <RelationsTab v-else-if="store.activeTab === 'relations'" :relations="state.relations" />
+        <AssetsTab v-else-if="store.activeTab === 'assets'" :character="state.character" />
+        <ProfileTab v-else :character="state.character" />
+      </div>
 
       <div v-if="showAdvance" class="pointer-events-none absolute inset-x-0 bottom-0 p-3">
         <button

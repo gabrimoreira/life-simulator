@@ -17,6 +17,8 @@ defineEmits<{ 'update:modelValue': [TabKey] }>()
       :key="tab.key"
       type="button"
       role="tab"
+      :id="`tab-${tab.key}`"
+      aria-controls="tab-panel"
       :aria-selected="modelValue === tab.key"
       class="flex min-h-[52px] flex-col items-center justify-center gap-0.5 border-t-2 px-1 text-[11px] transition-colors duration-100"
       :class="

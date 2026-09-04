@@ -338,7 +338,7 @@ export const ADULT_EVENTS: GameEvent[] = [
       { type: 'flag', flag: 'has_child', value: false },
       { type: 'flag', flag: 'chose_no_children', value: false },
     ],
-    text: 'A conversa sobre ter filho parou de ser hipotética.',
+    text: '{conjuge} quis conversar sobre ter filho, e desta vez não foi hipotético.',
     options: [
       {
         text: 'Ter um filho',

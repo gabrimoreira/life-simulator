@@ -150,15 +150,18 @@ const marks = computed(() =>
         </span>
       </h2>
       <!-- As trancadas aparecem porque saber que existem é o que faz caçar a
-           próxima; só o nome, para não entregar como se chega lá. -->
+           próxima; só o nome, para não entregar como se chega lá.
+           O código fazia o oposto do comentário: escondia o NOME e mostrava a
+           descrição, que é justamente a parte que entrega o caminho. -->
       <ul class="mt-2 space-y-2">
         <li v-for="item in store.allAchievements" :key="item.id">
           <span class="block text-sm" :class="item.earned ? '' : 'text-muted'">
-            {{ item.earned ? item.name : '· · ·' }}
+            {{ item.name }}
           </span>
-          <span class="block text-[11px] leading-snug text-muted">
+          <span v-if="item.earned" class="block text-[11px] leading-snug text-muted">
             {{ item.description }}
           </span>
+          <span v-else class="block text-[11px] leading-snug text-muted">· · ·</span>
         </li>
       </ul>
     </section>
