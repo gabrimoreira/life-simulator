@@ -33,8 +33,26 @@ export interface Plan {
   /** Prefixos de ação de relação, tentados em cada pessoa viva. */
   social?: string[]
   policy?: Policy
+  /**
+   * Quantas vezes tentar CADA ação por turno.
+   *
+   * O padrão é 1, que espalha os pontos de ação entre as ações do plano. Com
+   * 3, o plano concentra tudo na primeira que estiver disponível — é a
+   * diferença entre "faço um pouco de cada" e "vou fundo numa coisa só", e
+   * `economy.test.ts` mede justamente a segunda.
+   */
+  repeatActions?: number
   /** Teto de turnos, para um bug de conteúdo não virar laço infinito. */
   maxYears?: number
+  name?: string
+  /**
+   * Chamado a cada turno, depois das ações e antes de avançar o ano.
+   *
+   * Existe para medir o que só aparece DURANTE a vida — o pico de anos
+   * seguidos de infelicidade, o menor pool de eventos visto — e que o estado
+   * final não guarda.
+   */
+  onYear?: (state: GameState) => void
 }
 
 /**
@@ -130,9 +148,17 @@ function pickOption(state: GameState, options: EventOption[], policy: Policy): n
 
 /** Vive uma vida inteira, do nascimento à morte, e devolve o estado final. */
 export function simulate(seed: number, content: ContentPack, plan: Plan = {}): GameState {
-  const { actions = [], social = [], policy = 'first', maxYears = 150 } = plan
+  const {
+    actions = [],
+    social = [],
+    policy = 'first',
+    repeatActions = 1,
+    maxYears = 150,
+    name = 'T',
+    onYear,
+  } = plan
 
-  const state = createGame({ name: 'T', gender: 'male', seed, birthYear: 2000 }, content)
+  const state = createGame({ name, gender: 'male', seed, birthYear: 2000 }, content)
   const rng = createRng(seed)
   let guard = 0
 
@@ -145,10 +171,13 @@ export function simulate(seed: number, content: ContentPack, plan: Plan = {}): G
     if (!state.character.alive) break
 
     for (const want of actions) {
-      const action = availableActions(state, content).find(
-        (a) => a.enabled && a.label.startsWith(want),
-      )
-      if (action) performAction(state, content, rng, action.id)
+      for (let i = 0; i < repeatActions; i++) {
+        const action = availableActions(state, content).find(
+          (a) => a.enabled && a.label.startsWith(want),
+        )
+        if (!action) break
+        performAction(state, content, rng, action.id)
+      }
     }
 
     for (const person of livingRelations(state)) {
@@ -159,6 +188,7 @@ export function simulate(seed: number, content: ContentPack, plan: Plan = {}): G
       }
     }
 
+    onYear?.(state)
     advanceYear(state, content)
   }
 

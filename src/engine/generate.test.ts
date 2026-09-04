@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { GAME_CONTENT } from '../content'
 import { skipPendingEvents } from '../test/fixtures'
-import { advanceYear, chooseOption, currentEvent } from './turn'
+import { simulate } from '../test/player'
+import { advanceYear } from './turn'
 import { createGame } from './generate'
-import { firstFailure } from './conditions'
 import {
   INITIAL_RELATION,
   PARENT_MIN_AGE_AT_FIRST_CHILD,
@@ -129,33 +129,7 @@ describe('decaimento de relação', () => {
 describe('a semente reproduz a vida inteira', () => {
   /** Assinatura do que uma vida produziu, do nascimento a morte. */
   function assinatura(seed: number): string {
-    const state = createGame(
-      { name: 'T', gender: 'male', seed, birthYear: 2000 },
-      GAME_CONTENT,
-    )
-    let guard = 0
-    while (state.character.alive && guard++ < 150) {
-      while (state.pendingEventIds.length > 0) {
-        const event = currentEvent(state, GAME_CONTENT)
-        if (!event) break
-        // A primeira opcao DISPONIVEL: escolher a 0 as cegas estoura em
-        // qualquer evento cuja primeira opcao tenha requisito.
-        let pick = 0
-        for (let i = 0; i < event.options.length; i++) {
-          const option = event.options[i]
-          if (
-            option &&
-            (!option.requirements || firstFailure(option.requirements, state) === null)
-          ) {
-            pick = i
-            break
-          }
-        }
-        chooseOption(state, GAME_CONTENT, pick)
-      }
-      if (!state.character.alive) break
-      advanceYear(state, GAME_CONTENT)
-    }
+    const state = simulate(seed, GAME_CONTENT)
     return JSON.stringify({
       cidade: state.character.city,
       classe: state.character.socialClass,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { GAME_CONTENT } from '../content'
+import { simulate } from '../test/player'
 import { makeCharacter, makeContent, makeState } from '../test/fixtures'
-import { availableActions, performAction } from '../engine/actions'
 import { netWorth } from './assets'
 import {
   AGE_FINANCIALLY_INDEPENDENT,
@@ -11,6 +11,7 @@ import {
   SUBSISTENCE_COST,
 } from './balance'
 import { hireInto, leaveCareer } from './careers'
+import { createRng } from './rng'
 import type { CareerTrack } from './types'
 
 const TRILHA_TESTE: CareerTrack = {
@@ -23,10 +24,6 @@ const TRILHA_TESTE: CareerTrack = {
 }
 import { applyEconomy, costOfLiving } from './economy'
 import { enroll } from './education'
-import { createGame } from './generate'
-import { firstFailure } from './conditions'
-import { createRng } from './rng'
-import { advanceYear, chooseOption, currentEvent } from './turn'
 import type { GameState } from './types'
 
 const rng = () => createRng(1)
@@ -123,43 +120,17 @@ describe('vida de quem joga com um plano', () => {
     'Treinar',
   ]
 
+  /**
+   * Este plano vai FUNDO: gasta os três pontos de ação na primeira coisa do
+   * `PLANO` que estiver disponível, em vez de espalhar. É o que `repeatActions`
+   * expressa, e o que separa esta medida da do `player-bracket`.
+   */
   function viveComPlano(seed: number): GameState {
-    const state = createGame(
-      { name: 'Planejador', gender: 'male', seed, birthYear: 2000 },
-      GAME_CONTENT,
-    )
-    const player = createRng(seed ^ 0x5eed)
-    let guard = 0
-
-    while (state.character.alive && guard++ < 150) {
-      while (state.pendingEventIds.length > 0) {
-        const event = currentEvent(state, GAME_CONTENT)
-        if (!event) break
-        let chosen = 0
-        for (let i = 0; i < event.options.length; i++) {
-          const option = event.options[i]
-          if (!option) continue
-          if (!option.requirements || firstFailure(option.requirements, state) === null) {
-            chosen = i
-            break
-          }
-        }
-        chooseOption(state, GAME_CONTENT, chosen)
-      }
-      if (!state.character.alive) break
-
-      for (const want of PLANO) {
-        for (let i = 0; i < 3; i++) {
-          const action = availableActions(state, GAME_CONTENT).find(
-            (a) => a.enabled && a.label.startsWith(want),
-          )
-          if (!action) break
-          performAction(state, GAME_CONTENT, player, action.id)
-        }
-      }
-      advanceYear(state, GAME_CONTENT)
-    }
-    return state
+    return simulate(seed, GAME_CONTENT, {
+      actions: PLANO,
+      repeatActions: 3,
+      name: 'Planejador',
+    })
   }
 
   const sample = Array.from({ length: 40 }, (_, i) => viveComPlano(i + 1))
