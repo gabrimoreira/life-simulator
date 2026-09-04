@@ -173,6 +173,24 @@ describe('validateCareers', () => {
   })
 })
 
+describe('validateCareers, nomes', () => {
+  it('pega duas trilhas com o mesmo nome', () => {
+    const base: CareerTrack = {
+      id: 'a',
+      name: 'Tecnologia',
+      kind: 'clt',
+      entryLabel: 'Entrar',
+      entryHint: 'Dica',
+      levels: [
+        { title: 'Um', salary: 10, minYears: 0, requirements: [] },
+        { title: 'Dois', salary: 20, minYears: 1, requirements: [] },
+      ],
+    }
+    const problems = validateCareers([base, { ...base, id: 'b' }])
+    expect(has(problems, 'duplicado')).toBe(true)
+  })
+})
+
 describe('validateCourses', () => {
   const course: Course = {
     id: 'c',

@@ -607,9 +607,12 @@ export const CAREER_TRACKS: CareerTrack[] = [
   // renda informal de R$9.000 por ano até morrer.
   {
     id: 'clt_tech',
-    name: 'Tecnologia',
+    // "Desenvolvimento", e não "Tecnologia": `business_tech` já é Tecnologia,
+    // e duas trilhas com o mesmo nome na tela são duas coisas diferentes que o
+    // jogador não tem como separar. O validador agora rejeita isso.
+    name: 'Desenvolvimento',
     kind: 'clt',
-    entryLabel: 'Trabalhar com tecnologia',
+    entryLabel: 'Trabalhar com programação',
     entryHint: 'Não pede diploma nem passado limpo. Pede que você saiba fazer.',
     levels: [
       {

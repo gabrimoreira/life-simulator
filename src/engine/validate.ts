@@ -210,12 +210,20 @@ export function validateActions(actions: GameAction[]): string[] {
 export function validateCareers(careers: CareerTrack[]): string[] {
   const problems: string[] = []
   const seen = new Set<string>()
+  const names = new Set<string>()
 
   for (const track of careers) {
     const where = `trilha "${track.id}"`
 
     if (seen.has(track.id)) problems.push(`${where}: id duplicado`)
     seen.add(track.id)
+
+    // Nome e o que o jogador le. Duas trilhas com o mesmo nome sao duas coisas
+    // diferentes que ele nao tem como separar — e foi o que aconteceu quando a
+    // Fase 8 criou uma trilha de tecnologia CLT ao lado da empresa de
+    // tecnologia que ja existia.
+    if (names.has(track.name)) problems.push(`${where}: nome "${track.name}" duplicado`)
+    names.add(track.name)
 
     if (track.levels.length < 2) problems.push(`${where}: precisa de pelo menos 2 niveis`)
 
