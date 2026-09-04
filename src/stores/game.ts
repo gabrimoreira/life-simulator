@@ -3,6 +3,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { GAME_CONTENT } from '../content'
+import { FLAG_LABELS } from '../content/flags'
 import { CLASS_PROFILES } from '../engine/balance'
 import { ACTION_GROUP_LABELS, availableActions } from '../engine/actions'
 import type { ActionGroup, Person } from '../engine/types'
@@ -25,6 +26,22 @@ export interface ActionGroupView {
   key: ActionGroup
   label: string
   actions: ReturnType<typeof availableActions>
+}
+
+/**
+ * Troca id de flag por rótulo nos motivos de bloqueio.
+ *
+ * `conditions.ts` monta "Requer: course_medicina" porque é engine e não pode
+ * importar `content/` — os rótulos são conteúdo. Traduzir aqui é justamente o
+ * trabalho do store, que é a camada que liga os dois. Sem isto o jogador lia
+ * o id cru da flag na tela.
+ */
+function humanize(reason: string | null): string | null {
+  if (reason === null) return reason
+  return reason.replace(/(Requer|Impedido por): ([a-z0-9_]+)/g, (whole, prefixo: string, flag: string) => {
+    const label = FLAG_LABELS[flag]
+    return label === undefined ? whole : `${prefixo}: ${label.toLowerCase()}`
+  })
 }
 
 export interface OptionStatus {
@@ -74,7 +91,7 @@ export const useGameStore = defineStore('game', () => {
       return {
         text: interpolate(option.text, current),
         enabled: reason === null,
-        reason,
+        reason: humanize(reason),
       }
     })
   })
@@ -134,7 +151,9 @@ export const useGameStore = defineStore('game', () => {
       .map((key) => ({
         key,
         label: ACTION_GROUP_LABELS[key],
-        actions: all.filter((action) => action.group === key),
+        actions: all
+          .filter((action) => action.group === key)
+          .map((action) => ({ ...action, reason: humanize(action.reason) })),
       }))
       .filter((group) => group.actions.length > 0)
   })
@@ -213,7 +232,10 @@ export const useGameStore = defineStore('game', () => {
 
   function actionsForPerson(person: Person): ReturnType<typeof relationActionsFor> {
     if (!state.value) return []
-    return relationActionsFor(state.value, GAME_CONTENT, person)
+    return relationActionsFor(state.value, GAME_CONTENT, person).map((action) => ({
+      ...action,
+      reason: humanize(action.reason),
+    }))
   }
 
   async function actOnPerson(personId: string, actionId: string): Promise<void> {

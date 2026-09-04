@@ -98,7 +98,7 @@ cursos. Por isso o validador rejeita ação de conteúdo com `:` no id.
 
 ## Carreira
 
-Onze trilhas em cinco tipos. O `kind` é o que a economia e as conquistas
+Quatorze trilhas em seis tipos. O `kind` é o que a economia e as conquistas
 enxergam; o `trackId` é o que o conteúdo enxerga, e é por isso que existem
 duas condições separadas (`careerKind` e `careerTrack`).
 
