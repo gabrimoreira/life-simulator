@@ -3,6 +3,7 @@
 import {
   AGE_FINANCIALLY_INDEPENDENT,
   CHRONIC_ANNUAL_COST,
+  VICES,
   CLASS_PROFILES,
   COST_OF_LIVING_INCOME_SHARE,
   INHERITED_LIFESTYLE_CAP,
@@ -98,15 +99,21 @@ export function applyEconomy(state: GameState, rng: Rng, content: ContentPack): 
   const income = own + spouse
   // Doenca cronica nao e so uma marca no Perfil: ela cobra todo ano.
   const medical = c.flags[FLAG_CHRONIC_CONDITION] === true ? CHRONIC_ANNUAL_COST : 0
+  // Vicio tambem. Sai da mesma lista que derruba o teto de saude em `aging`.
+  const vices = VICES.reduce(
+    (total, vice) => total + (c.flags[vice.flag] === true ? vice.annualCost : 0),
+    0,
+  )
   // Sobre a renda PROPRIA: o padrão de vida é ditado pela posição de quem
   // vive, e o que o cônjuge traz entra como folga em vez de virar expectativa.
-  const cost = costOfLiving(state, own) + medical
+  const cost = costOfLiving(state, own) + medical + vices
 
   addMoney(c, income - cost)
 
   const parts = [`Renda ${formatMoney(income)}`, `Custo ${formatMoney(cost)}`]
   if (spouse > 0) parts.splice(1, 0, `Cônjuge ${formatMoney(spouse)}`)
   if (medical > 0) parts.push(`Saúde ${formatMoney(medical)}`)
+  if (vices > 0) parts.push(`Vícios ${formatMoney(vices)}`)
   if (c.debt > 0) parts.push(`Dívida ${formatMoney(c.debt)}`)
 
   return { summary: parts.join(' · '), notes: career.notes }

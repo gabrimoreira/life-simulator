@@ -51,10 +51,18 @@ function levas(actions: string[], social: string[] = []): {
 describe('escolher bem muda o dinheiro', () => {
   const { ruim, bom } = levas(['Cursar mais um ano', 'Procurar emprego', 'Se dedicar ao trabalho'])
 
-  it('o jogador que não se sabota termina com bem mais patrimônio', () => {
+  it('o jogador que não se sabota termina com mais patrimônio', () => {
+    // A afirmação já foi "1,25x" e não sobrevivia à própria amostra: a
+    // mediana de patrimônio tem cauda pesada, e a mesma comparação mede
+    // 1,77 com 40 vidas, 1,14 com 60, 1,32 com 150. O que se sustenta em
+    // qualquer amostra é a direção, não o múltiplo.
     const patrimonioRuim = mediana(ruim.map(netWorth))
-    const patrimonioBom = mediana(bom.map(netWorth))
-    expect(patrimonioBom).toBeGreaterThan(patrimonioRuim * 1.25)
+    expect(mediana(bom.map(netWorth))).toBeGreaterThan(patrimonioRuim * 1.1)
+
+    // E a estatística que não depende da cauda: mais da metade das vidas
+    // sensatas passa a vida MEDIANA de quem se sabota.
+    const acima = bom.filter((s) => netWorth(s) > patrimonioRuim).length
+    expect(acima / N).toBeGreaterThan(0.5)
   })
 
   it('e quase não morre no vermelho', () => {
@@ -73,14 +81,18 @@ describe('mas não muda tudo', () => {
   const ruim = simulateMany(N_LONGEVIDADE, GAME_CONTENT, { actions: acoes, policy: 'first' })
   const bom = simulateMany(N_LONGEVIDADE, GAME_CONTENT, { actions: acoes, policy: 'sensible' })
 
-  it('a idade de morte quase não depende de escolha', () => {
-    // Longevidade é estrutural: sai da curva de Gompertz e do teto de saúde da
-    // idade, não do que o jogador clica. Medido: 69,3 contra 71,0 anos — o
-    // jogador sensato ganha menos de dois anos por não se sabotar. Se este
-    // teste começar a falhar, é porque alguma escolha virou um botão de viver
-    // mais, e isso precisa ser deliberado.
+  it('a idade de morte depende pouco de escolha — e o pouco é o vício', () => {
+    // Até a Fase 8 a resposta era "nada": 69,3 contra 71,0 anos, e a
+    // longevidade saía inteira da curva de Gompertz e do teto de saúde da
+    // idade. Os vícios são a primeira escolha do jogo que compra anos de
+    // vida: 67,2 contra 71,7, com 49% dos personagens do jogador que se
+    // sabota terminando alcoolistas contra 21% do jogador sensato.
+    //
+    // Continua sendo POUCO de propósito. Se a diferença passar de seis anos,
+    // alguma escolha virou um botão de viver mais, e isso precisa ser
+    // deliberado em vez de acontecer.
     const idade = (vidas: GameState[]): number => media(vidas.map((s) => s.character.deathAge ?? 0))
-    expect(Math.abs(idade(bom) - idade(ruim))).toBeLessThanOrEqual(4)
+    expect(Math.abs(idade(bom) - idade(ruim))).toBeLessThanOrEqual(6)
   })
 })
 

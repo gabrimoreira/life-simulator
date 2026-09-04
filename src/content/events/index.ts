@@ -22,6 +22,7 @@ import { ELDER_EVENTS } from './elder'
 import { RANDOM_EVENTS } from './random'
 import { SCHOOL_EVENTS } from './school'
 import { YOUNG_EVENTS } from './young'
+import { VICE_EVENTS } from './vices'
 import { YOUNG_ADULT_EVENTS } from './young-adult'
 import type { GameEvent } from '../../engine/types'
 
@@ -36,6 +37,7 @@ export const ALL_EVENTS: GameEvent[] = [
   ...PRISON_EVENTS,
   ...CRIME_EVENTS,
   ...CRISIS_EVENTS,
+  ...VICE_EVENTS,
   ...POLITICS_EVENTS,
   ...POVERTY_EVENTS,
   ...PROFESSION_EVENTS,

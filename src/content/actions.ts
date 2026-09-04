@@ -77,6 +77,67 @@ export const GAME_ACTIONS: GameAction[] = [
     ],
   },
 
+  // Largar um vício é a única ação do jogo que desfaz uma flag antiga. O
+  // viés é em felicidade de propósito: quem está mal recai, e é justamente
+  // quem está mal que costuma ter o vício.
+  {
+    id: 'quit_smoking',
+    group: 'health',
+    label: 'Largar o cigarro',
+    hint: 'Você já tentou antes. Desta vez, quem sabe.',
+    cost: 1,
+    conditions: [{ type: 'flag', flag: 'smoker', value: true }],
+    outcomes: [
+      {
+        chance: 0.4,
+        bias: { happiness: 0.5, health: 0.2 },
+        text: 'Foram três semanas horríveis e depois um ano inteiro sem um cigarro.',
+        effects: [
+          { type: 'flag', flag: 'smoker', value: false },
+          { type: 'flag', flag: 'quit_a_vice', value: true },
+          { type: 'stat', stat: 'health', op: 'delta', value: 5 },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: -4 },
+        ],
+      },
+      {
+        chance: 0.6,
+        text: 'Você segurou até o primeiro dia ruim.',
+        effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: -5 }],
+      },
+    ],
+  },
+  {
+    id: 'quit_drinking',
+    group: 'health',
+    label: 'Parar de beber',
+    hint: 'Sozinho é mais difícil. Com ajuda custa dinheiro.',
+    cost: 1,
+    conditions: [{ type: 'flag', flag: 'heavy_drinker', value: true }],
+    requirements: [{ type: 'money', min: 4_000 }],
+    outcomes: [
+      {
+        chance: 0.45,
+        bias: { happiness: 0.5, charisma: 0.15 },
+        text: 'Você foi às reuniões, contou a sua vez, e chegou ao fim do ano seco.',
+        effects: [
+          { type: 'money', delta: -4_000 },
+          { type: 'flag', flag: 'heavy_drinker', value: false },
+          { type: 'flag', flag: 'quit_a_vice', value: true },
+          { type: 'stat', stat: 'health', op: 'delta', value: 6 },
+          { type: 'flag', flag: 'sought_help', value: true },
+        ],
+      },
+      {
+        chance: 0.55,
+        text: 'Você parou por quatro meses. No quinto teve um casamento.',
+        effects: [
+          { type: 'money', delta: -4_000 },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: -6 },
+        ],
+      },
+    ],
+  },
+
   // --- Educação ------------------------------------------------------------
   {
     id: 'self_study',
