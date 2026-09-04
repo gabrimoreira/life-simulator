@@ -168,6 +168,14 @@ export interface Character {
   careerHistory: Record<string, number>
   /** Renda anual vitalicia de quem se aposentou. 0 = nunca se aposentou. */
   pension: number
+  /**
+   * Anos SEGUIDOS com felicidade abaixo de `HAPPINESS_CRISIS_THRESHOLD`.
+   *
+   * Zera no primeiro ano bom. E a unica memoria de duracao que o jogo tem: as
+   * outras condicoes olham o estado do turno, e por isso nao conseguem
+   * distinguir um ano ruim de uma decada ruim.
+   */
+  unhappyYears: number
   /** null = solto. Preso, a vida roda num sub-loop com pool proprio. */
   prison: PrisonState | null
   /** null = nao esta estudando nada agora. */
@@ -267,6 +275,8 @@ export type Condition =
   | { type: 'performance'; min?: number; max?: number }
   | { type: 'enrolled'; value: boolean }
   | { type: 'inPrison'; value: boolean }
+  /** Anos SEGUIDOS de infelicidade. Ver `Character.unhappyYears`. */
+  | { type: 'unhappyYears'; min?: number; max?: number }
   | { type: 'ownsAsset'; assetId?: string; kind?: AssetKind }
   | { type: 'netWorth'; min?: number; max?: number }
   | { type: 'relationLevel'; kind: RelationKind; min?: number; max?: number }

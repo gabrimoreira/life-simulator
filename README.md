@@ -157,9 +157,29 @@ Estudante paga uma fração disso.
 A dívida tem teto. Passado o teto o gasto simplesmente não acontece — a pessoa
 corta o próprio padrão de vida até caber, porque ninguém empresta para sempre.
 
+## Crise de felicidade
+
+O spec pede eventos de crise "se a felicidade zerar por vários turnos", e por
+cinco fases existiram apenas dois gates instantâneos de felicidade baixa em 193
+eventos. A diferença importa: um gate instantâneo dispara no primeiro ano ruim
+de uma vida boa, e o que o spec descreve é a espiral.
+
+`Character.unhappyYears` conta anos SEGUIDOS abaixo do limiar e zera no
+primeiro ano bom. É a única memória de duração do jogo — todas as outras
+condições olham o estado do turno, e por isso não distinguem um ano ruim de
+uma década ruim.
+
+Cuidado com o limiar: o nominal é 30, o **efetivo é 27**. A reversão à média
+roda antes da contagem e o stat é arredondado, então `round(0,92x + 4) < 30`
+exige `x <= 27`. Está medido em `aging.test.ts`.
+
+Medido em 200 vidas sem plano nenhum: 88 veem ao menos um evento de crise, a
+maior sequência é de 13 anos, o pico médio é 3,1, e os cinco eventos disparam
+— inclusive o que exige seis anos seguidos.
+
 ## Save
 
-`saveVersion` 5. As migrações rodam sobre o JSON cru e a checagem de forma
+`saveVersion` 6. As migrações rodam sobre o JSON cru e a checagem de forma
 acontece depois, sobre o resultado — o contrário obrigaria a manter o tipo de
 cada versão antiga do `GameState` vivo no código para sempre.
 

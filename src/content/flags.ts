@@ -24,6 +24,7 @@ const HAND_WRITTEN: Record<string, string> = {
   philanthropist: 'Filantropo',
   public_scandal: 'Envolvido em escândalo público',
   snitched_inside: 'Entregou alguém na cadeia',
+  sought_help: 'Procurou ajuda',
 }
 
 /** Rótulos de curso saem do próprio catálogo, para não sair de sincronia. */

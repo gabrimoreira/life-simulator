@@ -247,3 +247,50 @@ describe('caracterizacao da longevidade', () => {
     expect(Math.max(...ages)).toBeLessThanOrEqual(MAX_AGE)
   })
 })
+
+describe('anos seguidos de infelicidade', () => {
+  /** Roda um ano com a felicidade forcada, para o contador nao depender do RNG. */
+  function ano(state: ReturnType<typeof makeState>, happiness: number): void {
+    state.character.stats.happiness = happiness
+    applyAging(state, createRng(1))
+  }
+
+  it('conta anos seguidos abaixo do limiar', () => {
+    const state = makeState({ character: makeCharacter({ age: 30 }) })
+    expect(state.character.unhappyYears).toBe(0)
+
+    ano(state, 5)
+    expect(state.character.unhappyYears).toBe(1)
+    ano(state, 5)
+    expect(state.character.unhappyYears).toBe(2)
+    ano(state, 5)
+    expect(state.character.unhappyYears).toBe(3)
+  })
+
+  it('zera no primeiro ano bom — e sequencia, nao acumulado de vida', () => {
+    const state = makeState({ character: makeCharacter({ age: 30 }) })
+    ano(state, 5)
+    ano(state, 5)
+    expect(state.character.unhappyYears).toBe(2)
+
+    ano(state, 90)
+    expect(state.character.unhappyYears).toBe(0)
+  })
+
+  it('conta onde o ano TERMINOU, depois da reversao a media', () => {
+    // A reversao a media roda ANTES da contagem e o stat e arredondado, e as
+    // duas coisas juntas deslocam o limiar real: round(0,92x + 4) < 30 exige
+    // x <= 27. Quem esta em 28 termina o ano em 30 e NAO conta.
+    //
+    // O limiar nominal e 30 e o efetivo e 27. A diferenca e pequena e importa
+    // para quem escreve conteudo de crise, entao fica medida aqui em vez de
+    // ser descoberta de novo mais tarde.
+    const naoConta = makeState({ character: makeCharacter({ age: 30 }) })
+    ano(naoConta, 28)
+    expect(naoConta.character.unhappyYears).toBe(0)
+
+    const conta = makeState({ character: makeCharacter({ age: 30 }) })
+    ano(conta, 27)
+    expect(conta.character.unhappyYears).toBe(1)
+  })
+})

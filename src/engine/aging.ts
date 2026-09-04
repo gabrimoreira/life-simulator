@@ -5,6 +5,7 @@ import {
   DEATH_CAUSES_BY_AGE,
   DEATH_CAUSE_OLD_AGE,
   DEATH_CAUSE_POOR_HEALTH,
+  HAPPINESS_CRISIS_THRESHOLD,
   HAPPINESS_MEAN,
   HAPPINESS_MEAN_REVERSION,
   HEALTH_BASELINE_DECLINE,
@@ -53,6 +54,12 @@ export function applyAging(state: GameState, rng: Rng): void {
   // Felicidade regride a media: euforia e depressao nao duram para sempre.
   const drift = (HAPPINESS_MEAN - c.stats.happiness) * HAPPINESS_MEAN_REVERSION
   setStat(c, 'happiness', c.stats.happiness + drift)
+
+  // Conta os anos SEGUIDOS de infelicidade, depois da reversao a media — o que
+  // interessa e onde a pessoa terminou o ano, nao o susto do meio dele. Zera
+  // no primeiro ano bom: e um contador de sequencia, nao um acumulado de vida.
+  c.unhappyYears =
+    c.stats.happiness < HAPPINESS_CRISIS_THRESHOLD ? c.unhappyYears + 1 : 0
 
   if (c.age >= INTELLIGENCE_SCHOOL_AGES.min && c.age <= INTELLIGENCE_SCHOOL_AGES.max) {
     setStat(

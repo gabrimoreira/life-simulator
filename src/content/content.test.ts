@@ -10,7 +10,9 @@ import {
   danglingChoices,
   orphanFlags,
 } from '../engine/validate'
+import { firstFailure } from '../engine/conditions'
 import { eligibleEvents } from '../engine/events'
+import { advanceYear, chooseOption, currentEvent } from '../engine/turn'
 import { makeCharacter, makeState } from '../test/fixtures'
 import { createGame } from '../engine/generate'
 import { GAME_CONTENT } from '.'
@@ -247,5 +249,67 @@ describe('densidade do sorteio', () => {
     expect(eligibleEvents(personaAos(5), GAME_CONTENT).length).toBeGreaterThanOrEqual(5)
     expect(eligibleEvents(personaAos(10), GAME_CONTENT).length).toBeGreaterThanOrEqual(8)
     expect(eligibleEvents(personaAos(15), GAME_CONTENT).length).toBeGreaterThanOrEqual(12)
+  })
+})
+
+describe('a crise de felicidade acontece de verdade', () => {
+  /** Vive sem plano nenhum, que é o pior caso para a felicidade. */
+  function vidaSemPlano(seed: number): ReturnType<typeof createGame> {
+    const state = createGame({ name: 'T', gender: 'male', seed, birthYear: 2000 }, GAME_CONTENT)
+    let guard = 0
+    let pico = 0
+    while (state.character.alive && guard++ < 150) {
+      while (state.pendingEventIds.length > 0) {
+        const event = currentEvent(state, GAME_CONTENT)
+        if (!event) break
+        let pick = 0
+        for (let i = 0; i < event.options.length; i++) {
+          const option = event.options[i]
+          if (
+            option &&
+            (!option.requirements || firstFailure(option.requirements, state) === null)
+          ) {
+            pick = i
+            break
+          }
+        }
+        chooseOption(state, GAME_CONTENT, pick)
+      }
+      if (!state.character.alive) break
+      pico = Math.max(pico, state.character.unhappyYears)
+      advanceYear(state, GAME_CONTENT)
+    }
+    state.character.unhappyYears = pico
+    return state
+  }
+
+  const amostra = Array.from({ length: 40 }, (_, i) => vidaSemPlano(i + 1))
+
+  it('a sequência de anos infelizes chega aos gates mais fundos', () => {
+    // O spec pede crise "se a felicidade zerar por VÁRIOS turnos". Sem esta
+    // medida, um evento gated em `unhappyYears min 6` poderia ser conteúdo
+    // morto e ninguém notaria — foi exatamente o que aconteceu com o time de
+    // futebol de R$40 milhões.
+    const picos = amostra.map((s) => s.character.unhappyYears)
+    expect(Math.max(...picos), 'maior sequência vista').toBeGreaterThanOrEqual(6)
+  })
+
+  it('mas a infelicidade não é o estado normal da vida', () => {
+    // Se todo mundo vivesse em crise, a crise não significaria nada.
+    const medio = amostra.reduce((sum, s) => sum + s.character.unhappyYears, 0) / amostra.length
+    expect(medio).toBeLessThan(8)
+  })
+
+  it('todo evento de crise é alcançável pelo contador', () => {
+    const crises = ALL_EVENTS.filter((e) => e.id.startsWith('crisis_'))
+    expect(crises.length).toBeGreaterThan(0)
+
+    const maiorGate = Math.max(
+      ...crises.flatMap((e) =>
+        e.conditions.filter((c) => c.type === 'unhappyYears').map((c) => c.min ?? 0),
+      ),
+    )
+    const maiorVisto = Math.max(...amostra.map((s) => s.character.unhappyYears))
+    expect(maiorVisto, `gate mais fundo é ${maiorGate}`).toBeGreaterThanOrEqual(maiorGate)
   })
 })

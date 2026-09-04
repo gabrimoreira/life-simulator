@@ -63,6 +63,9 @@ export function evaluate(condition: Condition, state: GameState): boolean {
     case 'inPrison':
       return (c.prison !== null) === condition.value
 
+    case 'unhappyYears':
+      return inRange(c.unhappyYears, condition.min, condition.max)
+
     case 'ownsAsset':
       return c.assets.some((owned) => {
         if (condition.assetId !== undefined && owned.assetId !== condition.assetId) return false
@@ -190,6 +193,9 @@ export function describe(condition: Condition): string {
 
     case 'inPrison':
       return condition.value ? 'Só na cadeia' : 'Não dá para fazer isso preso'
+
+    case 'unhappyYears':
+      return describeRange('anos seguidos de infelicidade', condition.min, condition.max, plain)
 
     case 'ownsAsset':
       return 'Requer ter um bem específico'

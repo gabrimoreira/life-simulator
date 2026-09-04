@@ -55,6 +55,18 @@ export const CHRONIC_ANNUAL_COST = 9_000
 export const HAPPINESS_MEAN_REVERSION = 0.08
 export const HAPPINESS_MEAN = 50
 
+/**
+ * Abaixo disto o ano conta como ano ruim, e o contador de anos seguidos sobe.
+ *
+ * O spec pede eventos de crise "se a felicidade zerar por VARIOS turnos", e
+ * ate a Fase 6 so existiam dois gates instantaneos de felicidade baixa. Um
+ * gate instantaneo dispara no primeiro ano ruim de uma vida boa; a crise que
+ * interessa e a que se acumula. Reverter a media (`HAPPINESS_MEAN_REVERSION`)
+ * puxa todo mundo de volta para 50, entao ficar abaixo de 30 por anos exige
+ * que alguma coisa esteja empurrando para baixo o tempo todo.
+ */
+export const HAPPINESS_CRISIS_THRESHOLD = 30
+
 /** Aparencia cai devagar depois desta idade. */
 export const LOOKS_DECAY_START_AGE = 35
 export const LOOKS_DECAY_FACTOR = 0.045

@@ -75,6 +75,7 @@ export function createHeir(state: GameState, heirId: string): GameState | null {
     career: null,
     careerHistory: {},
     pension: 0,
+    unhappyYears: 0,
     prison: null,
     enrollment: null,
     assets: [],
