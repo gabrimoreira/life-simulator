@@ -119,8 +119,31 @@ de estudo por vez, cada ano custando um ponto de ação — o custo de oportunid
 é a decisão. Pular um ano não reprova, só não forma. A mensalidade sai do caixa
 sempre que houver caixa; o resto vira dívida.
 
-Concluir um curso concede o nível de escolaridade e a flag `course_<id>`, que
-eventos e carreiras podem exigir.
+Concluir um curso concede o nível de escolaridade e a flag `course_<id>`.
+
+Por três fases essa flag foi escrita e lida por ninguém: nada perguntava QUAL
+curso você tinha feito, e Medicina — seis anos, R$360.000, exigindo
+inteligência 72 — abria exatamente as mesmas portas que Licenciatura, quatro
+anos e R$32.000. Hoje cada graduação abre alguma coisa:
+
+| curso         | abre |
+|---------------|------|
+| Medicina      | trilha Medicina, a mais bem paga do jogo, que cobra saúde todo ano |
+| Direito       | trilha Advocacia, que escala com carisma |
+| Engenharia    | trilha Engenharia, estável e sem escândalo |
+| Artes Cênicas | atalho na celebridade: sobe de degrau sem a fama exigida |
+| Administração | troca carisma por diploma na subida do empresário |
+| Licenciatura  | entrada na academia sem pós; os níveis seguintes ainda exigem |
+
+Medicina, Advocacia e Engenharia são todas `kind: 'clt'` — são emprego formal,
+com demissão e checagem de antecedentes. O que as separa do corporativo
+genérico é a porta. É também por isso que a condição `careerTrack` existe
+separada de `careerKind`: com quatro trilhas do mesmo tipo, "plantão de vinte
+e quatro horas" não pode aparecer para um analista de escritório.
+
+O nível de escolaridade SOBE e nunca desce. Concluir uma segunda graduação
+rebaixava para `bachelor` quem já tinha mestrado — e com isso o expulsava da
+trilha acadêmica, sem nenhum aviso.
 
 ## Economia
 
@@ -157,6 +180,18 @@ turno pelo mesmo `evaluateAll` dos eventos. Não há gatilho nem contador
 escondido. A checagem roda **depois** da morte, de propósito: "chegou aos cem"
 e "morreu no vermelho" só fazem sentido no turno em que a vida acaba.
 
+## Os invariantes são testados, não conferidos na mão
+
+Zero `any`, `Math.random` só em `rng.ts`, `engine/` sem importar `content/`,
+nem um nem outro importando Vue. Isso era `grep` manual a cada fase, por quem
+lembrasse de rodar — `src/architecture.test.ts` transforma em teste.
+
+E cuidado com o `typecheck`: por três fases o script era `vue-tsc --noEmit`,
+que lê o `tsconfig.json` raiz. Esse arquivo é de solução (`"files": []` mais
+duas `references`), então o comando checava ZERO arquivos e saía limpo. Quem
+segurava tudo era o `build`. Agora é `vue-tsc -b --force`, e é ele que faz o
+`assertNever` funcionar como lista de tarefas quando uma união cresce.
+
 ## Flags não podem ser decorativas
 
 `orphanFlags` em `engine/validate.ts` quebra o teste se o conteúdo escrever uma
@@ -170,7 +205,7 @@ Flags lidas pelo próprio engine (e não por uma `Condition`) ficam declaradas e
 ## Como o balanceamento é medido
 
 Não por intuição: por simulação. Perfis de jogador scriptados — aleatório,
-família, carreira, otimizado, crime, academia — cem vidas cada, olhando
+família, carreira, otimizado, crime, academia, pobre — cem vidas cada, olhando
 mediana, p90, mortes no vermelho e herdeiros.
 
 Foi assim que apareceram os problemas que a leitura do código não mostrava: o
@@ -180,3 +215,37 @@ herdado condenando quem nasce rico.
 
 A forma importa mais que a mediana. Academia tem p50 alto e p90 baixo (teto
 baixo, piso alto); corporativo tem o inverso. É o desenho, não um desequilíbrio.
+
+Última medida, 100 vidas por perfil:
+
+| perfil    | p50 patrimônio | p90 | negativos | herdeiro | morte p50 |
+|-----------|---------------:|----:|----------:|---------:|----------:|
+| aleatório | 701k  | 3,24M | 14 |  4 | 70 |
+| família   | 1,78M | 2,83M |  9 | 52 | 73 |
+| carreira  | 1,89M | 5,75M | 12 | 14 | 69 |
+| otimizado | 4,78M | 9,09M | 17 | 33 | 73 |
+| crime     | 1,22M | 2,98M |  3 |  2 | 66 |
+| academia  | 2,16M | 4,47M | 15 |  7 | 72 |
+| pobre     | 918k  | 4,20M | 12 |  9 | 75 |
+
+O perfil otimizado é o que faz Medicina e entra na trilha da profissão. Ele
+paga 2,5 vezes o corporativo genérico — e tem o maior número de mortes no
+vermelho, porque seis anos e R$360.000 de faculdade cobram antes de pagar.
+
+### O teto do jogo é R$12,8 milhões
+
+Medido em 300 vidas do perfil mais rentável que existe. R$10 milhões acontece
+em 3% delas; ninguém chegou a R$20 milhões.
+
+Isso condenava dois bens de luxo: o jatinho custava R$18 milhões e o time de
+futebol R$40 milhões exigindo R$60 milhões de patrimônio. Eram itens de
+vitrine, e com o time morriam os dois eventos que exigem possuí-lo. Hoje o
+clube é ofertado em 63 de 300 vidas e o jatinho em 36.
+
+A mesma conta vale para idade: com plano voltado a saúde, em 300 vidas a idade
+máxima foi 94 e ninguém passou de 95. A conquista dos cem anos era decoração e
+virou noventa, que acontece em 7% dessas vidas. `MAX_AGE = 110` segue
+inalcançável de propósito — é o teto duro do laço, não uma meta.
+
+Três testes em `education-matters.test.ts` impedem que um bem ou uma conquista
+volte a pedir mais do que o jogo é capaz de produzir.

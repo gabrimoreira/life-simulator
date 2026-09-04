@@ -182,10 +182,16 @@ export const ACHIEVEMENTS: Achievement[] = [
     conditions: [{ type: 'age', min: 80 }],
   },
   {
+    // O id continua `centenarian` por causa dos saves, que guardam conquistas
+    // por id. O alvo era 100 anos e a curva de Gompertz do jogo não permite:
+    // em 300 vidas com plano voltado a saúde, a idade máxima foi 94 e NINGUÉM
+    // passou de 95. Era decoração. Aos 90 acontece em 7% dessas vidas — raro,
+    // e possível. `MAX_AGE = 110` segue inalcançável de propósito: é o teto
+    // duro do laço, não uma meta.
     id: 'centenarian',
-    name: 'Cem anos',
-    description: 'Chegou aos cem.',
-    conditions: [{ type: 'age', min: 100 }],
+    name: 'Nonagenário',
+    description: 'Chegou aos noventa.',
+    conditions: [{ type: 'age', min: 90 }],
   },
   {
     id: 'iron_health',

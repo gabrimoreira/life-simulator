@@ -253,12 +253,17 @@ describe('alcançabilidade da linhagem', () => {
     //   60% — Fase 3, antes de existir conteúdo que acaba com casamento
     //   45% — Fase 4, com traição, cadeia e o crime chegando em casa
     //   42% — Fase 5, medido em 200 vidas com 159 eventos no pool
-    //   37% — Fase 5, com 167 eventos
+    //   37% — Fase 5, com 167 eventos: DILUIÇÃO pura, os eventos de família
+    //         passaram a ser sorteados menos
+    //   52% — Fase 5, com 193 eventos, medido em 100 vidas
     //
-    // A queda de 42 para 37 foi só DILUIÇÃO: oito eventos novos, e os de
-    // família passam a ser sorteados menos. O jogador scriptado sempre escolhe
-    // a primeira opção disponível, que nos eventos destrutivos é a pior — ele
-    // é um piso, não uma estimativa de como o jogo se comporta com gente.
+    // A subida final não foi sorte: a leva de conteúdo que encheu a cadeia, a
+    // primeira infância e a pobreza trouxe junto muito evento de FAMÍLIA, e o
+    // pobre que antes não tinha o que viver agora convive com gente. O piso
+    // fica em 40% e não em 50% porque este número oscila com o tamanho do
+    // catálogo, e porque o jogador scriptado sempre escolhe a primeira opção
+    // disponível — a pior nos eventos destrutivos. Ele é um piso, não uma
+    // estimativa de como o jogo se comporta com gente.
     //
     // Com 30 vidas o piso de 45% passava por sorte de seed; 100 estabiliza a
     // medida. O teste abaixo, que compara os dois PLANOS entre si, é o que de
@@ -267,7 +272,7 @@ describe('alcançabilidade da linhagem', () => {
       vive(i + 1, ['Procurar emprego', 'Procurar um relacionamento']),
     )
     const comFilho = vidas.filter(canContinue).length
-    expect(comFilho / vidas.length).toBeGreaterThan(0.33)
+    expect(comFilho / vidas.length).toBeGreaterThan(0.4)
   }, 20_000)
 
   it('gastar todo ponto de ação na carreira custa a família', () => {

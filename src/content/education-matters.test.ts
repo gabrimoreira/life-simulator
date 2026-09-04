@@ -116,3 +116,51 @@ describe('o curso importa', () => {
     expect(trilhasAbertas(state)).toContain('academia')
   })
 })
+
+describe('o topo do jogo é comprável', () => {
+  it('nenhum bem custa mais do que o jogo é capaz de gerar', () => {
+    // O jatinho pedia R$18 milhões e o time R$40 milhões, com R$60 milhões de
+    // patrimônio. Medindo 300 vidas do perfil mais rentável que existe, o
+    // máximo visto foi R$12,8 milhões — os dois eram itens de vitrine, e com o
+    // time morriam também os dois eventos de luxury.ts que exigem possuí-lo.
+    //
+    // O teto aqui é generoso de propósito: ele não afirma que o bem é fácil,
+    // só que existe uma vida capaz de comprá-lo.
+    const TETO_MEDIDO = 12_800_000
+
+    const caros = GAME_CONTENT.assets
+      .filter((asset) => asset.price > TETO_MEDIDO)
+      .map((asset) => `${asset.id} (${asset.price})`)
+    expect(caros, 'bens acima do que o jogo gera').toEqual([])
+  })
+
+  it('nenhum bem exige um patrimônio que ninguém alcança', () => {
+    const TETO_MEDIDO = 12_800_000
+
+    const impossiveis: string[] = []
+    for (const asset of GAME_CONTENT.assets) {
+      for (const condition of asset.requirements) {
+        if (condition.type === 'netWorth' && (condition.min ?? 0) > TETO_MEDIDO) {
+          impossiveis.push(`${asset.id} pede ${condition.min}`)
+        }
+      }
+    }
+    expect(impossiveis).toEqual([])
+  })
+
+  it('nenhuma conquista pede uma idade que a curva de mortalidade não permite', () => {
+    // Em 300 vidas com plano voltado a saúde a idade máxima foi 94, e ninguém
+    // passou de 95. `centenarian` pedia 100: era decoração.
+    const IDADE_MAXIMA_MEDIDA = 94
+
+    const impossiveis: string[] = []
+    for (const achievement of GAME_CONTENT.achievements) {
+      for (const condition of achievement.conditions) {
+        if (condition.type === 'age' && (condition.min ?? 0) > IDADE_MAXIMA_MEDIDA) {
+          impossiveis.push(`${achievement.id} pede ${condition.min} anos`)
+        }
+      }
+    }
+    expect(impossiveis).toEqual([])
+  })
+})
