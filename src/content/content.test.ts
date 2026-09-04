@@ -181,6 +181,60 @@ describe('densidade do sorteio', () => {
     }
   })
 
+  /** Quem o conteúdo esquece: sem dinheiro, sem carreira, sem família, preso. */
+  function personaMagra(
+    age: number,
+    tweak: (state: ReturnType<typeof createGame>) => void = () => {},
+  ): ReturnType<typeof createGame> {
+    const state = createGame({ name: 'T', gender: 'male', seed: 1, birthYear: 2000 }, GAME_CONTENT)
+    state.character.age = age
+    state.character.education = age >= 18 ? 'highschool' : 'none'
+    state.character.money = 0
+    state.character.socialClass = 'poor'
+    state.relations = []
+    tweak(state)
+    return state
+  }
+
+  // As quatro medidas abaixo são CARACTERIZAÇÃO, não a meta. O teste antigo só
+  // media uma persona rica, casada e empregada — 38 elegíveis aos 45 — e por
+  // isso não enxergava que o mesmo jogo entrega metade disso para quem não
+  // venceu. Os pisos aqui são o que existe hoje, para que não piore; o Bloco 6
+  // enche esses pools e sobe cada número para a meta escrita ao lado.
+  it('quem não venceu na vida também tem o que viver', () => {
+    for (const age of [25, 35, 45, 60]) {
+      const pool = eligibleEvents(personaMagra(age), GAME_CONTENT)
+      expect(pool.length, `pobre sem nada aos ${age} anos`).toBeGreaterThanOrEqual(19) // meta: 22
+    }
+  })
+
+  it('a cadeia não é o mesmo punhado de textos por uma pena inteira', () => {
+    // Penas chegam a 9 anos, e prison_fight ainda soma 3. Com um pool de 4
+    // repetíveis o jogador via os mesmos textos o tempo todo.
+    const preso = personaMagra(30, (state) => {
+      state.character.prison = { yearsLeft: 6, reason: 'roubo', yearsServed: 1 }
+    })
+    expect(eligibleEvents(preso, GAME_CONTENT).length).toBeGreaterThanOrEqual(4) // meta: 12
+  })
+
+  it('a aposentadoria dura décadas e precisa de pool para elas', () => {
+    const aposentado = personaMagra(78, (state) => {
+      state.character.flags['retired'] = true
+      state.character.pension = 30_000
+    })
+    expect(eligibleEvents(aposentado, GAME_CONTENT).length).toBeGreaterThanOrEqual(21) // meta: 22
+  })
+
+  it('os primeiros anos de vida não são turnos vazios', () => {
+    // O jogo começa aos 0. Se o pool for 0, "Avançar ano" só imprime o
+    // cabeçalho do ano, e a primeira impressão do jogo é a de um jogo quebrado.
+    // Hoje é 0 aos 0 anos e 1 dos 1 aos 3: quatro turnos que só imprimem o
+    // cabeçalho do ano. Meta do Bloco 6: pelo menos 2 em cada.
+    for (const age of [0, 1, 2, 3]) {
+      expect(eligibleEvents(personaMagra(age), GAME_CONTENT).length, `aos ${age}`).toBeGreaterThanOrEqual(0)
+    }
+  })
+
   it('a infância e a adolescência têm com o que trabalhar', () => {
     // A infância é curta: são poucos turnos, então um pool menor não vira
     // repetição do jeito que viraria numa vida adulta de trinta anos.

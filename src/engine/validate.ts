@@ -387,11 +387,24 @@ export function orphanFlags(content: ContentPack): string[] {
 
   for (const course of content.courses) {
     walkConditions(course.requirements, read)
+    // A bolsa e um requisito como outro qualquer: uma flag lida so aqui
+    // seria acusada de orfa sem esta linha.
+    walkConditions(course.scholarship, read)
     walkEffects(course.completionEffects, written)
   }
 
   for (const asset of content.assets) {
     walkConditions(asset.requirements, read)
+    // `annualEffects` sao aplicados de verdade em assets.ts; uma flag escrita
+    // por um bem de luxo escapava da deteccao.
+    walkEffects(asset.annualEffects ?? [], written)
+  }
+
+  // Conquista tambem le flag. Sem isto, uma flag cujo unico leitor fosse uma
+  // conquista aparecia como orfa — falso positivo que so nao acontecia porque
+  // `criminal_record` e `retired` tinham um segundo leitor por acaso.
+  for (const achievement of content.achievements) {
+    walkConditions(achievement.conditions, read)
   }
 
   return [...written].filter((flag) => !read.has(flag)).sort()
