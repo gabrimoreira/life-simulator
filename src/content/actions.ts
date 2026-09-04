@@ -193,6 +193,7 @@ export const GAME_ACTIONS: GameAction[] = [
     hint: 'Sai limpo, mas sai. Todo o progresso da trilha vai junto.',
     cost: 0,
     conditions: [{ type: 'hasCareer', value: true }],
+    confirm: 'Sair agora zera o progresso desta trilha. Voltar depois custa níveis. Pedir demissão?',
     outcomes: [
       {
         chance: 1,

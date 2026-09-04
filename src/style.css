@@ -27,14 +27,22 @@
   --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
+/*
+ * Os tons secundários são calculados para passar em AA (4.5:1) contra papel E
+ * painel, porque é neles que vive a tipografia de 11px — hints de ação, custos,
+ * rótulos de aba — ou seja, quase toda a informação secundária do jogo. Os
+ * valores anteriores ficavam entre 3.88 e 4.30, reprovando justamente ali.
+ * O ocre serve nos dois sentidos: texto ocre sobre papel e texto papel sobre
+ * ocre são o mesmo par, e contraste é simétrico.
+ */
 :root {
   --c-paper: #f4f0e6;
   --c-panel: #eee8d9;
   --c-ink: #1e1b16;
-  --c-muted: #7a7059;
+  --c-muted: #6e6550;
   --c-rule: #d6cfbe;
-  --c-ochre: #a8621b;
-  --c-rust: #8c3a2b;
+  --c-ochre: #955718;
+  --c-rust: #89392a;
   color-scheme: light;
 }
 
@@ -43,10 +51,10 @@
     --c-paper: #17150f;
     --c-panel: #1f1c15;
     --c-ink: #ede7d8;
-    --c-muted: #8b8069;
+    --c-muted: #91856d;
     --c-rule: #38332a;
-    --c-ochre: #d08a3e;
-    --c-rust: #c4614c;
+    --c-ochre: #d18d42;
+    --c-rust: #c86c59;
     color-scheme: dark;
   }
 }
@@ -78,6 +86,32 @@
 * {
   box-shadow: none !important;
   border-radius: 0 !important;
+}
+
+/*
+ * O foco precisa de `outline`, não de `ring`.
+ *
+ * Os utilitários `ring-*` do Tailwind são implementados como box-shadow, e a
+ * regra acima os apaga com `!important`. O resultado era que NENHUM anel de
+ * foco podia existir: navegar por teclado era invisível nas cinco abas, no
+ * modal e na tela de morte. `outline` não é sombra, então sobrevive — e o
+ * dossiê continua sem sombra nenhuma.
+ */
+:focus-visible {
+  outline: 2px solid var(--c-ochre);
+  outline-offset: 2px;
+}
+
+/*
+ * O bounce precisa estar em quem rola de verdade.
+ *
+ * `overscroll-behavior` no html/body não faz nada aqui: o scroll acontece nos
+ * contêineres internos de cada aba. Sem esta regra, chegar ao fim da timeline
+ * arrasta a página inteira.
+ */
+.scroll-pane {
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Barra de rolagem discreta, no tom do papel. */

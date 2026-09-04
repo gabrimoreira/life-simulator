@@ -249,6 +249,7 @@ export const RELATION_ACTIONS: RelationAction[] = [
     label: 'Terminar',
     hint: 'Acaba com o relacionamento. Sem volta.',
     cost: 0,
+    confirm: 'Terminar não tem volta: a pessoa deixa de ser família. Tem certeza?',
     kinds: ['partner', 'spouse'],
     outcomes: [
       {
@@ -268,6 +269,7 @@ export const RELATION_ACTIONS: RelationAction[] = [
     label: 'Cortar relações',
     hint: 'Some da vida da pessoa de vez.',
     cost: 0,
+    confirm: 'Cortar relações é definitivo. Tem certeza?',
     kinds: ['friend', 'sibling'],
     maxRelation: 40,
     outcomes: [

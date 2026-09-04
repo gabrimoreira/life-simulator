@@ -14,10 +14,11 @@ import type { GameState } from '../engine/types'
 const props = defineProps<{ state: GameState }>()
 const store = useGameStore()
 
-// O botão de avançar só existe na aba Vida: nas outras ele competiria com o
-// conteúdo da aba sem ganhar nada.
+// Em qualquer aba. Antes só existia na aba Vida, e o jogador tinha que voltar
+// para lá só para continuar — as abas ganharam `pb-20` para o botão flutuar
+// sem cobrir o último item da lista.
 const showAdvance = computed(
-  () => store.activeTab === 'life' && store.pendingEvent === null && props.state.character.alive,
+  () => store.pendingEvent === null && props.state.character.alive,
 )
 </script>
 

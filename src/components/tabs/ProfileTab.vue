@@ -23,7 +23,7 @@ const marks = computed(() =>
 </script>
 
 <template>
-  <div class="h-full overflow-y-auto px-4 py-4">
+  <div class="h-full scroll-pane px-4 pt-4 pb-20">
     <section>
       <h2 class="border-b border-rule pb-1 font-serif text-sm tracking-wide uppercase">
         Atributos
@@ -109,15 +109,23 @@ const marks = computed(() =>
       </dl>
     </section>
 
-    <section v-if="store.achievements.length" class="mt-6">
+    <section class="mt-6">
       <h2 class="flex items-baseline justify-between border-b border-rule pb-1 font-serif text-sm tracking-wide uppercase">
         <span>Conquistas</span>
-        <span class="tabular-nums">{{ store.achievements.length }}</span>
+        <span class="tabular-nums">
+          {{ store.achievements.length }}/{{ store.allAchievements.length }}
+        </span>
       </h2>
+      <!-- As trancadas aparecem porque saber que existem é o que faz caçar a
+           próxima; só o nome, para não entregar como se chega lá. -->
       <ul class="mt-2 space-y-2">
-        <li v-for="item in store.achievements" :key="item.id">
-          <span class="block text-sm">{{ item.name }}</span>
-          <span class="block text-[11px] leading-snug text-muted">{{ item.description }}</span>
+        <li v-for="item in store.allAchievements" :key="item.id">
+          <span class="block text-sm" :class="item.earned ? '' : 'text-muted'">
+            {{ item.earned ? item.name : '· · ·' }}
+          </span>
+          <span class="block text-[11px] leading-snug text-muted">
+            {{ item.description }}
+          </span>
         </li>
       </ul>
     </section>

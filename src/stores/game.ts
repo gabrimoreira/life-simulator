@@ -6,9 +6,9 @@ import { GAME_CONTENT } from '../content'
 import { CLASS_PROFILES } from '../engine/balance'
 import { ACTION_GROUP_LABELS, availableActions } from '../engine/actions'
 import type { ActionGroup, Person } from '../engine/types'
-import { earnedAchievements } from '../engine/achievements'
+import { achievementCatalog, earnedAchievements } from '../engine/achievements'
 import { netWorth, ownedWithDef } from '../engine/assets'
-import { careerTitle, currentLevel } from '../engine/careers'
+import { careerTitle, currentLevel, peakCareer } from '../engine/careers'
 import { canContinue, createHeir, heirCandidates } from '../engine/heir'
 import { livingRelations, relationActionsFor } from '../engine/relations'
 import { courseName } from '../engine/education'
@@ -16,7 +16,7 @@ import { firstFailure } from '../engine/conditions'
 import { createGame } from '../engine/generate'
 import { interpolate } from '../engine/text'
 import { advanceYear, chooseOption, currentEvent, runAction, runRelationAction } from '../engine/turn'
-import type { EventOption, GameState, Gender } from '../engine/types'
+import type { EventOption, GameState, Gender, TimelineEntry } from '../engine/types'
 import { CURRENT_SAVE_VERSION } from '../save/adapter'
 import type { SaveAdapter } from '../save/adapter'
 import { createLocalStorageAdapter } from '../save/local-storage-adapter'
@@ -38,6 +38,15 @@ export const useGameStore = defineStore('game', () => {
 
   const state = ref<GameState | null>(null)
   const ready = ref(false)
+
+  /**
+   * O que a última ação produziu, para ser mostrado onde ela foi clicada.
+   *
+   * `runAction` escreve a nota na timeline, que só é renderizada na aba Vida:
+   * clicar "Treinar" na aba Ações mudava apenas o contador de pontos, e o
+   * resultado do dado ia parar numa tela que o jogador não estava olhando.
+   */
+  const lastResult = ref<TimelineEntry | null>(null)
   const activeTab = ref<'life' | 'actions' | 'relations' | 'assets' | 'profile'>('life')
 
   const character = computed(() => state.value?.character ?? null)
@@ -87,12 +96,21 @@ export const useGameStore = defineStore('game', () => {
 
   async function newGame(name: string, gender: Gender): Promise<void> {
     state.value = createGame({ name, gender }, GAME_CONTENT)
+    lastResult.value = null
     activeTab.value = 'life'
     await persist()
   }
 
+  /** A nota recém-escrita na timeline, se a última coisa gravada foi uma. */
+  function captureResult(): void {
+    const timeline = state.value?.timeline
+    const last = timeline?.[timeline.length - 1]
+    lastResult.value = last !== undefined && last.kind === 'note' ? last : null
+  }
+
   async function nextYear(): Promise<void> {
     if (!state.value) return
+    lastResult.value = null
     advanceYear(state.value, GAME_CONTENT)
     await persist()
   }
@@ -120,6 +138,23 @@ export const useGameStore = defineStore('game', () => {
   })
 
   const jobTitle = computed(() => (state.value ? careerTitle(state.value, GAME_CONTENT) : null))
+
+  /** Para o balanço final: o cargo mais alto de toda a vida, não o último. */
+  const peakJob = computed(() => (state.value ? peakCareer(state.value, GAME_CONTENT) : null))
+
+  /** Números que só fazem sentido depois que a vida acabou. */
+  const lifeSummary = computed(() => {
+    const current = state.value
+    if (!current) return null
+    const children = current.relations.filter((p) => p.kind === 'child')
+    return {
+      peakJob: peakJob.value,
+      children: children.length,
+      married: current.character.flags['married'] === true,
+      yearsJailed: current.character.prison?.yearsServed ?? 0,
+      hadRecord: current.character.flags['criminal_record'] === true,
+    }
+  })
 
   /**
    * De onde vem o dinheiro do ano, com o mesmo critério da economia.
@@ -167,6 +202,11 @@ export const useGameStore = defineStore('game', () => {
     state.value ? earnedAchievements(state.value, GAME_CONTENT) : [],
   )
 
+  /** Catálogo inteiro, para o jogador saber o que ainda falta caçar. */
+  const allAchievements = computed(() =>
+    state.value ? achievementCatalog(state.value, GAME_CONTENT) : [],
+  )
+
   const canContinueLineage = computed(() => (state.value ? canContinue(state.value) : false))
 
   function actionsForPerson(person: Person): ReturnType<typeof relationActionsFor> {
@@ -177,6 +217,7 @@ export const useGameStore = defineStore('game', () => {
   async function actOnPerson(personId: string, actionId: string): Promise<void> {
     if (!state.value) return
     if (!runRelationAction(state.value, GAME_CONTENT, personId, actionId)) return
+    captureResult()
     await persist()
   }
 
@@ -193,6 +234,7 @@ export const useGameStore = defineStore('game', () => {
   async function act(actionId: string): Promise<void> {
     if (!state.value) return
     if (!runAction(state.value, GAME_CONTENT, actionId)) return
+    captureResult()
     await persist()
   }
 
@@ -206,6 +248,7 @@ export const useGameStore = defineStore('game', () => {
     state,
     ready,
     activeTab,
+    lastResult,
     character,
     alive,
     hasGame,
@@ -218,11 +261,14 @@ export const useGameStore = defineStore('game', () => {
     worth,
     heirs,
     achievements,
+    allAchievements,
     canContinueLineage,
     actionsForPerson,
     actOnPerson,
     continueAsHeir,
     jobTitle,
+    peakJob,
+    lifeSummary,
     income,
     currentSalary,
     studying,

@@ -30,6 +30,7 @@ export interface RelationActionView {
   cost: number
   enabled: boolean
   reason: string | null
+  confirm?: string
 }
 
 export function findPerson(state: GameState, personId: string): Person | undefined {
@@ -177,6 +178,7 @@ export function relationActionsFor(
       cost: action.cost,
       enabled: reason === null,
       reason,
+      ...(action.confirm !== undefined ? { confirm: action.confirm } : {}),
     }
   })
 }

@@ -385,6 +385,8 @@ export interface RelationAction {
   maxRelation?: number
   /** Anos minimos entre dois usos NA MESMA pessoa. */
   cooldown?: number
+  /** Ver `GameAction.confirm`. */
+  confirm?: string
   outcomes: Outcome[]
 }
 
@@ -428,6 +430,12 @@ export interface GameAction {
   /** Se falhar, a acao aparece desabilitada com o motivo. */
   requirements?: Condition[]
   cooldown?: number
+  /**
+   * Pergunta de confirmacao. Presente = a acao e irreversivel o bastante para
+   * merecer um segundo toque: largar um curso apaga anos de estudo, romper um
+   * casamento nao tem volta.
+   */
+  confirm?: string
   outcomes: Outcome[]
 }
 

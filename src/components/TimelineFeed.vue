@@ -19,7 +19,15 @@ watch(
 </script>
 
 <template>
-  <div ref="scroller" class="h-full overflow-y-auto px-4 pt-3 pb-20">
+  <!-- `aria-live="polite"`: as notas do ano, incluindo conquistas, chegam sem
+       nenhuma interação. Sem isto um leitor de tela não anunciava nada. -->
+  <div
+    ref="scroller"
+    class="h-full scroll-pane px-4 pt-3 pb-20"
+    role="log"
+    aria-live="polite"
+    aria-label="Linha do tempo"
+  >
     <template v-for="(entry, index) in entries" :key="index">
       <div v-if="entry.kind === 'year'" class="pt-5 first:pt-0">
         <div class="flex items-baseline gap-3">

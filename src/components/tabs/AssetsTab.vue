@@ -34,7 +34,7 @@ function drift(value: number, price: number): number {
 </script>
 
 <template>
-  <div class="h-full overflow-y-auto px-4 py-4">
+  <div class="h-full scroll-pane px-4 pt-4 pb-20">
     <section>
       <h2 class="border-b border-rule pb-1 font-serif text-sm tracking-wide uppercase">Balanço</h2>
       <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm tabular-nums">

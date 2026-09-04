@@ -13,7 +13,13 @@ function start(): void {
 </script>
 
 <template>
-  <div class="flex h-full flex-col justify-between px-6 py-10">
+  <div
+    class="flex h-full flex-col justify-between px-6 py-10"
+    :style="{
+      paddingTop: 'max(2.5rem, env(safe-area-inset-top))',
+      paddingBottom: 'max(2.5rem, env(safe-area-inset-bottom))',
+    }"
+  >
     <div>
       <p class="font-serif text-xs tracking-[0.2em] text-muted uppercase">Simulador</p>
       <h1 class="mt-1 font-serif text-4xl leading-none">Vida</h1>

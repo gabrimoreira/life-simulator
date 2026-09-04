@@ -10,11 +10,15 @@ defineEmits<{ 'update:modelValue': [TabKey] }>()
   <nav
     class="grid shrink-0 grid-cols-5 border-t border-rule bg-panel"
     :style="{ paddingBottom: 'env(safe-area-inset-bottom)' }"
+    role="tablist"
+    aria-label="Seções do jogo"
   >
     <button
       v-for="tab in TABS"
       :key="tab.key"
       type="button"
+      role="tab"
+      :aria-selected="modelValue === tab.key"
       class="flex min-h-[52px] flex-col items-center justify-center gap-0.5 border-t-2 px-1 text-[11px] transition-colors duration-100"
       :class="
         modelValue === tab.key
@@ -23,7 +27,9 @@ defineEmits<{ 'update:modelValue': [TabKey] }>()
       "
       @click="$emit('update:modelValue', tab.key)"
     >
-      <span class="font-serif text-base leading-none">{{ tab.glyph }}</span>
+      <!-- Os glifos são ornamento: um leitor de tela lia "parágrafo, seção,
+           asterisco" antes de cada nome de aba. -->
+      <span class="font-serif text-base leading-none" aria-hidden="true">{{ tab.glyph }}</span>
       <span>{{ tab.label }}</span>
     </button>
   </nav>
