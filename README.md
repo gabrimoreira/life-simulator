@@ -316,6 +316,44 @@ Não por intuição: por simulação. Perfis de jogador scriptados — aleatóri
 família, carreira, otimizado, crime, academia, pobre — cem vidas cada, olhando
 mediana, p90, mortes no vermelho e herdeiros.
 
+### Dois jogadores, não um
+
+`src/test/player.ts` tem duas políticas de escolha, e a distância entre elas é
+a informação:
+
+- **`first`** sempre pega a primeira opção disponível. Nos eventos destrutivos
+  essa é justamente a pior, então ele é um **piso**: o que ele alcança, todo
+  mundo alcança.
+- **`sensible`** pontua cada opção pelo efeito esperado e pega a melhor. Não é
+  esperto — não planeja, não guarda dinheiro, não vê sinergia entre curso e
+  trilha. Só não se sabota.
+
+Por cinco fases só existiu o primeiro, e por isso cada número vinha com a
+ressalva de que o jogador escolhia sempre a pior opção. Um piso sozinho não
+diz se o jogo é difícil ou se o jogador é ruim.
+
+Medido em 100 vidas por combinação:
+
+| plano    | política | p50 patrimônio | negativos | herdeiro | morte p50 |
+|----------|----------|---------------:|----------:|---------:|----------:|
+| carreira | first    | 2,07M | 11 |  9 | 72 |
+| carreira | sensible | 3,19M |  2 | 11 | 72 |
+| medicina | first    | 3,85M | 12 |  7 | 70 |
+| medicina | sensible | 6,28M |  1 |  5 | 70 |
+| família  | first    | 1,92M |  5 | 52 | 72 |
+| família  | sensible | 2,62M |  3 | 61 | 75 |
+
+Duas leituras que só aparecem com os dois lados:
+
+**Morrer no vermelho é quase inteiramente escolha**, não economia dura — 11 em
+100 caem para 2. É a forma certa: um jogo que empobrece quem joga bem estaria
+punindo por existir.
+
+**A idade de morte quase não muda.** Longevidade é estrutural — sai da curva de
+Gompertz e do teto de saúde da idade, não do que se clica. Um teste guarda
+isso: se a diferença crescer, alguma escolha virou um botão de viver mais, e
+isso precisa ser deliberado.
+
 Foi assim que apareceram os problemas que a leitura do código não mostrava: o
 efeito de promoção furando a tabela de requisitos, o crime sendo a trilha mais
 rentável do jogo por não ter mecanismo de ruína nenhum, e o padrão de vida
