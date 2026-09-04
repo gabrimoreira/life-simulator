@@ -40,6 +40,13 @@ const marks = computed(() =>
       </div>
     </section>
 
+    <!-- `unhappyYears` decide quais eventos de crise existem (2, 3, 4 e 6 anos
+         seguidos) e era invisível: a espiral acontecia sem o jogador ter como
+         saber que estava dentro de uma. -->
+    <p v-if="character.unhappyYears >= 2" class="mt-3 border-l-2 border-rust pl-3 text-[11px] leading-snug text-rust">
+      {{ character.unhappyYears }} anos seguidos de infelicidade. Um ano bom zera a conta.
+    </p>
+
     <section v-if="character.prison" class="mt-6">
       <h2 class="border-b border-ink pb-1 font-serif text-sm tracking-wide uppercase">Preso</h2>
       <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
@@ -73,6 +80,16 @@ const marks = computed(() =>
           {{ character.career?.yearsInTrack ?? 0 }}
           {{ (character.career?.yearsInTrack ?? 0) === 1 ? 'ano' : 'anos' }}
         </dd>
+        <!-- O motor já sabia se a promoção estava madura desde a Fase 2, e a
+             tela nunca contou: o jogador via o desempenho subir sem saber para
+             onde. -->
+        <template v-if="store.promotion">
+          <dt class="text-muted">Próximo cargo</dt>
+          <dd class="text-right" :class="store.promotion.ready ? 'text-ochre' : ''">
+            {{ store.promotion.title ?? 'Você está no topo' }}
+            <template v-if="store.promotion.title && store.promotion.ready"> · pronto</template>
+          </dd>
+        </template>
       </dl>
       <dl
         v-else-if="character.pension > 0"
@@ -98,8 +115,16 @@ const marks = computed(() =>
           {{ store.studying.yearsLeft }}
           {{ store.studying.yearsLeft === 1 ? 'ano' : 'anos' }}
         </dd>
+        <dt class="text-muted">Mensalidade</dt>
+        <dd class="text-right tabular-nums">
+          {{ store.studying.annualCost > 0 ? formatMoney(store.studying.annualCost) + '/ano' : 'Sem custo' }}
+        </dd>
         <dt class="text-muted">Pagamento</dt>
-        <dd class="text-right">{{ store.studying.financed ? 'Financiado' : 'Em dia' }}</dd>
+        <dd class="text-right">{{ store.studying.payment }}</dd>
+        <dt v-if="store.studying.neededDebt" class="text-muted">Atenção</dt>
+        <dd v-if="store.studying.neededDebt" class="text-right text-rust">
+          Já virou dívida
+        </dd>
       </dl>
     </section>
 

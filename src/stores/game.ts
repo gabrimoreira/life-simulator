@@ -6,10 +6,11 @@ import { GAME_CONTENT } from '../content'
 import { FLAG_LABELS } from '../content/flags'
 import { CLASS_PROFILES } from '../engine/balance'
 import { ACTION_GROUP_LABELS, availableActions } from '../engine/actions'
-import type { ActionGroup, Person } from '../engine/types'
+import type { ActionGroup, PaymentMode, Person } from '../engine/types'
 import { achievementCatalog, earnedAchievements } from '../engine/achievements'
 import { netWorth, ownedWithDef } from '../engine/assets'
-import { careerTitle, currentLevel, peakCareer } from '../engine/careers'
+import { costOfLiving, spouseIncome } from '../engine/economy'
+import { careerTitle, currentLevel, nextLevel, peakCareer, promotionReady } from '../engine/careers'
 import { canContinue, createHeir, heirCandidates } from '../engine/heir'
 import { livingRelations, relationActionsFor } from '../engine/relations'
 import { courseName } from '../engine/education'
@@ -75,6 +76,26 @@ export const useGameStore = defineStore('game', () => {
    * se descobria ao recarregar a página.
    */
   const saveProblem = ref<SaveProblem | null>(null)
+
+  /**
+   * O que quebrou, se quebrou.
+   *
+   * Sem isto, uma excecao dentro de `chooseOption` deixava o jogo parado com o
+   * modal aberto e o turno preso em 'resolving': nenhum botao respondia, nada
+   * aparecia na tela, e a unica saida era limpar o navegador — levando junto a
+   * vida inteira. Registrado aqui, o jogador ao menos consegue ver o que
+   * houve e baixar o save antes de recomecar.
+   */
+  const fatal = ref<string | null>(null)
+
+  function reportFatal(error: unknown): void {
+    fatal.value = error instanceof Error ? error.message : String(error)
+  }
+
+  function dismissFatal(): void {
+    fatal.value = null
+  }
+
   const activeTab = ref<'life' | 'actions' | 'relations' | 'assets' | 'profile'>('life')
 
   const character = computed(() => state.value?.character ?? null)
@@ -258,13 +279,59 @@ export const useGameStore = defineStore('game', () => {
 
   const currentSalary = computed(() => income.value.value)
 
+  /**
+   * O proximo degrau da carreira e se ele ja esta ao alcance.
+   *
+   * `nextLevel` e `promotionReady` existiam, tinham teste, e nenhuma tela
+   * chamava: o jogador via "Desempenho 62" sem nenhuma forma de saber que o
+   * proximo cargo pedia 65.
+   */
+  const promotion = computed(() => {
+    const current = state.value
+    if (!current || current.character.career === null) return null
+    const next = nextLevel(current, GAME_CONTENT)
+    if (!next) return { title: null, ready: false, minYears: 0 }
+    return {
+      title: next.title,
+      ready: promotionReady(current, GAME_CONTENT),
+      minYears: next.minYears,
+    }
+  })
+
+  /**
+   * O custo de vida de verdade, e o que o conjuge poe na mesa.
+   *
+   * A aba Patrimonio mostrava o PISO da classe social sob o rotulo "custo de
+   * vida minimo" e explicava em letra miuda que o real era outro numero — que
+   * ela nao mostrava. `costOfLiving` e `spouseIncome` ja calculavam os dois.
+   */
+  const yearCost = computed(() => (state.value ? costOfLiving(state.value, currentSalary.value) : 0))
+
+  const spouseContribution = computed(() =>
+    state.value ? spouseIncome(state.value, currentSalary.value) : 0,
+  )
+
+  /** Como o curso esta sendo pago, em palavra em vez de enum. */
+  const PAYMENT_LABELS: Record<PaymentMode, string> = {
+    scholarship: 'Bolsa integral',
+    cash: 'Do próprio bolso',
+    financed: 'Financiado',
+  }
+
   const studying = computed(() => {
     const enrollment = state.value?.character.enrollment
     if (!enrollment) return null
     return {
       name: courseName(GAME_CONTENT, enrollment.courseId),
       yearsLeft: enrollment.yearsLeft,
-      financed: enrollment.financed,
+      // `annualCost` e `mode` eram gravados na matricula e nao apareciam em
+      // lugar nenhum: a tela dizia "Financiado" ou "Em dia" a partir de um
+      // booleano diferente, e chamava de "Em dia" ate quem tinha bolsa
+      // integral e nunca pagou nada.
+      annualCost: enrollment.annualCost,
+      payment: PAYMENT_LABELS[enrollment.mode],
+      /** Ja precisou recorrer a divida em algum ano do curso. */
+      neededDebt: enrollment.financed,
     }
   })
 
@@ -352,10 +419,16 @@ export const useGameStore = defineStore('game', () => {
     lifeSummary,
     income,
     currentSalary,
+    promotion,
+    yearCost,
+    spouseContribution,
     studying,
     act,
     saveProblem,
     dismissSaveProblem,
+    fatal,
+    reportFatal,
+    dismissFatal,
     exportSave,
     importSave,
     init,

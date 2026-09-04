@@ -47,7 +47,6 @@ function baixar(conteudo: string, nome: string): void {
     v-if="texto"
     class="border-b border-rust bg-panel px-4 py-2.5"
     role="alert"
-    :style="{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }"
   >
     <p class="text-[11px] leading-snug text-rust">{{ texto }}</p>
     <div class="mt-2 flex gap-2">

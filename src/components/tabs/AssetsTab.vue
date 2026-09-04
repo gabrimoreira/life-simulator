@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CLASS_PROFILES } from '../../engine/balance'
 import { formatMoney } from '../../engine/text'
 import type { AssetKind, Character } from '../../engine/types'
 import { useGameStore } from '../../stores/game'
 
-const props = defineProps<{ character: Character }>()
+defineProps<{ character: Character }>()
 const store = useGameStore()
-
-const livingFloor = computed(() => CLASS_PROFILES[props.character.socialClass].costOfLiving)
 
 const KIND_LABELS: Record<AssetKind, string> = {
   property: 'Imóveis',
@@ -88,15 +85,33 @@ function drift(value: number, price: number): number {
       <h2 class="border-b border-rule pb-1 font-serif text-sm tracking-wide uppercase">
         Fluxo anual
       </h2>
+      <!-- Esta tela mostrava o PISO da classe social como "custo de vida
+           mínimo" e explicava em letra miúda que o número real era outro — o
+           que ela não mostrava. `costOfLiving` e `spouseIncome` já calculavam
+           os dois desde a Fase 6, e ninguém os chamava. -->
       <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm tabular-nums">
         <dt class="text-muted">{{ store.income.label }}</dt>
         <dd class="text-right">{{ formatMoney(store.income.value) }}</dd>
-        <dt class="text-muted">Custo de vida mínimo</dt>
-        <dd class="text-right">{{ formatMoney(livingFloor) }}</dd>
+        <template v-if="store.spouseContribution > 0">
+          <dt class="text-muted">Cônjuge</dt>
+          <dd class="text-right">{{ formatMoney(store.spouseContribution) }}</dd>
+        </template>
+        <dt class="text-muted">Custo de vida</dt>
+        <dd class="text-right text-rust">−{{ formatMoney(store.yearCost) }}</dd>
       </dl>
+      <div class="mt-2 flex items-baseline justify-between border-t border-rule pt-2 text-sm">
+        <span class="text-muted">Sobra por ano</span>
+        <span
+          class="tabular-nums"
+          :class="store.income.value + store.spouseContribution - store.yearCost < 0 ? 'text-rust' : ''"
+        >
+          {{ formatMoney(store.income.value + store.spouseContribution - store.yearCost) }}
+        </span>
+      </div>
       <p class="mt-2 text-[11px] leading-relaxed text-muted">
-        Quem ganha mais gasta mais: o custo de vida real é o maior entre esse piso e uma fatia da
-        renda do ano. Comprar e vender bens fica na aba Ações.
+        Quem ganha mais gasta mais: o custo de vida sobe junto com a renda e nunca cai abaixo da
+        subsistência. Não entram aqui a manutenção dos bens, a conta de uma condição crônica nem o
+        que um vício cobra. Comprar e vender bens fica na aba Ações.
       </p>
     </section>
   </div>
