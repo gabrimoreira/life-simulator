@@ -1,4 +1,9 @@
 // Infância: 0 a 12 anos. Pouca agência, consequências que duram.
+//
+// Os primeiros anos existem porque o pool medido era ZERO aos 0 anos e UM dos
+// 1 aos 3: quatro turnos em que "Avançar ano" só imprimia o cabeçalho do ano,
+// que é a primeira impressão que o jogo dá. Quem escolhe aqui é a família —
+// o bebê é o objeto da decisão, não o sujeito, e os textos assumem isso.
 
 import type { GameEvent } from '../../engine/types'
 
@@ -547,6 +552,216 @@ export const CHILDHOOD_EVENTS: GameEvent[] = [
             effects: [
               { type: 'money', delta: 500 },
               { type: 'stat', stat: 'intelligence', op: 'delta', value: 3 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  // --- Primeiros anos: quem decide é a casa ---------------------------------
+
+  {
+    id: 'childhood_arrival',
+    category: 'childhood',
+    weight: 14,
+    once: true,
+    conditions: [{ type: 'age', max: 0 }],
+    text: 'Você nasceu. Alguém precisou decidir de quem seria o seu nome.',
+    options: [
+      {
+        text: 'O nome de alguém da família',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você carrega o nome de gente que veio antes. Isso pesa e ampara.',
+            effects: [
+              { type: 'relation', target: { by: 'kind', kind: 'mother' }, delta: 8 },
+              { type: 'relation', target: { by: 'kind', kind: 'father' }, delta: 8 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Um nome que ninguém da família tem',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Escolheram um nome novo em folha. Metade da família achou estranho.',
+            effects: [
+              { type: 'stat', stat: 'looks', op: 'delta', value: 2 },
+              { type: 'stat', stat: 'luck', op: 'delta', value: 3 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'childhood_first_year',
+    category: 'childhood',
+    weight: 13,
+    once: true,
+    conditions: [{ type: 'age', max: 1 }],
+    text: 'Primeiro ano. Você não dorme, e por tabela ninguém na casa dorme.',
+    options: [
+      {
+        text: 'A casa se reveza',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Dividiram as noites entre todo mundo, e todo mundo chegou vivo em dezembro.',
+            effects: [
+              { type: 'relation', target: { by: 'kind', kind: 'mother' }, delta: 6 },
+              { type: 'relation', target: { by: 'kind', kind: 'father' }, delta: 6 },
+              { type: 'stat', stat: 'health', op: 'delta', value: 3 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Sobra tudo para uma pessoa só',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Uma pessoa atravessou o ano inteiro sozinha, e ninguém falou sobre isso depois.',
+            effects: [
+              { type: 'relation', target: { by: 'kind', kind: 'mother' }, delta: 14 },
+              { type: 'relation', target: { by: 'kind', kind: 'father' }, delta: -10 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'childhood_daycare',
+    category: 'childhood',
+    weight: 12,
+    once: true,
+    conditions: [{ type: 'age', min: 2, max: 4 }],
+    text: 'Chegou a hora de decidir com quem você fica enquanto a casa trabalha.',
+    options: [
+      {
+        text: 'Creche',
+        outcomes: [
+          {
+            chance: 0.7,
+            text: 'Você aprendeu a dividir brinquedo antes de aprender a ler.',
+            effects: [
+              { type: 'stat', stat: 'charisma', op: 'delta', value: 6 },
+              { type: 'stat', stat: 'health', op: 'delta', value: -3 },
+            ],
+          },
+          {
+            chance: 0.3,
+            text: 'Você pegou todas as doenças que existiam naquela sala.',
+            effects: [
+              { type: 'stat', stat: 'health', op: 'delta', value: -8 },
+              { type: 'stat', stat: 'charisma', op: 'delta', value: 4 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Com a avó',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você passou os dias com sua avó, e comeu bem demais.',
+            effects: [
+              { type: 'stat', stat: 'happiness', op: 'delta', value: 8 },
+              { type: 'stat', stat: 'health', op: 'delta', value: 4 },
+              { type: 'stat', stat: 'charisma', op: 'delta', value: -3 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'childhood_early_talk',
+    category: 'childhood',
+    weight: 11,
+    cooldown: 2,
+    conditions: [{ type: 'age', min: 2, max: 5 }],
+    text: 'Você virou uma criança de perguntas. Não param nunca, e algumas não têm resposta.',
+    options: [
+      {
+        text: 'Responderam todas, mesmo as difíceis',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Levaram você a sério cedo, e isso não é pouca coisa.',
+            effects: [
+              { type: 'stat', stat: 'intelligence', op: 'delta', value: 7 },
+              { type: 'relation', target: { by: 'kind', kind: 'mother' }, delta: 5 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Mandaram você brincar',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você aprendeu que certas perguntas incomodam, e parou de fazer.',
+            effects: [
+              { type: 'stat', stat: 'intelligence', op: 'delta', value: 2 },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -4 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'childhood_first_fall',
+    category: 'health',
+    weight: 10,
+    cooldown: 3,
+    conditions: [{ type: 'age', min: 1, max: 6 }],
+    text: 'Você caiu de um lugar de onde não devia ter subido.',
+    options: [
+      {
+        text: 'Correram com você para o pronto-socorro',
+        outcomes: [
+          {
+            chance: 0.8,
+            text: 'Não era nada. Voltaram para casa aliviados e com a conta na mão.',
+            effects: [
+              { type: 'money', delta: -800 },
+              { type: 'stat', stat: 'health', op: 'delta', value: -2 },
+            ],
+          },
+          {
+            chance: 0.2,
+            text: 'Era o braço. Gesso por dois meses e uma cicatriz que ficou.',
+            effects: [
+              { type: 'money', delta: -2_500 },
+              { type: 'stat', stat: 'health', op: 'delta', value: -8 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Passaram gelo e disseram que passava',
+        outcomes: [
+          {
+            chance: 0.75,
+            text: 'Passou mesmo. Crianças são feitas de outro material.',
+            effects: [{ type: 'stat', stat: 'health', op: 'delta', value: -3 }],
+          },
+          {
+            chance: 0.25,
+            text: 'Não passou, e quando foram ver já tinha colado torto.',
+            effects: [
+              { type: 'stat', stat: 'health', op: 'delta', value: -12 },
+              { type: 'stat', stat: 'looks', op: 'delta', value: -4 },
             ],
           },
         ],

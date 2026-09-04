@@ -106,7 +106,30 @@ describe('ser preso', () => {
 
     expect(state.character.prison?.yearsLeft).toBe(7)
     expect(state.character.prison?.reason).toBe('roubo')
-    if (note.kind === 'note') expect(note.text).toContain('aumentou')
+    if (note?.kind === 'note') expect(note.text).toContain('aumentou')
+  })
+
+  it('anos negativos DESCONTAM a pena em vez de somar', () => {
+    // `Math.max(1, years)` transformava remição por estudo e progressão de
+    // regime em um ano a MAIS de cadeia — o contrário exato do que o texto do
+    // evento prometia ao jogador.
+    const state = preso(6)
+    const note = jail(state, content, -2, 'remição por estudo')
+
+    expect(state.character.prison?.yearsLeft).toBe(4)
+    if (note?.kind === 'note') expect(note.text).toContain('caiu')
+  })
+
+  it('desconto maior que a pena solta em vez de deixar dias negativos', () => {
+    const state = preso(2)
+    jail(state, content, -5, 'progressão de regime')
+    expect(state.character.prison).toBeNull()
+  })
+
+  it('desconto não faz nada para quem está solto', () => {
+    const state = makeState({ character: makeCharacter({ age: 30 }) })
+    expect(jail(state, content, -3, 'nada')).toBeNull()
+    expect(state.character.prison).toBeNull()
   })
 })
 

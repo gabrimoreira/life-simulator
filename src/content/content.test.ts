@@ -203,15 +203,14 @@ describe('densidade do sorteio', () => {
     return state
   }
 
-  // As quatro medidas abaixo são CARACTERIZAÇÃO, não a meta. O teste antigo só
-  // media uma persona rica, casada e empregada — 38 elegíveis aos 45 — e por
-  // isso não enxergava que o mesmo jogo entrega metade disso para quem não
-  // venceu. Os pisos aqui são o que existe hoje, para que não piore; o Bloco 6
-  // enche esses pools e sobe cada número para a meta escrita ao lado.
+  // O teste antigo media só uma persona rica, casada e empregada — 38 eventos
+  // elegíveis aos 45 — e por isso não enxergava que o mesmo jogo entregava
+  // 20 para quem não venceu. O jogo tinha sete eventos sobre ter iate e
+  // nenhum sobre não ter o que comer.
   it('quem não venceu na vida também tem o que viver', () => {
     for (const age of [25, 35, 45, 60]) {
       const pool = eligibleEvents(personaMagra(age), GAME_CONTENT)
-      expect(pool.length, `pobre sem nada aos ${age} anos`).toBeGreaterThanOrEqual(19) // meta: 22
+      expect(pool.length, `pobre sem nada aos ${age} anos`).toBeGreaterThanOrEqual(25)
     }
   })
 
@@ -221,7 +220,7 @@ describe('densidade do sorteio', () => {
     const preso = personaMagra(30, (state) => {
       state.character.prison = { yearsLeft: 6, reason: 'roubo', yearsServed: 1 }
     })
-    expect(eligibleEvents(preso, GAME_CONTENT).length).toBeGreaterThanOrEqual(4) // meta: 12
+    expect(eligibleEvents(preso, GAME_CONTENT).length).toBeGreaterThanOrEqual(12)
   })
 
   it('a aposentadoria dura décadas e precisa de pool para elas', () => {
@@ -229,16 +228,16 @@ describe('densidade do sorteio', () => {
       state.character.flags['retired'] = true
       state.character.pension = 30_000
     })
-    expect(eligibleEvents(aposentado, GAME_CONTENT).length).toBeGreaterThanOrEqual(21) // meta: 22
+    expect(eligibleEvents(aposentado, GAME_CONTENT).length).toBeGreaterThanOrEqual(25)
   })
 
   it('os primeiros anos de vida não são turnos vazios', () => {
     // O jogo começa aos 0. Se o pool for 0, "Avançar ano" só imprime o
     // cabeçalho do ano, e a primeira impressão do jogo é a de um jogo quebrado.
-    // Hoje é 0 aos 0 anos e 1 dos 1 aos 3: quatro turnos que só imprimem o
-    // cabeçalho do ano. Meta do Bloco 6: pelo menos 2 em cada.
+    // Era 0 aos 0 anos e 1 dos 1 aos 3: quatro turnos em que "Avançar ano" só
+    // imprimia o cabeçalho, e essa é a primeira impressão que o jogo dá.
     for (const age of [0, 1, 2, 3]) {
-      expect(eligibleEvents(personaMagra(age), GAME_CONTENT).length, `aos ${age}`).toBeGreaterThanOrEqual(0)
+      expect(eligibleEvents(personaMagra(age), GAME_CONTENT).length, `aos ${age}`).toBeGreaterThanOrEqual(2)
     }
   })
 

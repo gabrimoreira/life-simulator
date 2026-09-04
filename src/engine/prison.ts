@@ -40,20 +40,46 @@ export function mentionsPrison(conditions: Condition[]): boolean {
 }
 
 /**
- * Prende, ou soma à pena de quem já está preso. Carreira e matrícula acabam
- * junto. Sem a soma, um evento de briga dentro da cadeia dizia "sua pena
- * aumentou" e não aumentava nada.
+ * Muda a pena: prende, soma à de quem já está preso, ou desconta.
+ *
+ * Sem a soma, um evento de briga dentro da cadeia dizia "sua pena aumentou" e
+ * não aumentava nada. Anos NEGATIVOS descontam — é como remição por estudo e
+ * progressão de regime se expressam, e sem isso um `Math.max(1, ...)` as
+ * transformava em um ano a MAIS de cadeia, o contrário exato do que o texto
+ * do evento prometia. Descontar só faz sentido para quem já está preso.
  */
 export function jail(
   state: GameState,
   content: ContentPack,
   years: number,
   reason: string,
-): TimelineEntry {
+): TimelineEntry | null {
   const c = state.character
-  const total = Math.max(1, Math.round(years))
-
+  const requested = Math.round(years)
   const current = c.prison
+
+  if (current && requested < 0) {
+    const cut = Math.min(-requested, current.yearsLeft)
+    current.yearsLeft -= cut
+
+    if (current.yearsLeft <= 0) {
+      const note = release(state)
+      return note ?? null
+    }
+
+    return makeNote(
+      state,
+      `Sua pena caiu ${cut} ${cut === 1 ? 'ano' : 'anos'} por ${reason}.`,
+      'crime',
+      [{ label: 'Pena', text: `−${cut} anos`, tone: 'good' }],
+    )
+  }
+
+  // Desconto em quem está solto não significa nada.
+  if (requested <= 0) return null
+
+  const total = Math.max(1, requested)
+
   if (current) {
     current.yearsLeft += total
     return makeNote(

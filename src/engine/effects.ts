@@ -268,7 +268,12 @@ export function applyEffect(
     case 'jail': {
       const wasInside = state.character.prison !== null
       // A nota rica de condenacao e escrita por `jail()`; aqui so o resumo.
-      jail(state, content, effect.years, effect.reason)
+      // Anos negativos descontam a pena, e nao valem nada para quem esta solto.
+      if (!jail(state, content, effect.years, effect.reason)) return null
+
+      if (effect.years < 0) {
+        return { label: 'Pena', text: `${effect.years} anos`, tone: 'good' }
+      }
       return {
         label: wasInside ? 'Pena' : 'Preso',
         text: `${wasInside ? '+' : ''}${effect.years} anos`,

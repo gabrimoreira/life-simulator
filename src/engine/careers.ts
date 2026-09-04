@@ -207,7 +207,8 @@ export function applyCareerYear(
     const chance = CRIME_JAIL_BASE_CHANCE * (1 + career.level * CRIME_JAIL_LEVEL_FACTOR)
     if (rng.chance(chance)) {
       const years = CRIME_SENTENCE_PER_LEVEL * (career.level + 1) + rng.int(0, 3)
-      notes.push(jail(state, content, years, 'os crimes que você vinha cometendo'))
+      const note = jail(state, content, years, 'os crimes que você vinha cometendo')
+      if (note) notes.push(note)
       return { income, notes }
     }
   }
