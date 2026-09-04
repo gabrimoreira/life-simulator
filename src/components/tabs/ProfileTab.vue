@@ -65,6 +65,13 @@ const marks = computed(() =>
           {{ character.career?.yearsInLevel ?? 0 }}
           {{ (character.career?.yearsInLevel ?? 0) === 1 ? 'ano' : 'anos' }}
         </dd>
+        <!-- `yearsInTrack` era contado todo ano desde a Fase 2 e nunca lido
+             por ninguém: nem regra, nem tela. -->
+        <dt class="text-muted">Tempo na área</dt>
+        <dd class="text-right tabular-nums">
+          {{ character.career?.yearsInTrack ?? 0 }}
+          {{ (character.career?.yearsInTrack ?? 0) === 1 ? 'ano' : 'anos' }}
+        </dd>
       </dl>
       <dl
         v-else-if="character.pension > 0"

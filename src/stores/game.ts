@@ -94,8 +94,10 @@ export const useGameStore = defineStore('game', () => {
     ready.value = true
   }
 
-  async function newGame(name: string, gender: Gender): Promise<void> {
-    state.value = createGame({ name, gender }, GAME_CONTENT)
+  async function newGame(name: string, gender: Gender, seed?: number): Promise<void> {
+    // A seed sempre existiu em `GameState` e nunca foi exibida nem aceita: o
+    // engine é determinístico por design e não havia como repetir uma vida.
+    state.value = createGame(seed === undefined ? { name, gender } : { name, gender, seed }, GAME_CONTENT)
     lastResult.value = null
     activeTab.value = 'life'
     await persist()

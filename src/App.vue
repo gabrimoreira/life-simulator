@@ -16,7 +16,10 @@ onMounted(() => {
 <template>
   <div class="mx-auto flex h-dvh max-w-[480px] flex-col border-rule sm:border-x">
     <template v-if="store.ready">
-      <NewGameView v-if="!store.state" @start="(name, gender) => store.newGame(name, gender)" />
+      <NewGameView
+        v-if="!store.state"
+        @start="(name, gender, seed) => store.newGame(name, gender, seed)"
+      />
       <DeathView
         v-else-if="!store.state.character.alive"
         :character="store.state.character"

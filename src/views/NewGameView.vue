@@ -2,13 +2,18 @@
 import { ref } from 'vue'
 import type { Gender } from '../engine/types'
 
-const emit = defineEmits<{ start: [name: string, gender: Gender] }>()
+const emit = defineEmits<{ start: [name: string, gender: Gender, seed?: number] }>()
 
 const name = ref('')
 const gender = ref<Gender>('female')
+const seed = ref('')
 
 function start(): void {
-  emit('start', name.value.trim(), gender.value)
+  // A vida inteira sai de uma seed. Informar a mesma repete tudo — os eventos,
+  // os dados, a cidade, a família. É o que torna possível contar a mesma
+  // história para outra pessoa.
+  const parsed = Number.parseInt(seed.value.trim(), 10)
+  emit('start', name.value.trim(), gender.value, Number.isFinite(parsed) ? parsed : undefined)
 }
 </script>
 
@@ -69,6 +74,26 @@ function start(): void {
           Define a concordância dos textos e alguns eventos. Nada mais.
         </p>
       </fieldset>
+
+      <div>
+        <label for="semente" class="font-serif text-sm tracking-wide uppercase">
+          Semente <span class="text-muted normal-case">(opcional)</span>
+        </label>
+        <input
+          id="semente"
+          v-model="seed"
+          type="text"
+          inputmode="numeric"
+          maxlength="12"
+          autocomplete="off"
+          placeholder="Em branco, sorteia"
+          class="mt-2 min-h-[48px] w-full border-b border-rule bg-transparent pb-1 font-serif text-base outline-none placeholder:text-muted focus:border-ochre"
+        />
+        <p class="mt-2 text-xs text-muted">
+          A mesma semente dá exatamente a mesma vida. A do fim de cada partida fica na tela de
+          morte.
+        </p>
+      </div>
 
       <button
         type="submit"

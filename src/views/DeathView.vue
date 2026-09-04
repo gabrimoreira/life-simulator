@@ -64,6 +64,10 @@ const marks = computed(() =>
         <dd v-if="store.lifeSummary?.hadRecord" class="text-right text-rust">Suja</dd>
         <dt class="text-muted">Momentos vividos</dt>
         <dd class="text-right tabular-nums">{{ chosen }}</dd>
+        <!-- A seed reproduz esta vida inteira. Estava no save desde a Fase 1 e
+             nunca tinha sido mostrada a ninguém. -->
+        <dt class="text-muted">Semente</dt>
+        <dd class="text-right font-serif tabular-nums select-all">{{ store.state?.seed }}</dd>
       </dl>
     </section>
 
