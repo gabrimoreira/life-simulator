@@ -13,6 +13,7 @@ import { LUXURY_EVENTS } from './luxury'
 import { MIDLIFE_EVENTS } from './midlife'
 import { PARENTHOOD_EVENTS } from './parenthood'
 import { PRISON_EVENTS } from './prison'
+import { PROFESSION_EVENTS } from './professions'
 import { SOCIAL_EVENTS } from './social'
 import { CHILDHOOD_EVENTS } from './childhood'
 import { ELDER_EVENTS } from './elder'
@@ -33,6 +34,7 @@ export const ALL_EVENTS: GameEvent[] = [
   ...PRISON_EVENTS,
   ...CRIME_EVENTS,
   ...POLITICS_EVENTS,
+  ...PROFESSION_EVENTS,
   ...ACADEMIA_EVENTS,
   ...PARENTHOOD_EVENTS,
   ...LUXURY_EVENTS,

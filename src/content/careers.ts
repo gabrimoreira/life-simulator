@@ -2,6 +2,14 @@
 //
 // Trocar de trilha é permitido e custa todo o progresso — a decisão é
 // interessante justamente por isso, não porque o jogo pune.
+//
+// As trilhas de PROFISSÃO (medicina, direito, engenharia) existem porque sem
+// elas o diploma não valia nada: nenhuma flag `course_*` era lida em lugar
+// nenhum, e Medicina — seis anos e R$360.000 — abria exatamente as mesmas
+// portas que Licenciatura, quatro anos e R$32.000. Elas também são o que
+// torna a condição `careerTrack` necessária: agora há quatro trilhas de
+// `kind: 'clt'`, e "evento de médico" não é a mesma coisa que "evento de
+// quem tem carteira assinada".
 
 import type { CareerTrack } from '../engine/types'
 
@@ -18,7 +26,8 @@ export const CAREER_TRACKS: CareerTrack[] = [
         salary: 30_000,
         minYears: 0,
         requirements: [
-          { type: 'age', min: 17 },
+          // Sem `age`: o médio só termina aos 18 (AGE_HIGHSCHOOL_DONE), então
+          // um mínimo de 17 nunca era o gargalo — era condição morta.
           { type: 'education', level: 'highschool', atLeast: true },
           // Emprego formal faz checagem de antecedentes. Autônomo e artista não.
           { type: 'not', condition: { type: 'flag', flag: 'criminal_record', value: true } },
@@ -101,7 +110,15 @@ export const CAREER_TRACKS: CareerTrack[] = [
         volatility: 0.7,
         minYears: 3,
         requirements: [
-          { type: 'stat', stat: 'charisma', min: 55 },
+          // Administração troca carisma por diploma: quem estudou gestão sobe
+          // sem precisar ser o mais carismático da sala.
+          {
+            type: 'anyOf',
+            conditions: [
+              { type: 'flag', flag: 'course_administracao', value: true },
+              { type: 'stat', stat: 'charisma', min: 55 },
+            ],
+          },
           { type: 'performance', min: 50 },
         ],
       },
@@ -151,7 +168,15 @@ export const CAREER_TRACKS: CareerTrack[] = [
         volatility: 0.7,
         minYears: 2,
         requirements: [
-          { type: 'stat', stat: 'fame', min: 25 },
+          // Artes Cênicas é o atalho: quem se formou passa com menos fama.
+          // É a única coisa que aquele diploma abre, e precisa abrir alguma.
+          {
+            type: 'anyOf',
+            conditions: [
+              { type: 'flag', flag: 'course_artes', value: true },
+              { type: 'stat', stat: 'fame', min: 25 },
+            ],
+          },
           { type: 'stat', stat: 'charisma', min: 50 },
         ],
       },
@@ -324,15 +349,29 @@ export const CAREER_TRACKS: CareerTrack[] = [
         salary: 46_000,
         minYears: 0,
         requirements: [
-          { type: 'age', min: 24 },
-          { type: 'education', level: 'postgrad', atLeast: true },
+          // Era 24, e o caminho mais rápido (médio aos 18, graduação de 4,
+          // mestrado de 2) chega exatamente aos 24: zero folga, e qualquer
+          // ano perdido empurrava a entrada inteira.
+          { type: 'age', min: 22 },
+          // Licenciatura entra sem pós — é a porta de quem se formou professor.
+          // Os níveis seguintes continuam exigindo o mestrado.
+          {
+            type: 'anyOf',
+            conditions: [
+              { type: 'flag', flag: 'course_licenciatura', value: true },
+              { type: 'education', level: 'postgrad', atLeast: true },
+            ],
+          },
         ],
       },
       {
         title: 'Professor assistente',
         salary: 78_000,
         minYears: 3,
-        requirements: [{ type: 'stat', stat: 'intelligence', min: 62 }],
+        requirements: [
+          { type: 'education', level: 'postgrad', atLeast: true },
+          { type: 'stat', stat: 'intelligence', min: 62 },
+        ],
       },
       {
         title: 'Professor adjunto',
@@ -359,6 +398,175 @@ export const CAREER_TRACKS: CareerTrack[] = [
         requirements: [
           { type: 'stat', stat: 'intelligence', min: 88 },
           { type: 'stat', stat: 'reputation', min: 60 },
+          { type: 'performance', min: 75 },
+        ],
+      },
+    ],
+  },
+
+  // --- Profissões -----------------------------------------------------------
+  // Todas de `kind: 'clt'`: são emprego formal, com demissão e antecedentes.
+  // O que as separa do corporativo genérico é a porta de entrada — o diploma.
+
+  {
+    id: 'medicina',
+    name: 'Medicina',
+    kind: 'clt',
+    entryLabel: 'Exercer a medicina',
+    entryHint: 'Paga como nenhuma outra e cobra em plantão. Exige o diploma.',
+    levels: [
+      {
+        title: 'Residente',
+        salary: 42_000,
+        minYears: 0,
+        requirements: [
+          { type: 'flag', flag: 'course_medicina', value: true },
+          { type: 'not', condition: { type: 'flag', flag: 'criminal_record', value: true } },
+        ],
+      },
+      {
+        title: 'Plantonista',
+        salary: 180_000,
+        minYears: 2,
+        requirements: [{ type: 'stat', stat: 'intelligence', min: 60 }],
+      },
+      {
+        title: 'Especialista',
+        salary: 320_000,
+        minYears: 4,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 72 },
+          { type: 'performance', min: 55 },
+        ],
+      },
+      {
+        title: 'Cirurgião',
+        salary: 520_000,
+        minYears: 5,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 80 },
+          { type: 'performance', min: 68 },
+        ],
+      },
+      {
+        title: 'Chefe de equipe médica',
+        salary: 780_000,
+        minYears: 5,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 85 },
+          { type: 'stat', stat: 'reputation', min: 62 },
+          { type: 'performance', min: 78 },
+        ],
+      },
+    ],
+    // O plantão cobra o preço todo ano, em qualquer nível.
+    annualEffects: [{ type: 'stat', stat: 'health', op: 'delta', value: -2 }],
+  },
+
+  {
+    id: 'direito',
+    name: 'Advocacia',
+    kind: 'clt',
+    entryLabel: 'Advogar',
+    entryHint: 'Sobe com carisma e reputação. Exige o diploma.',
+    levels: [
+      {
+        title: 'Estagiário de escritório',
+        salary: 36_000,
+        minYears: 0,
+        requirements: [
+          { type: 'flag', flag: 'course_direito', value: true },
+          { type: 'not', condition: { type: 'flag', flag: 'criminal_record', value: true } },
+        ],
+      },
+      {
+        title: 'Advogado associado',
+        salary: 95_000,
+        minYears: 2,
+        requirements: [{ type: 'stat', stat: 'charisma', min: 50 }],
+      },
+      {
+        title: 'Advogado sênior',
+        salary: 195_000,
+        minYears: 4,
+        requirements: [
+          { type: 'stat', stat: 'charisma', min: 62 },
+          { type: 'performance', min: 55 },
+        ],
+      },
+      {
+        title: 'Sócio',
+        salary: 420_000,
+        volatility: 0.12,
+        minYears: 5,
+        requirements: [
+          { type: 'stat', stat: 'charisma', min: 72 },
+          { type: 'stat', stat: 'reputation', min: 58 },
+          { type: 'performance', min: 68 },
+        ],
+      },
+      {
+        title: 'Sócio-fundador',
+        salary: 700_000,
+        volatility: 0.15,
+        minYears: 6,
+        requirements: [
+          { type: 'stat', stat: 'charisma', min: 80 },
+          { type: 'stat', stat: 'reputation', min: 68 },
+          { type: 'performance', min: 78 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'engenharia',
+    name: 'Engenharia',
+    kind: 'clt',
+    entryLabel: 'Trabalhar como engenheiro',
+    entryHint: 'Estável e bem paga. Sobe com inteligência. Exige o diploma.',
+    levels: [
+      {
+        title: 'Engenheiro júnior',
+        salary: 68_000,
+        minYears: 0,
+        requirements: [
+          { type: 'flag', flag: 'course_engenharia', value: true },
+          { type: 'not', condition: { type: 'flag', flag: 'criminal_record', value: true } },
+        ],
+      },
+      {
+        title: 'Engenheiro pleno',
+        salary: 120_000,
+        minYears: 3,
+        requirements: [{ type: 'stat', stat: 'intelligence', min: 62 }],
+      },
+      {
+        title: 'Engenheiro sênior',
+        salary: 195_000,
+        minYears: 4,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 72 },
+          { type: 'performance', min: 55 },
+        ],
+      },
+      {
+        title: 'Coordenador de projetos',
+        salary: 300_000,
+        minYears: 4,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 78 },
+          { type: 'stat', stat: 'charisma', min: 55 },
+          { type: 'performance', min: 65 },
+        ],
+      },
+      {
+        title: 'Diretor de engenharia',
+        salary: 480_000,
+        minYears: 5,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 84 },
+          { type: 'stat', stat: 'charisma', min: 65 },
           { type: 'performance', min: 75 },
         ],
       },
