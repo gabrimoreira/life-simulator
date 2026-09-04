@@ -253,6 +253,24 @@ maior sequência é de 13 anos, o pico médio é 3,1, e os cinco eventos dispara
 acontece depois, sobre o resultado — o contrário obrigaria a manter o tipo de
 cada versão antiga do `GameState` vivo no código para sempre.
 
+O adapter **diz por que falhou**, e essa é a diferença que importa:
+
+| situação | antes | agora |
+|---|---|---|
+| nunca houve save | `null` | `save: null, problem: null` |
+| save corrompido | `null` | `problem: corrupted` **com o texto cru** |
+| armazenamento bloqueado | `null` | `problem: unreadable` |
+| gravação falhou | silêncio | `problem: unwritable` |
+
+As três falhas eram engolidas e devolviam a mesma coisa: o jogador perdia uma
+vida de setenta anos, caía na tela de novo jogo e nunca sabia por quê. O texto
+cru acompanha o save corrompido porque perder a vida sem nem a chance de
+guardar o arquivo é pior que o bug que a corrompeu.
+
+Importar passa pela MESMA migração e checagem de forma: arquivo de terceiro
+não é mais confiável que localStorage corrompido, e um arquivo recusado não
+destrói a vida em curso.
+
 ## Prisão
 
 Não há máquina de estados para a cadeia. Toda ação e todo evento já passam por

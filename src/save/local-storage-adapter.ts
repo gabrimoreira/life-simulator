@@ -1,26 +1,44 @@
-import type { PersistedSave, SaveAdapter } from './adapter'
+import type { LoadResult, PersistedSave, SaveAdapter, SaveProblem } from './adapter'
 import { migrate } from './migrations'
 
 const STORAGE_KEY = 'lifesim.save'
 
 export function createLocalStorageAdapter(key: string = STORAGE_KEY): SaveAdapter {
   return {
-    async load() {
+    async load(): Promise<LoadResult> {
+      let raw: string | null
       try {
-        const raw = localStorage.getItem(key)
-        if (raw === null) return null
-        return migrate(JSON.parse(raw))
+        raw = localStorage.getItem(key)
       } catch {
-        // Save corrompido, quota, modo privativo: comeca do zero em vez de travar.
-        return null
+        // Modo privativo ou armazenamento bloqueado: o jogo roda, so nao
+        // persiste. Nada se perdeu, e o jogador precisa saber disso.
+        return { save: null, problem: { kind: 'unreadable' } }
+      }
+
+      if (raw === null) return { save: null, problem: null }
+
+      try {
+        const migrado = migrate(JSON.parse(raw))
+        // `migrate` devolve null quando a forma nao bate depois da migracao —
+        // JSON valido nao garante um save valido.
+        if (migrado === null) return { save: null, problem: { kind: 'corrupted', raw } }
+        return { save: migrado, problem: null }
+      } catch {
+        // O texto cru vai junto para o jogador poder baixa-lo: uma vida de
+        // setenta anos sumir sem nem a chance de guardar o arquivo e pior que
+        // o bug que a corrompeu.
+        return { save: null, problem: { kind: 'corrupted', raw } }
       }
     },
 
-    async save(payload: PersistedSave) {
+    async save(payload: PersistedSave): Promise<SaveProblem | null> {
       try {
         localStorage.setItem(key, JSON.stringify(payload))
+        return null
       } catch {
-        // Sem espaco ou sem permissao. O jogo continua, so nao persiste.
+        // Sem espaco ou sem permissao. Antes isto era silencioso, e o jogador
+        // descobria que nao estava salvando ao recarregar a pagina.
+        return { kind: 'unwritable' }
       }
     },
 

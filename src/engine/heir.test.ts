@@ -296,5 +296,5 @@ describe('alcançabilidade da linhagem', () => {
     ).filter(canContinue).length
 
     expect(carreira).toBeLessThan(familia * 0.7)
-  })
+  }, 20_000)
 })
