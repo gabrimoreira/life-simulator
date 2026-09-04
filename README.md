@@ -179,6 +179,26 @@ Estudante paga uma fração disso.
 A dívida tem teto. Passado o teto o gasto simplesmente não acontece — a pessoa
 corta o próprio padrão de vida até caber, porque ninguém empresta para sempre.
 
+## Amizade acaba
+
+Amigo esfria mais rápido que família e **sai da lista** quando a relação chega
+a zero. Parente distante continua parente; ninguém deixa de ser irmão por não
+se falar. Amigo, sim.
+
+Sem isso uma vida acumulava **vinte e cinco amigos aos 60**, onze deles ainda
+acima de 40 de relação: dezesseis lugares do conteúdo criam amigos, nada os
+removia, e o decaimento de 2 ao ano levava mais de vinte anos para zerar um.
+
+O número não era o problema — o efeito colateral era. Com vinte amigos,
+"rede de contatos" não mede nada, e foi por isso que a primeira tentativa de
+fazer a política cobrar rede não prendeu nada. Hoje são ~10 amigos vivos, com
+p50 de 1 acima de 60 e p90 de 3, e cultivar amizade quase dobra a chance de
+chegar ao senado (22 para 35 em 100 vidas).
+
+Perder um amigo por abandono aparece na timeline. É consequência de onde você
+gastou os pontos de ação, que é a decisão que os pontos existem para forçar —
+sumir em silêncio esconderia justamente isso.
+
 ## Casamento
 
 Por cinco fases casar mudava uma flag e nada mais. A decisão mais consequente

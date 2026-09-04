@@ -307,10 +307,12 @@ export const CAREER_TRACKS: CareerTrack[] = [
           // dos cinco níveis usava relationCount ou relationLevel: o texto
           // mentia para o jogador.
           //
-          // Os números vêm da distribuição medida, não de palpite: uma vida
-          // acumula ~20 amigos, mas só ~5 passam de 60 de relação (p90: 7) e
-          // ~1 passa de 80 (p90: 2). Contar amigos crus não prendia nada.
-          { type: 'relationCount', kind: 'friend', min: 3, minRelation: 60 },
+          // Os números vêm da distribuição medida, não de palpite. Eles já
+          // foram calibrados duas vezes: a primeira contra uma vida que
+          // acumulava ~20 amigos porque ninguém saía da lista, e a segunda
+          // depois que a amizade passou a esfriar e acabar — hoje são ~10
+          // amigos vivos, com p50 de 1 acima de 60 e p90 de 3.
+          { type: 'relationCount', kind: 'friend', min: 1, minRelation: 60 },
         ],
       },
       {
@@ -322,7 +324,7 @@ export const CAREER_TRACKS: CareerTrack[] = [
           { type: 'stat', stat: 'charisma', min: 65 },
           { type: 'stat', stat: 'reputation', min: 60 },
           { type: 'performance', min: 55 },
-          { type: 'relationCount', kind: 'friend', min: 5, minRelation: 60 },
+          { type: 'relationCount', kind: 'friend', min: 2, minRelation: 60 },
         ],
       },
       {
@@ -334,9 +336,9 @@ export const CAREER_TRACKS: CareerTrack[] = [
           { type: 'stat', stat: 'charisma', min: 75 },
           { type: 'stat', stat: 'reputation', min: 70 },
           { type: 'performance', min: 65 },
-          { type: 'relationCount', kind: 'friend', min: 5, minRelation: 60 },
+          { type: 'relationCount', kind: 'friend', min: 3, minRelation: 60 },
           // Não basta ter gente em volta: alguém tem que te querer bem.
-          { type: 'relationCount', kind: 'friend', min: 1, minRelation: 80 },
+          { type: 'relationCount', kind: 'friend', min: 1, minRelation: 75 },
         ],
       },
       {
@@ -348,7 +350,7 @@ export const CAREER_TRACKS: CareerTrack[] = [
           { type: 'stat', stat: 'charisma', min: 82 },
           { type: 'stat', stat: 'reputation', min: 78 },
           { type: 'performance', min: 75 },
-          { type: 'relationCount', kind: 'friend', min: 6, minRelation: 60 },
+          { type: 'relationCount', kind: 'friend', min: 3, minRelation: 60 },
           { type: 'relationCount', kind: 'friend', min: 2, minRelation: 75 },
         ],
       },

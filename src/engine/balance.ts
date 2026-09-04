@@ -232,6 +232,23 @@ export const INITIAL_RELATION = { min: 55, max: 90 } as const
  */
 export const RELATION_ANNUAL_DECAY = 2
 
+/**
+ * Amizade esfria mais rapido que familia, e some quando chega a zero.
+ *
+ * Sem isto uma vida acumulava VINTE E CINCO amigos aos 60, onze deles ainda
+ * acima de 40 de relacao — porque 16 lugares do conteudo criam amigos, nada os
+ * remove, e o decaimento de 2 ao ano leva mais de vinte anos para zerar um.
+ *
+ * O efeito colateral era pior que o numero: `hasRelation: 'friend'` virava
+ * sempre verdadeiro, e a "rede de contatos" da politica precisou de limiar de
+ * proximidade justamente porque contar amigos crus nao media nada.
+ *
+ * Familia nao usa isto: parente distante continua parente, e ninguem deixa de
+ * ser irmao por nao se falar. Amigo, sim — e com tres pontos de acao por turno
+ * da para manter um punhado, que e o numero que uma pessoa mantem mesmo.
+ */
+export const FRIEND_ANNUAL_DECAY = 5
+
 
 // --- Carreira ---------------------------------------------------------------
 

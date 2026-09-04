@@ -22,6 +22,7 @@ import {
   MORTALITY_GROWTH,
   MORTALITY_HEALTH_MAX_MULT,
   MORTALITY_HEALTH_MIN_MULT,
+  FRIEND_ANNUAL_DECAY,
   RELATION_ANNUAL_DECAY,
 } from './balance'
 import { setStat } from './effects'
@@ -71,9 +72,14 @@ export function applyAging(state: GameState, rng: Rng): void {
 
   // Quem nao e cuidado se afasta. O envelhecimento e a morte dos parentes
   // ficam em `relations.ts`, junto com o resto do que e social.
+  //
+  // Amizade esfria mais rapido que familia: parente distante continua parente,
+  // amigo que voce nao ve vira conhecido e depois vira ninguem. Quem SAI da
+  // lista e decidido em `relations.ts`, junto com a nota da timeline.
   for (const person of state.relations) {
     if (!person.alive) continue
-    person.relation = Math.max(0, person.relation - RELATION_ANNUAL_DECAY)
+    const decay = person.kind === 'friend' ? FRIEND_ANNUAL_DECAY : RELATION_ANNUAL_DECAY
+    person.relation = Math.max(0, person.relation - decay)
   }
 }
 

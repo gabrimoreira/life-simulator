@@ -272,3 +272,59 @@ describe('viuvez', () => {
     expect(state.character.flags['married']).toBe(true)
   })
 })
+
+describe('amizade que acaba por abandono', () => {
+  function comAmigo(relation: number): GameState {
+    const state = makeState({ character: makeCharacter({ age: 40 }) })
+    state.relations.push({
+      id: 'f1',
+      name: 'Bruno Alves',
+      kind: 'friend',
+      gender: 'male',
+      age: 40,
+      relation,
+      alive: true,
+    })
+    return state
+  }
+
+  it('amigo com relacao zerada sai da lista, com nota', () => {
+    // Sumir em silencio esconderia a consequencia de onde o jogador gastou os
+    // pontos de acao, que e justamente a decisao que os pontos existem para
+    // forcar.
+    const state = comAmigo(0)
+    const notes = applyRelationYear(state, createRng(1))
+
+    expect(state.relations).toHaveLength(0)
+    const texto = notes.map((n) => (n.kind === 'note' ? n.text : '')).join(' ')
+    expect(texto).toContain('pararam de se falar')
+  })
+
+  it('amigo com qualquer relacao restante fica', () => {
+    const state = comAmigo(1)
+    applyRelationYear(state, createRng(1))
+    expect(state.relations).toHaveLength(1)
+  })
+
+  it('familia zerada NAO sai: ninguem deixa de ser irmao por nao se falar', () => {
+    const state = makeState({ character: makeCharacter({ age: 40 }) })
+    state.relations.push({
+      id: 'm',
+      name: 'Marta Alves',
+      kind: 'mother',
+      gender: 'female',
+      age: 70,
+      relation: 0,
+      alive: true,
+    })
+    applyRelationYear(state, createRng(1))
+    expect(state.relations).toHaveLength(1)
+  })
+
+  it('nao mexe em quem ja morreu', () => {
+    const state = comAmigo(0)
+    state.relations[0]!.alive = false
+    applyRelationYear(state, createRng(1))
+    expect(state.relations).toHaveLength(1)
+  })
+})
