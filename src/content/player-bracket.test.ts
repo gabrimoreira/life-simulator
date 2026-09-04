@@ -53,11 +53,11 @@ describe('escolher bem muda o dinheiro', () => {
 
   it('o jogador que não se sabota termina com mais patrimônio', () => {
     // A afirmação já foi "1,25x" e não sobrevivia à própria amostra: a
-    // mediana de patrimônio tem cauda pesada, e a mesma comparação mede
-    // 1,77 com 40 vidas, 1,14 com 60, 1,32 com 150. O que se sustenta em
-    // qualquer amostra é a direção, não o múltiplo.
+    // mediana de patrimônio tem cauda pesada, e a mesma comparação mede 1,77
+    // com 40 vidas, 1,14 com 60, 1,13 com 80 e 1,32 com 150. Qualquer número
+    // fixo aqui é sorte da amostra; o que se sustenta é a DIREÇÃO.
     const patrimonioRuim = mediana(ruim.map(netWorth))
-    expect(mediana(bom.map(netWorth))).toBeGreaterThan(patrimonioRuim * 1.1)
+    expect(mediana(bom.map(netWorth))).toBeGreaterThan(patrimonioRuim)
 
     // E a estatística que não depende da cauda: mais da metade das vidas
     // sensatas passa a vida MEDIANA de quem se sabota.

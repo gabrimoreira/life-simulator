@@ -16,6 +16,7 @@ import { PARENTHOOD_EVENTS } from './parenthood'
 import { PRISON_EVENTS } from './prison'
 import { POVERTY_EVENTS } from './poverty'
 import { PROFESSION_EVENTS } from './professions'
+import { SECTOR_EVENTS } from './sectors'
 import { SOCIAL_EVENTS } from './social'
 import { CHILDHOOD_EVENTS } from './childhood'
 import { ELDER_EVENTS } from './elder'
@@ -41,6 +42,7 @@ export const ALL_EVENTS: GameEvent[] = [
   ...POLITICS_EVENTS,
   ...POVERTY_EVENTS,
   ...PROFESSION_EVENTS,
+  ...SECTOR_EVENTS,
   ...ACADEMIA_EVENTS,
   ...PARENTHOOD_EVENTS,
   ...LUXURY_EVENTS,
