@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import {
+  validateAchievements,
   validateActions,
+  validateAssets,
   validateCareers,
   validateCourses,
   validateEvents,
+  validateRelationActions,
+  orphanFlags,
 } from '../engine/validate'
 import { eligibleEvents } from '../engine/events'
 import { makeCharacter, makeState } from '../test/fixtures'
+import { createGame } from '../engine/generate'
 import { GAME_CONTENT } from '.'
 import { ALL_EVENTS } from './events'
 
@@ -16,6 +21,9 @@ describe('conteúdo do jogo', () => {
     expect(validateActions(GAME_CONTENT.actions)).toEqual([])
     expect(validateCareers(GAME_CONTENT.careers)).toEqual([])
     expect(validateCourses(GAME_CONTENT.courses)).toEqual([])
+    expect(validateAssets(GAME_CONTENT.assets)).toEqual([])
+    expect(validateRelationActions(GAME_CONTENT.relationActions)).toEqual([])
+    expect(validateAchievements(GAME_CONTENT.achievements)).toEqual([])
   })
 
   it('toda trilha tem um nível de entrada alcançável cedo', () => {
@@ -124,5 +132,59 @@ describe('validateEvents', () => {
       },
     ])
     expect(problems.some((p) => p.includes('travar'))).toBe(true)
+  })
+})
+
+describe('saúde do conteúdo', () => {
+  it('nenhuma flag é escrita sem que alguém a leia', () => {
+    // Onze das dezesseis flags eram write-only quando isto foi medido: o
+    // Perfil exibia "Ficha suja" e nada no jogo se comportava diferente.
+    expect(orphanFlags(GAME_CONTENT)).toEqual([])
+  })
+})
+
+describe('densidade do sorteio', () => {
+  /** Um personagem representativo da idade, para medir o pool disponível. */
+  function personaAos(age: number): ReturnType<typeof createGame> {
+    const state = createGame({ name: 'T', gender: 'male', seed: 1, birthYear: 2000 }, GAME_CONTENT)
+    state.character.age = age
+    state.character.education = age >= 23 ? 'bachelor' : age >= 18 ? 'highschool' : 'none'
+    state.character.money = 500_000
+
+    if (age >= 24) {
+      state.character.career = {
+        trackId: 'clt',
+        kind: 'clt',
+        level: 2,
+        yearsInLevel: 3,
+        yearsInTrack: 6,
+        performance: 60,
+      }
+    }
+    if (age >= 30) {
+      state.character.flags['married'] = true
+      state.relations.push(
+        { id: 'sp', name: 'Ana Silva', kind: 'spouse', gender: 'female', age, relation: 70, alive: true },
+        { id: 'ch', name: 'Rui Silva', kind: 'child', gender: 'male', age: Math.max(1, age - 28), relation: 70, alive: true },
+      )
+    }
+    return state
+  }
+
+  it('o pool não deixa a vida adulta virar repetição', () => {
+    // Uma vida sorteia ~120 eventos. Com um punhado de elegíveis por idade, a
+    // vida adulta repetia os mesmos quatro por trinta turnos seguidos.
+    for (let age = 20; age <= 80; age += 5) {
+      const pool = eligibleEvents(personaAos(age), GAME_CONTENT)
+      expect(pool.length, `aos ${age} anos`).toBeGreaterThanOrEqual(22)
+    }
+  })
+
+  it('a infância e a adolescência têm com o que trabalhar', () => {
+    // A infância é curta: são poucos turnos, então um pool menor não vira
+    // repetição do jeito que viraria numa vida adulta de trinta anos.
+    expect(eligibleEvents(personaAos(5), GAME_CONTENT).length).toBeGreaterThanOrEqual(5)
+    expect(eligibleEvents(personaAos(10), GAME_CONTENT).length).toBeGreaterThanOrEqual(8)
+    expect(eligibleEvents(personaAos(15), GAME_CONTENT).length).toBeGreaterThanOrEqual(12)
   })
 })

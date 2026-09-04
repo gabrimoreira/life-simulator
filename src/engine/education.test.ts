@@ -13,6 +13,7 @@ const PAGA: Course = {
   years: 3,
   annualCost: 20_000,
   requirements: [{ type: 'stat', stat: 'intelligence', min: 50 }],
+  scholarship: [{ type: 'stat', stat: 'intelligence', min: 80 }],
   completionEffects: [{ type: 'stat', stat: 'charisma', op: 'delta', value: 8 }],
 }
 
@@ -95,14 +96,34 @@ describe('matrícula', () => {
     expect(enroll(makeState(), content, 'astrologia')).toBe(false)
   })
 
-  it('entra financiado quem não tem o dinheiro do primeiro ano', () => {
-    const pobre = makeState({ character: makeCharacter({ money: 500 }) })
-    enroll(pobre, content, 'direito')
-    expect(pobre.character.enrollment?.financed).toBe(true)
-
+  it('o modo de pagamento é escolha da matrícula, não previsão', () => {
     const rico = makeState({ character: makeCharacter({ money: 500_000 }) })
-    enroll(rico, content, 'direito')
-    expect(rico.character.enrollment?.financed).toBe(false)
+    enroll(rico, content, 'direito', 'financed')
+    expect(rico.character.enrollment?.mode).toBe('financed')
+
+    // Mesmo com meio milhão em caixa, quem escolheu financiar financia — é o
+    // ponto de ter escolhido.
+    studyYear(rico, content, rng())
+    expect(rico.character.debt).toBe(20_000)
+    expect(rico.character.money).toBe(500_000)
+  })
+
+  it('quem paga do bolso só recorre à dívida se faltar caixa', () => {
+    const pobre = makeState({ character: makeCharacter({ money: 500, debt: 0 }) })
+    enroll(pobre, content, 'direito', 'cash')
+    studyYear(pobre, content, rng())
+    expect(pobre.character.debt).toBe(20_000)
+  })
+
+  it('bolsa zera a mensalidade, e só existe para quem se qualifica', () => {
+    const comBolsa = makeState()
+    comBolsa.character.stats.intelligence = 90
+    expect(enroll(comBolsa, content, 'direito', 'scholarship')).toBe(true)
+    expect(comBolsa.character.enrollment?.annualCost).toBe(0)
+
+    const semBolsa = makeState()
+    semBolsa.character.stats.intelligence = 50
+    expect(enroll(semBolsa, content, 'direito', 'scholarship')).toBe(false)
   })
 })
 

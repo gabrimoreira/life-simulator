@@ -14,12 +14,14 @@ const HAND_WRITTEN: Record<string, string> = {
   married: 'Casado',
   trains_regularly: 'Treina com regularidade',
   chronic_condition: 'Condição crônica',
-  owns_property: 'Imóvel próprio',
   has_child: 'Tem filho',
   chose_no_children: 'Optou por não ter filhos',
   retired: 'Aposentado',
   wrote_memoir: 'Escreveu suas memórias',
   criminal_record: 'Ficha suja',
+  underworld_ties: 'Contatos no crime',
+  owes_favors: 'Deve favores políticos',
+  philanthropist: 'Filantropo',
 }
 
 /** Rótulos de curso saem do próprio catálogo, para não sair de sincronia. */

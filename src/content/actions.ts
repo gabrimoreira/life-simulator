@@ -296,6 +296,104 @@ export const GAME_ACTIONS: GameAction[] = [
     ],
   },
 
+  // --- Preso ---------------------------------------------------------------
+  // Só aparecem na cadeia. Toda ação que NÃO menciona prisão some lá dentro,
+  // então esta lista é a vida inteira de quem está preso.
+  {
+    id: 'prison_lay_low',
+    group: 'crime',
+    label: 'Manter a cabeça baixa',
+    hint: 'Não chamar atenção é a estratégia mais chata e mais eficaz.',
+    cost: 1,
+    conditions: [{ type: 'inPrison', value: true }],
+    outcomes: [
+      {
+        chance: 0.85,
+        text: 'O ano passou sem que ninguém reparasse em você.',
+        effects: [{ type: 'stat', stat: 'health', op: 'delta', value: 4 }],
+      },
+      {
+        chance: 0.15,
+        text: 'Sobrou para você mesmo assim.',
+        effects: [{ type: 'stat', stat: 'health', op: 'delta', value: -8 }],
+      },
+    ],
+  },
+  {
+    id: 'prison_study',
+    group: 'crime',
+    label: 'Estudar na biblioteca',
+    hint: 'Tempo é a única coisa que sobra. Dá para usar.',
+    cost: 1,
+    conditions: [{ type: 'inPrison', value: true }],
+    outcomes: [
+      {
+        chance: 0.8,
+        text: 'Você leu tudo o que tinha na estante, duas vezes.',
+        effects: [
+          { type: 'stat', stat: 'intelligence', op: 'delta', value: 6 },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: 4 },
+        ],
+      },
+      {
+        chance: 0.2,
+        text: 'Você não conseguiu se concentrar em uma página sequer.',
+        effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: -4 }],
+      },
+    ],
+  },
+  {
+    id: 'prison_connections',
+    group: 'crime',
+    label: 'Se aproximar de quem manda',
+    hint: 'Proteção lá dentro, dívida lá fora.',
+    cost: 1,
+    cooldown: 2,
+    conditions: [{ type: 'inPrison', value: true }],
+    outcomes: [
+      {
+        chance: 0.55,
+        luckBias: 0.4,
+        text: 'Você virou gente de confiança. Ninguém mais te encosta.',
+        effects: [
+          { type: 'stat', stat: 'charisma', op: 'delta', value: 6 },
+          { type: 'stat', stat: 'health', op: 'delta', value: 5 },
+          { type: 'addRelation', kind: 'friend' },
+        ],
+      },
+      {
+        chance: 0.45,
+        text: 'Você se aproximou de quem não devia e agora deve favor.',
+        effects: [
+          { type: 'stat', stat: 'reputation', op: 'delta', value: -8 },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: -6 },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'prison_good_behavior',
+    group: 'crime',
+    label: 'Pedir progressão de regime',
+    hint: 'Bom comportamento pode encurtar a pena.',
+    cost: 2,
+    cooldown: 3,
+    conditions: [{ type: 'inPrison', value: true }],
+    outcomes: [
+      {
+        chance: 0.35,
+        luckBias: 0.5,
+        text: 'O juiz aceitou. Você sai antes do previsto.',
+        effects: [{ type: 'release' }],
+      },
+      {
+        chance: 0.65,
+        text: 'O pedido foi negado sem muita explicação.',
+        effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: -8 }],
+      },
+    ],
+  },
+
   // --- Crime ---------------------------------------------------------------
   // A TRILHA de crime é Fase 4. Estas duas existem para o grupo não ser um
   // cartaz de "em breve" — dá para roubar, dá para se dar mal.

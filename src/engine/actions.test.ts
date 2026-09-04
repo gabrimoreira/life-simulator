@@ -141,31 +141,31 @@ describe('disponibilidade', () => {
 describe('ações derivadas', () => {
   it('oferece matrícula nos cursos e entrada nas trilhas', () => {
     const state = makeState({ character: makeCharacter({ age: 20 }) })
-    expect(ids(state)).toContain('enroll:direito')
+    expect(ids(state)).toContain('enroll:direito:cash')
     expect(ids(state)).toContain('career:clt')
   })
 
   it('a matrícula herda os requisitos do curso', () => {
     const state = makeState({ character: makeCharacter({ age: 20 }) })
     state.character.stats.intelligence = 10
-    expect(view(state, 'enroll:direito')?.reason).toBe('Requer Inteligência 60 ou mais')
+    expect(view(state, 'enroll:direito:cash')?.reason).toBe('Requer Inteligência 60 ou mais')
   })
 
   it('matricular troca a lista por cursar e largar', () => {
     const state = makeState({ character: makeCharacter({ age: 20 }) })
     state.character.stats.intelligence = 80
-    performAction(state, content, rng(), 'enroll:direito')
+    performAction(state, content, rng(), 'enroll:direito:cash')
 
     expect(ids(state)).toContain('study')
     expect(ids(state)).toContain('drop_out')
-    expect(ids(state)).not.toContain('enroll:direito')
+    expect(ids(state).some((id) => id.startsWith('enroll:direito'))).toBe(false)
   })
 
   it('curso já concluído some da lista', () => {
     const state = makeState({ character: makeCharacter({ age: 20 }) })
     state.character.stats.intelligence = 80
     state.character.flags[courseFlag('direito')] = true
-    expect(ids(state)).not.toContain('enroll:direito')
+    expect(ids(state).some((id) => id.startsWith('enroll:direito'))).toBe(false)
   })
 
   it('entrar numa carreira coloca no nível de entrada e some da lista', () => {
@@ -192,7 +192,7 @@ describe('ações derivadas', () => {
   it('cursar um ano avança a matrícula', () => {
     const state = makeState({ character: makeCharacter({ age: 20 }) })
     state.character.stats.intelligence = 80
-    performAction(state, content, rng(), 'enroll:direito')
+    performAction(state, content, rng(), 'enroll:direito:cash')
     performAction(state, content, rng(), 'study')
     expect(state.character.enrollment?.yearsLeft).toBe(1)
   })

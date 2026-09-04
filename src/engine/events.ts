@@ -2,6 +2,7 @@
 
 import { evaluateAll } from './conditions'
 import type { ContentPack } from './content-pack'
+import { isInPrison, mentionsPrison } from './prison'
 import type { Rng } from './rng'
 import type { EventOption, GameEvent, GameState, Outcome } from './types'
 
@@ -16,8 +17,12 @@ export function eligibleEvents(
   exclude: ReadonlySet<string> = new Set(),
 ): GameEvent[] {
   const fired = new Set(state.firedEventIds)
+  const locked = isInPrison(state)
+
   return content.events.filter((event) => {
     if (exclude.has(event.id)) return false
+    // Preso, a vida la fora simplesmente some do sorteio.
+    if (locked !== mentionsPrison(event.conditions)) return false
     if (event.once === true && fired.has(event.id)) return false
     if (event.cooldown !== undefined) {
       const last = state.lastFiredYear[event.id]

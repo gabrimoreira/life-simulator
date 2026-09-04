@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { makeContent, makeState } from '../test/fixtures'
+import { makeCharacter, makeContent, makeState } from '../test/fixtures'
 import {
   applyCareerYear,
   careerTitle,
@@ -10,6 +10,7 @@ import {
   performanceBaseline,
   promotionReady,
 } from './careers'
+import { applyEffect } from './effects'
 import { createRng } from './rng'
 import type { CareerTrack, GameState } from './types'
 
@@ -64,7 +65,7 @@ describe('contratação', () => {
 
   it('sair zera a carreira', () => {
     const state = employed()
-    leaveCareer(state)
+    leaveCareer(state, content)
     expect(state.character.career).toBeNull()
     expect(currentLevel(state, content)).toBeUndefined()
   })
@@ -296,7 +297,7 @@ describe('recomeço na mesma trilha', () => {
     const best = state.character.careerHistory['clt'] ?? 0
     expect(best).toBeGreaterThan(0)
 
-    leaveCareer(state)
+    leaveCareer(state, content)
     hireInto(state, TRACK)
     expect(state.character.career?.level).toBeGreaterThanOrEqual(best - 2)
   })
@@ -305,5 +306,78 @@ describe('recomeço na mesma trilha', () => {
     const state = makeState()
     state.character.careerHistory['clt'] = 99
     expect(entryLevel(state, TRACK)).toBe(TRACK.levels.length - 1)
+  })
+})
+
+describe('promoção respeita a tabela', () => {
+  it('o efeito de promoção não fura os requisitos do nível', () => {
+    // Um evento com `career: promote` promovia sem checar nada. Na prática
+    // isso levava um personagem sem diploma a Analista sênior, e a educação
+    // deixava de valer qualquer coisa para a carreira.
+    const state = employed()
+    state.character.stats.intelligence = 10
+    const rng = createRng(1)
+
+    applyEffect({ type: 'career', action: 'promote' }, state, rng, content)
+    expect(state.character.career?.level).toBe(0)
+
+    state.character.stats.intelligence = 90
+    applyEffect({ type: 'career', action: 'promote' }, state, rng, content)
+    expect(state.character.career?.level).toBe(1)
+  })
+})
+
+describe('risco da trilha de crime', () => {
+  const CRIME: CareerTrack = {
+    id: 'crime',
+    name: 'Crime',
+    kind: 'crime',
+    entryLabel: 'Entrar para o crime',
+    entryHint: 'Alto retorno.',
+    levels: [
+      { title: 'Batedor', salary: 30_000, volatility: 0.5, minYears: 0, requirements: [] },
+      { title: 'Chefe', salary: 200_000, volatility: 0.6, minYears: 2, requirements: [] },
+    ],
+  }
+  const crimeContent = makeContent([], { careers: [CRIME] })
+
+  it('acaba levando à cadeia — é o freio que a trilha precisa ter', () => {
+    // Medindo 100 vidas por perfil, o crime era o caminho MAIS rentável do
+    // jogo: CLT tem demissão, empresário tem falência, e o crime não tinha
+    // mecanismo de ruína nenhum no loop de carreira, só eventos.
+    const state = makeState({ character: makeCharacter({ age: 20 }) })
+    hireInto(state, CRIME)
+
+    const rng = createRng(5)
+    let preso = false
+    for (let i = 0; i < 60 && !preso; i++) {
+      applyCareerYear(state, rng, crimeContent)
+      preso = state.character.prison !== null
+    }
+    expect(preso).toBe(true)
+  })
+
+  it('ser preso acaba com a carreira criminosa', () => {
+    const state = makeState({ character: makeCharacter({ age: 20 }) })
+    hireInto(state, CRIME)
+
+    const rng = createRng(5)
+    for (let i = 0; i < 60; i++) {
+      if (state.character.prison !== null) break
+      applyCareerYear(state, rng, crimeContent)
+    }
+    expect(state.character.career).toBeNull()
+    expect(state.character.flags['criminal_record']).toBe(true)
+  })
+
+  it('CLT não vai preso pela própria carreira', () => {
+    const state = makeState({ character: makeCharacter({ age: 20 }) })
+    hireInto(state, TRACK)
+    const rng = createRng(5)
+    for (let i = 0; i < 60; i++) {
+      if (!state.character.career) hireInto(state, TRACK)
+      applyCareerYear(state, rng, content)
+    }
+    expect(state.character.prison).toBeNull()
   })
 })

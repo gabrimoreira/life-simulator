@@ -24,7 +24,10 @@ const money = computed(() => formatMoney(props.character.money))
         <template v-if="character.debt > 0">· dívida {{ formatMoney(character.debt) }}</template>
       </span>
       <span class="shrink-0">
-        {{ character.city }}/{{ character.uf }}
+        <span v-if="character.prison" class="text-rust">
+          Preso · {{ character.prison.yearsLeft }}a
+        </span>
+        <template v-else>{{ character.city }}/{{ character.uf }}</template>
         <span class="ml-1 text-ochre tabular-nums">{{ actionPoints }} PA</span>
       </span>
     </div>

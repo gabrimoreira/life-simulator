@@ -64,6 +64,31 @@ export function evaluate(condition: Condition, state: GameState): boolean {
     case 'enrolled':
       return (c.enrollment !== null) === condition.value
 
+    case 'inPrison':
+      return (c.prison !== null) === condition.value
+
+    case 'ownsAsset':
+      return c.assets.some((owned) => {
+        if (condition.assetId !== undefined && owned.assetId !== condition.assetId) return false
+        if (condition.kind !== undefined && owned.kind !== condition.kind) return false
+        return true
+      })
+
+    case 'netWorth': {
+      const worth = c.money + c.assets.reduce((sum, a) => sum + a.value, 0) - c.debt
+      return inRange(worth, condition.min, condition.max)
+    }
+
+    case 'relationLevel': {
+      const person = state.relations.find((r) => r.kind === condition.kind && r.alive)
+      return person !== undefined && inRange(person.relation, condition.min, condition.max)
+    }
+
+    case 'relationCount': {
+      const count = state.relations.filter((r) => r.kind === condition.kind && r.alive).length
+      return inRange(count, condition.min, condition.max)
+    }
+
     case 'not':
       return !evaluate(condition.condition, state)
 
@@ -149,6 +174,21 @@ export function describe(condition: Condition): string {
 
     case 'enrolled':
       return condition.value ? 'Requer estar matriculado' : 'Você já está estudando'
+
+    case 'inPrison':
+      return condition.value ? 'Só na cadeia' : 'Não dá para fazer isso preso'
+
+    case 'ownsAsset':
+      return 'Requer ter um bem específico'
+
+    case 'netWorth':
+      return describeRange('patrimônio', condition.min, condition.max, formatMoney)
+
+    case 'relationLevel':
+      return describeRange('relação', condition.min, condition.max, plain)
+
+    case 'relationCount':
+      return describeRange('número de pessoas', condition.min, condition.max, plain)
 
     case 'not':
       return `Não pode: ${describe(condition.condition)}`

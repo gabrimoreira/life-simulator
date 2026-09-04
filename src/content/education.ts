@@ -14,6 +14,7 @@ export const COURSES: Course[] = [
       { type: 'education', level: 'highschool', atLeast: true },
       { type: 'stat', stat: 'intelligence', min: 50 },
     ],
+    scholarship: [{ type: 'stat', stat: 'intelligence', min: 72 }],
     completionEffects: [
       { type: 'stat', stat: 'intelligence', op: 'delta', value: 10 },
       { type: 'stat', stat: 'charisma', op: 'delta', value: 8 },
@@ -29,6 +30,7 @@ export const COURSES: Course[] = [
       { type: 'education', level: 'highschool', atLeast: true },
       { type: 'stat', stat: 'intelligence', min: 60 },
     ],
+    scholarship: [{ type: 'stat', stat: 'intelligence', min: 78 }],
     completionEffects: [{ type: 'stat', stat: 'intelligence', op: 'delta', value: 16 }],
   },
   {
@@ -41,6 +43,7 @@ export const COURSES: Course[] = [
       { type: 'education', level: 'highschool', atLeast: true },
       { type: 'stat', stat: 'intelligence', min: 72 },
     ],
+    scholarship: [{ type: 'stat', stat: 'intelligence', min: 88 }],
     completionEffects: [
       { type: 'stat', stat: 'intelligence', op: 'delta', value: 14 },
       { type: 'stat', stat: 'reputation', op: 'delta', value: 12 },
@@ -57,6 +60,7 @@ export const COURSES: Course[] = [
       { type: 'education', level: 'highschool', atLeast: true },
       { type: 'stat', stat: 'intelligence', min: 40 },
     ],
+    scholarship: [{ type: 'stat', stat: 'intelligence', min: 65 }],
     completionEffects: [
       { type: 'stat', stat: 'intelligence', op: 'delta', value: 7 },
       { type: 'stat', stat: 'charisma', op: 'delta', value: 7 },
@@ -69,6 +73,7 @@ export const COURSES: Course[] = [
     years: 4,
     annualCost: 11_000,
     requirements: [{ type: 'education', level: 'highschool', atLeast: true }],
+    scholarship: [{ type: 'stat', stat: 'charisma', min: 70 }],
     completionEffects: [
       { type: 'stat', stat: 'charisma', op: 'delta', value: 12 },
       { type: 'stat', stat: 'looks', op: 'delta', value: 6 },
@@ -100,6 +105,7 @@ export const COURSES: Course[] = [
       { type: 'education', level: 'bachelor', atLeast: true },
       { type: 'stat', stat: 'intelligence', min: 65 },
     ],
+    scholarship: [{ type: 'stat', stat: 'intelligence', min: 80 }],
     completionEffects: [
       { type: 'stat', stat: 'intelligence', op: 'delta', value: 12 },
       { type: 'stat', stat: 'reputation', op: 'delta', value: 8 },

@@ -2,7 +2,20 @@
 // deve derrubar o CI, nao o jogo do jogador.
 
 import { KNOWN_TOKENS, extractTokens } from './text'
-import type { CareerTrack, Condition, Course, GameAction, GameEvent, Outcome } from './types'
+import type { ContentPack } from './content-pack'
+import { ENGINE_READ_FLAGS } from './flags'
+import type {
+  Achievement,
+  AssetDef,
+  CareerTrack,
+  Condition,
+  Course,
+  GameAction,
+  Effect,
+  GameEvent,
+  Outcome,
+  RelationAction,
+} from './types'
 
 const CHANCE_TOLERANCE = 0.001
 const MIN_OPTIONS = 2
@@ -210,4 +223,175 @@ export function validateCourses(courses: Course[]): string[] {
   }
 
   return problems
+}
+
+
+export function validateAssets(assets: AssetDef[]): string[] {
+  const problems: string[] = []
+  const seen = new Set<string>()
+
+  for (const asset of assets) {
+    const where = `ativo "${asset.id}"`
+
+    if (seen.has(asset.id)) problems.push(`${where}: id duplicado`)
+    seen.add(asset.id)
+
+    if (asset.name.trim() === '') problems.push(`${where}: name vazio`)
+    if (asset.hint.trim() === '') problems.push(`${where}: hint vazio`)
+    if (asset.price <= 0) problems.push(`${where}: price deve ser > 0`)
+    if (asset.upkeepRate < 0) problems.push(`${where}: upkeepRate negativo`)
+    if (asset.volatility < 0) problems.push(`${where}: volatility negativa`)
+    // Um ativo que valoriza sem cobrar nada e sem risco e dinheiro de graca:
+    // o jogo nao tem inflacao, entao o retorno aqui e real, nao nominal.
+    if (asset.appreciation > 0.06 && asset.upkeepRate === 0 && asset.volatility < 0.15) {
+      problems.push(`${where}: valoriza forte sem custo nem risco`)
+    }
+
+    asset.requirements.forEach((c, i) =>
+      checkCondition(c, `${where}.requirements[${i}]`, problems),
+    )
+  }
+
+  return problems
+}
+
+export function validateRelationActions(actions: RelationAction[]): string[] {
+  const problems: string[] = []
+  const seen = new Set<string>()
+
+  for (const action of actions) {
+    const where = `acao de relacao "${action.id}"`
+
+    if (seen.has(action.id)) problems.push(`${where}: id duplicado`)
+    seen.add(action.id)
+
+    if (action.kinds.length === 0) problems.push(`${where}: sem tipos de relacao`)
+    if (action.label.trim() === '') problems.push(`${where}: label vazio`)
+    if (action.hint.trim() === '') problems.push(`${where}: hint vazio`)
+    if (action.cost < 0) problems.push(`${where}: cost negativo`)
+    if (action.cooldown !== undefined && action.cooldown <= 0) {
+      problems.push(`${where}: cooldown deve ser > 0`)
+    }
+    if (
+      action.minRelation !== undefined &&
+      action.maxRelation !== undefined &&
+      action.minRelation > action.maxRelation
+    ) {
+      problems.push(`${where}: minRelation > maxRelation, a acao nunca aparece`)
+    }
+
+    action.conditions?.forEach((c, i) => checkCondition(c, `${where}.conditions[${i}]`, problems))
+    action.requirements?.forEach((c, i) =>
+      checkCondition(c, `${where}.requirements[${i}]`, problems),
+    )
+    checkOutcomes(action.outcomes, where, problems)
+  }
+
+  return problems
+}
+
+
+export function validateAchievements(achievements: Achievement[]): string[] {
+  const problems: string[] = []
+  const seen = new Set<string>()
+
+  for (const achievement of achievements) {
+    const where = `conquista "${achievement.id}"`
+
+    if (seen.has(achievement.id)) problems.push(`${where}: id duplicado`)
+    seen.add(achievement.id)
+
+    if (achievement.name.trim() === '') problems.push(`${where}: name vazio`)
+    if (achievement.description.trim() === '') problems.push(`${where}: description vazia`)
+    // Conquista sem condicao seria concedida no primeiro turno de toda vida.
+    if (achievement.conditions.length === 0) problems.push(`${where}: sem condicoes`)
+
+    achievement.conditions.forEach((c, i) =>
+      checkCondition(c, `${where}.conditions[${i}]`, problems),
+    )
+  }
+
+  return problems
+}
+
+// ---------------------------------------------------------------------------
+// Saude do conteudo como um todo
+// ---------------------------------------------------------------------------
+
+function walkConditionFlags(condition: Condition, read: Set<string>): void {
+  switch (condition.type) {
+    case 'flag':
+      read.add(condition.flag)
+      break
+    case 'not':
+      walkConditionFlags(condition.condition, read)
+      break
+    case 'anyOf':
+      condition.conditions.forEach((inner) => walkConditionFlags(inner, read))
+      break
+    default:
+      break
+  }
+}
+
+function walkConditions(conditions: Condition[] | undefined, read: Set<string>): void {
+  conditions?.forEach((condition) => walkConditionFlags(condition, read))
+}
+
+function walkEffects(effects: Effect[], written: Set<string>): void {
+  for (const effect of effects) {
+    if (effect.type === 'flag') written.add(effect.flag)
+  }
+}
+
+function walkOutcomes(outcomes: Outcome[], written: Set<string>): void {
+  outcomes.forEach((outcome) => walkEffects(outcome.effects, written))
+}
+
+/**
+ * Flags que o conteudo escreve e ninguem le.
+ *
+ * Uma flag write-only e uma promessa quebrada: o Perfil mostra "Ficha suja" e
+ * nada no jogo se comporta diferente por causa disso. Foram onze de dezesseis
+ * quando isto foi medido pela primeira vez.
+ */
+export function orphanFlags(content: ContentPack): string[] {
+  const written = new Set<string>()
+  const read = new Set<string>(ENGINE_READ_FLAGS)
+
+  for (const event of content.events) {
+    walkConditions(event.conditions, read)
+    for (const option of event.options) {
+      walkConditions(option.requirements, read)
+      walkOutcomes(option.outcomes, written)
+    }
+  }
+
+  for (const action of content.actions) {
+    walkConditions(action.conditions, read)
+    walkConditions(action.requirements, read)
+    walkOutcomes(action.outcomes, written)
+  }
+
+  for (const action of content.relationActions) {
+    walkConditions(action.conditions, read)
+    walkConditions(action.requirements, read)
+    walkOutcomes(action.outcomes, written)
+  }
+
+  for (const track of content.careers) {
+    track.levels.forEach((level) => walkConditions(level.requirements, read))
+    walkEffects(track.annualEffects ?? [], written)
+  }
+
+  for (const course of content.courses) {
+    walkConditions(course.requirements, read)
+    walkEffects(course.completionEffects, written)
+  }
+
+  for (const asset of content.assets) {
+    walkConditions(asset.requirements, read)
+  }
+
+  return [...written].filter((flag) => !read.has(flag)).sort()
 }

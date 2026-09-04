@@ -2,10 +2,14 @@
 // promocao moram aqui.
 
 import {
+  AGE_RETIREMENT_MIN,
   BANKRUPTCY_CHANCE,
   CAREER_RESTART_PENALTY,
   BANKRUPTCY_DEBT_RATIO,
   BANKRUPTCY_INCOME_RATIO,
+  CRIME_JAIL_BASE_CHANCE,
+  CRIME_JAIL_LEVEL_FACTOR,
+  CRIME_SENTENCE_PER_LEVEL,
   DEBT_CEILING,
   FIRE_CHANCE,
   FIRE_PERFORMANCE_THRESHOLD,
@@ -14,6 +18,7 @@ import {
   PERFORMANCE_FROM_INTELLIGENCE,
   PERFORMANCE_START,
   PROMOTION_BASE_CHANCE,
+  PENSION_RATE,
   PROMOTION_PERFORMANCE_WEIGHT,
 } from './balance'
 import { evaluateAll } from './conditions'
@@ -21,6 +26,7 @@ import type { ContentPack } from './content-pack'
 import { applyEffects } from './effects'
 import type { Rng } from './rng'
 import { formatMoney } from './text'
+import { jail } from './prison'
 import { makeNote } from './timeline'
 import type { CareerLevel, CareerTrack, GameState, TimelineEntry } from './types'
 
@@ -101,7 +107,18 @@ export function hireInto(state: GameState, track: CareerTrack): void {
   recordCareerBest(state, track.id, level)
 }
 
-export function leaveCareer(state: GameState): void {
+/**
+ * Sai da carreira. Quem sai depois da idade de aposentadoria leva uma renda
+ * vitalicia proporcional ao ultimo salario; quem sai antes, nao.
+ */
+export function leaveCareer(state: GameState, content: ContentPack): void {
+  const level = currentLevel(state, content)
+  if (level && state.character.age >= AGE_RETIREMENT_MIN) {
+    state.character.pension = Math.max(
+      state.character.pension,
+      Math.round(level.salary * PENSION_RATE),
+    )
+  }
   state.character.career = null
 }
 
@@ -168,7 +185,7 @@ export function applyCareerYear(
     if (rng.chance(BANKRUPTCY_CHANCE)) {
       const debt = Math.round(level.salary * BANKRUPTCY_DEBT_RATIO)
       state.character.debt = Math.min(DEBT_CEILING, state.character.debt + debt)
-      leaveCareer(state)
+      leaveCareer(state, content)
       notes.push(
         makeNote(
           state,
@@ -184,10 +201,21 @@ export function applyCareerYear(
     }
   }
 
+  // Crime nao tem demissao nem falencia: tem cadeia, e a exposicao cresce
+  // com o nivel. E o unico freio da trilha mais rentavel do jogo.
+  if (track.kind === 'crime') {
+    const chance = CRIME_JAIL_BASE_CHANCE * (1 + career.level * CRIME_JAIL_LEVEL_FACTOR)
+    if (rng.chance(chance)) {
+      const years = CRIME_SENTENCE_PER_LEVEL * (career.level + 1) + rng.int(0, 3)
+      notes.push(jail(state, content, years, 'os crimes que você vinha cometendo'))
+      return { income, notes }
+    }
+  }
+
   // Demissao por desempenho.
   if (track.kind === 'clt' && career.performance < FIRE_PERFORMANCE_THRESHOLD) {
     if (rng.chance(FIRE_CHANCE)) {
-      leaveCareer(state)
+      leaveCareer(state, content)
       notes.push(
         makeNote(state, `Você foi demitid{o} de ${level.title.toLowerCase()}.`, 'career', [
           { label: 'Carreira', text: 'encerrada', tone: 'bad' },

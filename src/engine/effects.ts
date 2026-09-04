@@ -2,11 +2,14 @@
 // timeline mostra. Clamp de stat acontece aqui e em nenhum outro lugar.
 
 import { DEBT_CEILING, STAT_MAX, STAT_MIN } from './balance'
+import { assetName, buyAsset, findAsset, sellAsset } from './assets'
 import { clampPerformance, hireInto, leaveCareer, recordCareerBest } from './careers'
+import { evaluateAll } from './conditions'
 import { courseName, dropOut, enroll, studyYear } from './education'
 import type { ContentPack } from './content-pack'
 import { EDUCATION_LABELS, STAT_LABELS, relationLabel } from './labels'
 import { createPerson } from './people'
+import { jail, release } from './prison'
 import type { Rng } from './rng'
 import { formatMoney } from './text'
 import { assertNever } from './types'
@@ -52,9 +55,18 @@ export function addMoney(character: Character, delta: number): void {
 }
 
 function findRelation(state: GameState, ref: RelationRef): Person | undefined {
-  return ref.by === 'id'
-    ? state.relations.find((r) => r.id === ref.id)
-    : state.relations.find((r) => r.kind === ref.kind && r.alive)
+  switch (ref.by) {
+    case 'id':
+      return state.relations.find((r) => r.id === ref.id)
+    case 'kind':
+      return state.relations.find((r) => r.kind === ref.kind && r.alive)
+    case 'target':
+      // `retarget()` em relations.ts troca isto por um ref de id antes de
+      // chegar aqui. Um 'target' vivo neste ponto e conteudo escrito errado.
+      return undefined
+    default:
+      return assertNever(ref, 'findRelation')
+  }
 }
 
 function signed(n: number): string {
@@ -151,7 +163,10 @@ export function applyEffect(
 
     case 'career': {
       const career = state.character.career
-      switch (effect.action) {
+      // Extraido antes do switch: com `effect` narrowed a never no default, o
+      // acesso a `.action` deixa de compilar.
+      const action = effect.action
+      switch (action) {
         case 'hire': {
           const track = effect.trackId
             ? content.careers.find((t) => t.id === effect.trackId)
@@ -165,6 +180,11 @@ export function applyEffect(
           const track = content.careers.find((t) => t.id === career.trackId)
           const next = track?.levels[career.level + 1]
           if (!next) return null
+          // Respeita a tabela de requisitos. Sem isto, qualquer evento com um
+          // efeito de promocao furava a progressao inteira: um personagem sem
+          // diploma chegava a Analista senior, e a educacao deixava de valer
+          // qualquer coisa para a carreira.
+          if (!evaluateAll(next.requirements, state)) return null
           career.level += 1
           career.yearsInLevel = 0
           recordCareerBest(state, career.trackId, career.level)
@@ -173,15 +193,15 @@ export function applyEffect(
         case 'quit':
         case 'fire': {
           if (!career) return null
-          leaveCareer(state)
+          leaveCareer(state, content)
           return {
             label: 'Carreira',
-            text: effect.action === 'quit' ? 'largou o emprego' : 'demitido',
+            text: action === 'quit' ? 'largou o emprego' : 'demitido',
             tone: 'bad',
           }
         }
         default:
-          return assertNever(effect.action, 'applyEffect/career')
+          return assertNever(action, 'applyEffect/career')
       }
     }
 
@@ -220,6 +240,43 @@ export function applyEffect(
         text: signed(effect.delta),
         tone: effect.delta > 0 ? 'good' : 'bad',
       }
+    }
+
+    case 'asset': {
+      if (effect.action === 'buy') {
+        const asset = findAsset(content, effect.assetId)
+        if (!asset || !buyAsset(state, content, effect.assetId)) return null
+        return { label: asset.name, text: `−${formatMoney(asset.price)}`, tone: 'neutral' }
+      }
+      const proceeds = sellAsset(state, effect.assetId)
+      if (proceeds === null) return null
+      return {
+        label: assetName(content, effect.assetId),
+        text: `+${formatMoney(proceeds)}`,
+        tone: 'good',
+      }
+    }
+
+    case 'relationKind': {
+      const person = findRelation(state, effect.target)
+      if (!person || person.kind === effect.kind) return null
+      person.kind = effect.kind
+      return { label: relationLabel(effect.kind, person.gender), text: person.name.split(' ')[0] ?? person.name, tone: 'good' }
+    }
+
+    case 'jail': {
+      const wasInside = state.character.prison !== null
+      // A nota rica de condenacao e escrita por `jail()`; aqui so o resumo.
+      jail(state, content, effect.years, effect.reason)
+      return {
+        label: wasInside ? 'Pena' : 'Preso',
+        text: `${wasInside ? '+' : ''}${effect.years} anos`,
+        tone: 'bad',
+      }
+    }
+
+    case 'release': {
+      return release(state) !== null ? { label: 'Solto', text: 'liberdade', tone: 'good' } : null
     }
 
     case 'death': {

@@ -38,6 +38,18 @@ const marks = computed(() =>
       </div>
     </section>
 
+    <section v-if="character.prison" class="mt-6">
+      <h2 class="border-b border-ink pb-1 font-serif text-sm tracking-wide uppercase">Preso</h2>
+      <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+        <dt class="text-muted">Motivo</dt>
+        <dd class="text-right">{{ character.prison.reason }}</dd>
+        <dt class="text-muted">Cumprido</dt>
+        <dd class="text-right tabular-nums">{{ character.prison.yearsServed }}</dd>
+        <dt class="text-muted">Restam</dt>
+        <dd class="text-right tabular-nums text-rust">{{ character.prison.yearsLeft }}</dd>
+      </dl>
+    </section>
+
     <section class="mt-6">
       <h2 class="border-b border-rule pb-1 font-serif text-sm tracking-wide uppercase">
         Trabalho
@@ -85,6 +97,19 @@ const marks = computed(() =>
         <dt class="text-muted">Educação</dt>
         <dd class="text-right">{{ EDUCATION_LABELS[character.education] }}</dd>
       </dl>
+    </section>
+
+    <section v-if="store.achievements.length" class="mt-6">
+      <h2 class="flex items-baseline justify-between border-b border-rule pb-1 font-serif text-sm tracking-wide uppercase">
+        <span>Conquistas</span>
+        <span class="tabular-nums">{{ store.achievements.length }}</span>
+      </h2>
+      <ul class="mt-2 space-y-2">
+        <li v-for="item in store.achievements" :key="item.id">
+          <span class="block text-sm">{{ item.name }}</span>
+          <span class="block text-[11px] leading-snug text-muted">{{ item.description }}</span>
+        </li>
+      </ul>
     </section>
 
     <section class="mt-6">

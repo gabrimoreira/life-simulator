@@ -45,6 +45,11 @@ export const HEALTH_PEAK_AGE = 25
 export const HEALTH_BASELINE_DECLINE = 1.05
 /** Fracao da distancia ate o teto percorrida por ano. */
 export const HEALTH_RECOVERY_RATE = 0.18
+/** Quem treina com regularidade envelhece mais devagar. */
+export const TRAINED_HEALTH_BONUS = 6
+/** Condicao cronica: teto de saude menor e conta medica todo ano. */
+export const CHRONIC_HEALTH_PENALTY = 12
+export const CHRONIC_ANNUAL_COST = 9_000
 
 /** Felicidade regride a media com esta fracao por ano. */
 export const HAPPINESS_MEAN_REVERSION = 0.08
@@ -69,6 +74,15 @@ export const HIGHSCHOOL_MIN_INTELLIGENCE = 25
 
 export const AGE_FINANCIALLY_INDEPENDENT = 18
 
+/** Idade a partir da qual sair de uma carreira conta como aposentadoria. */
+export const AGE_RETIREMENT_MIN = 58
+/**
+ * Fracao do ultimo salario que vira renda vitalicia. Sem isso, aposentar-se
+ * jogava a renda para a informalidade e era puro prejuizo — o jogo pedia para
+ * o jogador nunca parar de trabalhar.
+ */
+export const PENSION_RATE = 0.55
+
 export interface ClassProfile {
   label: string
   /** Renda anual liquida antes da independencia (mesada da familia). */
@@ -90,7 +104,7 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   poor: {
     label: 'classe baixa',
     allowance: 300,
-    baseIncome: 11_000,
+    baseIncome: 9_000,
     costOfLiving: 14_000,
     startingMoney: 0,
     statBias: { health: -8, intelligence: -5, happiness: -4 },
@@ -99,8 +113,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   lowerMiddle: {
     label: 'classe média baixa',
     allowance: 900,
-    baseIncome: 16_000,
-    costOfLiving: 22_000,
+    baseIncome: 14_000,
+    costOfLiving: 24_000,
     startingMoney: 500,
     statBias: { health: -3, intelligence: -1 },
     weight: 33,
@@ -108,8 +122,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   middle: {
     label: 'classe média',
     allowance: 2_400,
-    baseIncome: 24_000,
-    costOfLiving: 33_000,
+    baseIncome: 18_000,
+    costOfLiving: 36_000,
     startingMoney: 2_000,
     statBias: {},
     weight: 25,
@@ -117,8 +131,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   upperMiddle: {
     label: 'classe média alta',
     allowance: 6_000,
-    baseIncome: 38_000,
-    costOfLiving: 55_000,
+    baseIncome: 26_000,
+    costOfLiving: 60_000,
     startingMoney: 12_000,
     statBias: { health: 4, intelligence: 5, looks: 3 },
     weight: 13,
@@ -126,8 +140,8 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
   rich: {
     label: 'classe alta',
     allowance: 18_000,
-    baseIncome: 70_000,
-    costOfLiving: 100_000,
+    baseIncome: 45_000,
+    costOfLiving: 110_000,
     startingMoney: 80_000,
     statBias: { health: 8, intelligence: 6, looks: 6, reputation: 8 },
     weight: 4,
@@ -142,6 +156,12 @@ export const CLASS_PROFILES: Record<SocialClass, ClassProfile> = {
  */
 export const DEBT_INTEREST_RATE = 0.06
 export const DEBT_CEILING = 400_000
+/**
+ * Reserva mantida antes de amortizar divida. Ninguem zera a conta para quitar
+ * um financiamento, mas tambem ninguem senta em cima de dois milhoes pagando
+ * juros de cinquenta mil — que era o que acontecia antes desta regra.
+ */
+export const DEBT_PAYDOWN_BUFFER_YEARS = 1
 
 // --- Geracao do personagem -------------------------------------------------
 
@@ -161,13 +181,11 @@ export const PARENT_AGE_AT_BIRTH = { min: 19, max: 42 } as const
 export const INITIAL_RELATION = { min: 55, max: 90 } as const
 
 /**
- * Relacoes ignoradas decaem sozinhas todo ano — mas so ate um piso. Na Fase 1
- * o jogador nao tem NENHUMA acao para cuidar de alguem, entao deixar tudo
- * chegar a zero seria punicao sem agencia. O piso sai quando a aba Relacoes
- * ganhar acoes, na Fase 3.
+ * Relacoes ignoradas decaem sozinhas todo ano. O piso que existia na Fase 1
+ * caiu junto com o motivo dele: agora o jogador TEM como cuidar de alguem, e
+ * ver a barra chegar a zero e a consequencia de nao ter feito nada.
  */
-export const RELATION_ANNUAL_DECAY = 1
-export const RELATION_DECAY_FLOOR = 30
+export const RELATION_ANNUAL_DECAY = 2
 
 
 // --- Carreira ---------------------------------------------------------------
@@ -179,14 +197,32 @@ export const PERFORMANCE_DRIFT = 0.15
 export const PERFORMANCE_FROM_INTELLIGENCE = 0.6
 export const PERFORMANCE_FROM_CHARISMA = 0.4
 
-/** Chance de promocao quando tempo e requisitos ja passaram. */
-export const PROMOTION_BASE_CHANCE = 0.16
-/** Quanto o desempenho acima de 50 soma na chance de promocao. */
-export const PROMOTION_PERFORMANCE_WEIGHT = 0.5
+/**
+ * Chance de promocao quando tempo e requisitos ja passaram, e o quanto o
+ * desempenho acima de 50 pesa nela.
+ *
+ * Com 0.16 e 0.5, quem se dedicava ao maximo ainda esperava ~3 anos por
+ * promocao ALEM do minimo do nivel — sete anos por degrau, trinta e cinco para
+ * chegar ao topo. Na pratica a mediana travava no meio da trilha e "se dedicar
+ * ao trabalho" nao pagava. Agora vai de 20% (sem esforco) a ~68% (maximo).
+ */
+export const PROMOTION_BASE_CHANCE = 0.2
+export const PROMOTION_PERFORMANCE_WEIGHT = 1.2
 
 /** Abaixo deste desempenho o emprego comeca a correr risco. */
 export const FIRE_PERFORMANCE_THRESHOLD = 20
 export const FIRE_CHANCE = 0.3
+
+/**
+ * Chance anual de ser preso trabalhando no crime, multiplicada pelo nivel:
+ * quanto mais alto, mais exposto. Sem isso o crime era a trilha mais rentavel
+ * do jogo e a unica sem mecanismo de ruina — CLT tem demissao, empresario tem
+ * falencia, e o crime tinha so eventos.
+ */
+export const CRIME_JAIL_BASE_CHANCE = 0.045
+export const CRIME_JAIL_LEVEL_FACTOR = 0.6
+/** Pena sorteada, em anos, escalando com o nivel. */
+export const CRIME_SENTENCE_PER_LEVEL = 2
 
 /** Ano em que a receita do negocio fica abaixo desta fracao vira risco real. */
 export const BANKRUPTCY_INCOME_RATIO = 0.4
@@ -210,6 +246,16 @@ export const CAREER_RESTART_PENALTY = 2
  */
 export const COST_OF_LIVING_INCOME_SHARE = 0.42
 
+/** Comer e ter um teto. Ninguem vive por menos que isto. */
+export const SUBSISTENCE_COST = 22_000
+/**
+ * Teto do padrao de vida herdado, como fracao da renda. Nascer rico te torna
+ * caro, mas nao te condena: se a renda nao sustenta o padrao da familia, ele
+ * desce ate caber. Sem esse limite, um filho de classe alta com salario de
+ * analista ficava no vermelho a vida inteira sem nada que pudesse fazer.
+ */
+export const INHERITED_LIFESTYLE_CAP = 1.15
+
 /**
  * Estudante vive como estudante: republica, casa dos pais, arroz e feijao.
  * Sem isso, cursar uma faculdade paga enquanto se paga custo de vida cheio
@@ -224,3 +270,42 @@ export const DROPOUT_UNHAPPY_THRESHOLD = 15
 export const DROPOUT_CHANCE = 0.25
 /** Estudar cansa. */
 export const STUDY_HAPPINESS_COST = 2
+
+
+// --- Ativos -----------------------------------------------------------------
+
+/** Corretagem, imposto, comprador negociando: vender sempre custa. */
+export const ASSET_SALE_HAIRCUT = 0.08
+/** Piso do valor de um ativo, como fracao do preco de compra. */
+export const ASSET_VALUE_FLOOR = 0.05
+
+// --- Relacoes ---------------------------------------------------------------
+
+/** Parentes envelhecem e morrem. Mesma curva de Gompertz, saude media fixa. */
+export const RELATIVE_MORTALITY_BASE = 0.00018
+export const RELATIVE_MORTALITY_GROWTH = 0.085
+
+/** Perder alguem proximo cobra felicidade proporcional a relacao. */
+export const GRIEF_MAX_HAPPINESS_LOSS = 25
+
+// --- Heranca ----------------------------------------------------------------
+
+/** Fatia do patrimonio liquido que passa para os filhos, dividida entre eles. */
+export const INHERITANCE_SHARE = 0.7
+/**
+ * Quanto os stats do pai puxam os do filho. O resto e regressao a media, senao
+ * uma linhagem otimizada viraria uma escada infinita de superpessoas.
+ */
+export const HEIR_STAT_INHERITANCE = 0.45
+export const HEIR_STAT_NOISE = 12
+
+
+// --- Prisao -----------------------------------------------------------------
+
+/** Cada ano preso cobra isto de saude e de felicidade. */
+export const PRISON_HEALTH_COST = 5
+export const PRISON_HAPPINESS_COST = 12
+/** E custa reputacao, uma vez, na entrada. */
+export const PRISON_REPUTATION_COST = 30
+/** Relacoes esfriam mais rapido com voce preso. */
+export const PRISON_RELATION_DECAY = 6
