@@ -75,6 +75,12 @@ export function evaluate(condition: Condition, state: GameState): boolean {
       return inRange(worth, condition.min, condition.max)
     }
 
+    case 'chose':
+      return state.choiceLog.some(
+        (record) =>
+          record.eventId === condition.eventId && record.optionIndex === condition.optionIndex,
+      )
+
     case 'relationLevel': {
       // Qualquer pessoa daquele tipo serve. Com `.find()` a resposta vinha
       // sempre do PRIMEIRO do array: quem tinha dois filhos e cuidava do
@@ -162,6 +168,9 @@ export function describe(condition: Condition): string {
 
     case 'careerTrack':
       return 'Requer outra carreira'
+
+    case 'chose':
+      return 'Depende de uma escolha que você não fez'
 
     case 'careerKind':
       return 'Requer outro tipo de carreira'

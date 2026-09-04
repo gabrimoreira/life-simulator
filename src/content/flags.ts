@@ -22,6 +22,7 @@ const HAND_WRITTEN: Record<string, string> = {
   underworld_ties: 'Contatos no crime',
   owes_favors: 'Deve favores políticos',
   philanthropist: 'Filantropo',
+  public_scandal: 'Envolvido em escândalo público',
 }
 
 /** Rótulos de curso saem do próprio catálogo, para não sair de sincronia. */

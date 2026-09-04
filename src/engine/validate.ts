@@ -409,3 +409,61 @@ export function orphanFlags(content: ContentPack): string[] {
 
   return [...written].filter((flag) => !read.has(flag)).sort()
 }
+
+/**
+ * Condicoes `chose` que apontam para um evento ou uma opcao que nao existem.
+ *
+ * Ao contrario de uma flag, aqui o alvo e uma coordenada: id do evento mais
+ * indice da opcao. Renomear um evento ou reordenar as opcoes de um evento ja
+ * escrito quebra o callback em silencio — a condicao simplesmente nunca mais
+ * e verdadeira, e nada no jogo reclama.
+ */
+export function danglingChoices(content: ContentPack): string[] {
+  const byId = new Map(content.events.map((event) => [event.id, event]))
+  const problems: string[] = []
+
+  const check = (condition: Condition, where: string): void => {
+    switch (condition.type) {
+      case 'chose': {
+        const target = byId.get(condition.eventId)
+        if (!target) {
+          problems.push(`${where}: chose aponta para evento inexistente "${condition.eventId}"`)
+        } else if (condition.optionIndex >= target.options.length || condition.optionIndex < 0) {
+          problems.push(
+            `${where}: chose pede a opcao ${condition.optionIndex} de "${condition.eventId}", que tem ${target.options.length}`,
+          )
+        }
+        break
+      }
+      case 'not':
+        check(condition.condition, where)
+        break
+      case 'anyOf':
+        condition.conditions.forEach((inner) => check(inner, where))
+        break
+      default:
+        break
+    }
+  }
+
+  for (const event of content.events) {
+    event.conditions.forEach((c, i) => check(c, `evento "${event.id}".conditions[${i}]`))
+    event.options.forEach((option, oi) =>
+      option.requirements?.forEach((c, i) =>
+        check(c, `evento "${event.id}".options[${oi}].requirements[${i}]`),
+      ),
+    )
+  }
+
+  for (const action of content.actions) {
+    action.conditions.forEach((c, i) => check(c, `acao "${action.id}".conditions[${i}]`))
+  }
+
+  for (const achievement of content.achievements) {
+    achievement.conditions.forEach((c, i) =>
+      check(c, `conquista "${achievement.id}".conditions[${i}]`),
+    )
+  }
+
+  return problems
+}

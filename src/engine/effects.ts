@@ -223,7 +223,8 @@ export function applyEffect(
 
     case 'study': {
       // A nota rica de "cursar um ano" e escrita por `studyYear`; aqui o efeito
-      // so existe para conteudo que queira empurrar um ano de curso de brinde.
+      // empurra um ano de brinde, sem gastar o ponto de acao que a acao
+      // "Cursar" cobraria. Usado por `callback_study_ahead`.
       return studyYear(state, content, rng) !== null
         ? { label: 'Curso', text: 'mais um ano', tone: 'neutral' }
         : null

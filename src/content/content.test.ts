@@ -7,6 +7,7 @@ import {
   validateCourses,
   validateEvents,
   validateRelationActions,
+  danglingChoices,
   orphanFlags,
 } from '../engine/validate'
 import { eligibleEvents } from '../engine/events'
@@ -141,6 +142,12 @@ describe('saúde do conteúdo', () => {
     // Perfil exibia "Ficha suja" e nada no jogo se comportava diferente.
     // Hoje são dezoito flags e nenhuma órfã.
     expect(orphanFlags(GAME_CONTENT)).toEqual([])
+  })
+
+  it('nenhuma condição `chose` aponta para um evento ou opção que não existe', () => {
+    // `chose` guarda uma coordenada, não um nome: renomear um evento ou
+    // reordenar suas opções quebra o callback em silêncio.
+    expect(danglingChoices(GAME_CONTENT)).toEqual([])
   })
 })
 

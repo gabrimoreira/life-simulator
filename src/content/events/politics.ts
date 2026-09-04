@@ -135,10 +135,14 @@ export const POLITICS_EVENTS: GameEvent[] = [
           },
           {
             chance: 0.45,
-            text: 'Uma pergunta pegou você sem resposta, e foi a única que rodou.',
+            text: 'Uma pergunta pegou você sem resposta, e foi a única que rodou em todo canal.',
             effects: [
-              { type: 'stat', stat: 'reputation', op: 'delta', value: -25 },
-              { type: 'stat', stat: 'fame', op: 'delta', value: 12 },
+              // `op: 'set'`: escândalo desse tamanho não desconta reputação,
+              // ele zera. Um delta de -25 em quem tinha 90 deixava a pessoa
+              // com 65, e a reportagem não teria mudado nada.
+              { type: 'stat', stat: 'reputation', op: 'set', value: 8 },
+              { type: 'stat', stat: 'fame', op: 'delta', value: 25 },
+              { type: 'flag', flag: 'public_scandal', value: true },
             ],
           },
         ],
@@ -149,7 +153,10 @@ export const POLITICS_EVENTS: GameEvent[] = [
           {
             chance: 1,
             text: 'A nota não convenceu ninguém, mas o assunto morreu em duas semanas.',
-            effects: [{ type: 'stat', stat: 'reputation', op: 'delta', value: -10 }],
+            effects: [
+              { type: 'stat', stat: 'reputation', op: 'delta', value: -10 },
+              { type: 'flag', flag: 'public_scandal', value: true },
+            ],
           },
         ],
       },
@@ -249,6 +256,53 @@ export const POLITICS_EVENTS: GameEvent[] = [
             chance: 1,
             text: 'Você agradeceu e disse que não era para você.',
             effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: 4 }],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'politics_scandal_shadow',
+    category: 'career',
+    weight: 9,
+    once: true,
+    conditions: [
+      { type: 'flag', flag: 'public_scandal', value: true },
+      { type: 'age', min: 40 },
+    ],
+    text: 'A reportagem antiga voltou a circular, agora sem contexto e com o seu nome no título.',
+    options: [
+      {
+        text: 'Enfrentar de novo, em público',
+        requirements: [{ type: 'stat', stat: 'charisma', min: 65 }],
+        outcomes: [
+          {
+            chance: 0.5,
+            luckBias: 0.4,
+            text: 'Dessa vez você tinha resposta pronta, e ela pegou melhor que a acusação.',
+            effects: [
+              { type: 'stat', stat: 'reputation', op: 'delta', value: 20 },
+              { type: 'stat', stat: 'fame', op: 'delta', value: 8 },
+            ],
+          },
+          {
+            chance: 0.5,
+            text: 'Você reabriu o assunto sozinho. Ficou mais duas semanas no ar.',
+            effects: [
+              { type: 'stat', stat: 'reputation', op: 'delta', value: -12 },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -8 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Não dizer nada',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Passou de novo, como tinha passado da primeira vez. Fica sempre.',
+            effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: -6 }],
           },
         ],
       },

@@ -253,6 +253,15 @@ export type Condition =
   | { type: 'hasRelation'; kind: RelationKind }
   | { type: 'hasCareer'; value: boolean }
   | { type: 'careerTrack'; trackId: string }
+  /**
+   * Se o jogador escolheu uma opcao especifica de um evento especifico.
+   *
+   * E a unica memoria do jogo que nao e flag booleana. Uma flag responde "isso
+   * aconteceu"; esta responde "voce escolheu isto", que e o que permite um
+   * callback reagir a decisao em vez de ao resultado — e permite cadeias, ja
+   * que o callback tambem e um evento com id e opcoes.
+   */
+  | { type: 'chose'; eventId: string; optionIndex: number }
   | { type: 'careerKind'; kind: CareerKind }
   | { type: 'careerLevel'; min?: number; max?: number }
   | { type: 'performance'; min?: number; max?: number }
