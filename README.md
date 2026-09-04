@@ -98,6 +98,28 @@ cursos. Por isso o validador rejeita ação de conteúdo com `:` no id.
 
 ## Carreira
 
+Onze trilhas em cinco tipos. O `kind` é o que a economia e as conquistas
+enxergam; o `trackId` é o que o conteúdo enxerga, e é por isso que existem
+duas condições separadas (`careerKind` e `careerTrack`).
+
+| tipo | trilhas |
+|------|---------|
+| `clt` | Corporativo, Medicina, Advocacia, Engenharia |
+| `business` | Comércio, Alimentação, Tecnologia |
+| `celebrity` | Internet, Música, Atuação, Esporte |
+| `crime` | Crime |
+| `politics` | Política |
+| `academia` | Acadêmica |
+
+As de `business` e `celebrity` existem porque o spec descreve as duas em prosa
+— "abre empresa, **escolhe setor**, injeta capital, contrata" e "**músico, ator,
+streamer, atleta**" — e por cinco fases as duas eram uma escada de salário só.
+Escolher o setor é escolher a trilha; injetar capital e contratar são ações,
+porque são coisas que se faz durante o ano trocando dinheiro por desempenho.
+
+Esporte é a única trilha do jogo com teto de idade na entrada: corpo tem prazo.
+
+
 Uma trilha (`src/content/careers.ts`) é uma lista de níveis com salário,
 requisitos e tempo mínimo. Três coisas movem a progressão:
 
@@ -280,15 +302,34 @@ O perfil otimizado é o que faz Medicina e entra na trilha da profissão. Ele
 paga 2,5 vezes o corporativo genérico — e tem o maior número de mortes no
 vermelho, porque seis anos e R$360.000 de faculdade cobram antes de pagar.
 
-### O teto do jogo é R$12,8 milhões
+### Quanto o jogo é capaz de gerar
 
-Medido em 300 vidas do perfil mais rentável que existe. R$10 milhões acontece
-em 3% delas; ninguém chegou a R$20 milhões.
+Medido em 120 vidas por trilha, nas oito mais rentáveis:
 
-Isso condenava dois bens de luxo: o jatinho custava R$18 milhões e o time de
-futebol R$40 milhões exigindo R$60 milhões de patrimônio. Eram itens de
-vitrine, e com o time morriam os dois eventos que exigem possuí-lo. Hoje o
-clube é ofertado em 63 de 300 vidas e o jatinho em 36.
+| trilha      | p50 | p90 | negativos |
+|-------------|----:|----:|----------:|
+| música      | 6,32M |  9,92M |  0 |
+| internet    | 4,96M |  8,75M |  1 |
+| medicina    | 4,43M |  8,91M | 17 |
+| comércio    | 4,22M |  9,68M |  7 |
+| esporte     | 3,96M | 10,73M |  1 |
+| tecnologia  | 3,95M | 11,20M |  7 |
+| alimentação | 2,58M |  6,25M |  9 |
+| atuação     | 2,38M | 11,41M | 10 |
+
+A forma importa mais que a mediana, e aqui ela aparece: alimentação tem teto
+baixo e chão firme; atuação tem a menor mediana e o maior p90 — é a trilha das
+cem audições; medicina tem o maior número de mortes no vermelho, porque seis
+anos e R$360.000 de faculdade cobram antes de pagar.
+
+**Não existe teto duro.** As trilhas voláteis têm caudas que passam de R$40
+milhões. O que existe é a faixa de p90, entre R$6,2M e R$11,4M, e é contra ela
+que os bens de luxo são precificados — um item comprável só na cauda é o mesmo
+que um item que ninguém compra.
+
+Foi assim que o jatinho de R$18 milhões e o time de futebol de R$40 milhões
+exigindo R$60 milhões de patrimônio apareceram: eram vitrine, e com o time
+morriam os dois eventos que exigem possuí-lo.
 
 A mesma conta vale para idade: com plano voltado a saúde, em 300 vidas a idade
 máxima foi 94 e ninguém passou de 95. A conquista dos cem anos era decoração e

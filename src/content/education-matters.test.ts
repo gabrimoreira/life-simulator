@@ -118,14 +118,16 @@ describe('o curso importa', () => {
 })
 
 describe('o topo do jogo é comprável', () => {
-  it('nenhum bem custa mais do que o jogo é capaz de gerar', () => {
+  it('nenhum bem custa mais do que uma vida de topo alcança', () => {
     // O jatinho pedia R$18 milhões e o time R$40 milhões, com R$60 milhões de
-    // patrimônio. Medindo 300 vidas do perfil mais rentável que existe, o
-    // máximo visto foi R$12,8 milhões — os dois eram itens de vitrine, e com o
-    // time morriam também os dois eventos de luxury.ts que exigem possuí-lo.
+    // patrimônio: eram itens de vitrine, e com o time morriam também os dois
+    // eventos de luxury.ts que exigem possuí-lo.
     //
-    // O teto aqui é generoso de propósito: ele não afirma que o bem é fácil,
-    // só que existe uma vida capaz de comprá-lo.
+    // O número é a faixa de p90 medida nas oito trilhas mais rentáveis, que vai
+    // de R$6,2M a R$11,4M. NÃO é um teto duro: as trilhas voláteis têm caudas
+    // que passam de R$40 milhões. O que este teste garante é que um bem esteja
+    // ao alcance de uma vida boa, não de uma vida excepcional — comprar só na
+    // cauda é o mesmo que não comprar.
     const TETO_MEDIDO = 12_800_000
 
     const caros = GAME_CONTENT.assets
@@ -135,6 +137,7 @@ describe('o topo do jogo é comprável', () => {
   })
 
   it('nenhum bem exige um patrimônio que ninguém alcança', () => {
+    // Mesma faixa do teste acima, pela mesma razão.
     const TETO_MEDIDO = 12_800_000
 
     const impossiveis: string[] = []

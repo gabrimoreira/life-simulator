@@ -81,11 +81,13 @@ export const CAREER_TRACKS: CareerTrack[] = [
   },
 
   {
+    // O id continua `business` porque os saves guardam `career.trackId`: um
+    // save antigo com carreira nesta trilha precisa continuar encontrando ela.
     id: 'business',
-    name: 'Empresário',
+    name: 'Comércio',
     kind: 'business',
-    entryLabel: 'Abrir o próprio negócio',
-    entryHint: 'Renda alta e volátil. Ano ruim é prejuízo de verdade, e falência existe.',
+    entryLabel: 'Abrir um comércio',
+    entryHint: 'O setor mais previsível dos três. Ano ruim ainda é prejuízo.',
     levels: [
       {
         title: 'Autônomo',
@@ -148,8 +150,10 @@ export const CAREER_TRACKS: CareerTrack[] = [
   },
 
   {
+    // Id preservado pelos saves, como em `business`. Este é o caminho de quem
+    // vira conhecido sem um ofício por trás — o creator genérico.
     id: 'celebrity',
-    name: 'Celebridade',
+    name: 'Internet',
     kind: 'celebrity',
     entryLabel: 'Tentar viver de holofote',
     entryHint: 'Fama vira dinheiro. Escândalo derruba tudo, e quase ninguém chega ao topo.',
@@ -582,6 +586,341 @@ export const CAREER_TRACKS: CareerTrack[] = [
           { type: 'stat', stat: 'intelligence', min: 84 },
           { type: 'stat', stat: 'charisma', min: 65 },
           { type: 'performance', min: 75 },
+        ],
+      },
+    ],
+  },
+
+  // --- Empresário: o setor é a escolha ---------------------------------------
+  // O spec descreve a trilha como "abre empresa, ESCOLHE SETOR, injeta capital,
+  // contrata" e por cinco fases ela era uma escada de salário só. Os três
+  // setores são trilhas próprias de `kind: 'business'` — mesma máquina das
+  // profissões, e é `careerTrack` que separa o conteúdo de cada um.
+  //
+  // Injetar capital e contratar são AÇÕES (actions.ts), não níveis: são coisas
+  // que se faz durante o ano, com dinheiro, e o retorno é desempenho.
+
+  {
+    id: 'business_food',
+    name: 'Alimentação',
+    kind: 'business',
+    entryLabel: 'Abrir um negócio de alimentação',
+    entryHint: 'Entra barato e trabalha muito. Teto mais baixo, chão mais firme.',
+    levels: [
+      {
+        title: 'Marmita e delivery',
+        salary: 28_000,
+        volatility: 0.4,
+        minYears: 0,
+        requirements: [
+          { type: 'age', min: 18 },
+          { type: 'money', min: 2_000 },
+        ],
+      },
+      {
+        title: 'Lanchonete',
+        salary: 65_000,
+        volatility: 0.45,
+        minYears: 2,
+        requirements: [{ type: 'performance', min: 40 }],
+      },
+      {
+        title: 'Restaurante',
+        salary: 140_000,
+        volatility: 0.55,
+        minYears: 3,
+        requirements: [
+          { type: 'stat', stat: 'charisma', min: 50 },
+          { type: 'performance', min: 55 },
+        ],
+      },
+      {
+        title: 'Duas casas cheias',
+        salary: 260_000,
+        volatility: 0.6,
+        minYears: 4,
+        requirements: [
+          { type: 'stat', stat: 'reputation', min: 55 },
+          { type: 'performance', min: 65 },
+        ],
+      },
+      {
+        title: 'Rede de restaurantes',
+        salary: 520_000,
+        volatility: 0.65,
+        minYears: 5,
+        requirements: [
+          { type: 'stat', stat: 'charisma', min: 68 },
+          { type: 'stat', stat: 'reputation', min: 65 },
+          { type: 'performance', min: 75 },
+        ],
+      },
+    ],
+    annualEffects: [{ type: 'stat', stat: 'health', op: 'delta', value: -1 }],
+  },
+
+  {
+    id: 'business_tech',
+    name: 'Tecnologia',
+    kind: 'business',
+    entryLabel: 'Abrir uma empresa de tecnologia',
+    entryHint: 'Quase tudo quebra. O que não quebra paga como nada mais paga.',
+    levels: [
+      {
+        title: 'Freelance de código',
+        salary: 45_000,
+        volatility: 0.5,
+        minYears: 0,
+        requirements: [
+          { type: 'age', min: 18 },
+          { type: 'stat', stat: 'intelligence', min: 55 },
+          { type: 'money', min: 8_000 },
+        ],
+      },
+      {
+        title: 'Produto com os primeiros clientes',
+        salary: 95_000,
+        volatility: 0.8,
+        minYears: 2,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 62 },
+          { type: 'performance', min: 45 },
+        ],
+      },
+      {
+        title: 'Startup com investidor',
+        salary: 220_000,
+        volatility: 0.9,
+        minYears: 3,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 70 },
+          { type: 'stat', stat: 'charisma', min: 55 },
+          { type: 'performance', min: 58 },
+        ],
+      },
+      {
+        title: 'Empresa que deu certo',
+        salary: 560_000,
+        volatility: 0.9,
+        minYears: 4,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 78 },
+          { type: 'performance', min: 68 },
+        ],
+      },
+      {
+        title: 'Vendeu por um número que ninguém acredita',
+        salary: 1_050_000,
+        volatility: 0.92,
+        minYears: 5,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 85 },
+          { type: 'stat', stat: 'charisma', min: 68 },
+          { type: 'performance', min: 80 },
+        ],
+      },
+    ],
+  },
+
+  // --- Celebridade: quatro ofícios, não um só --------------------------------
+  // O spec lista "músico, ator, streamer, atleta" e a trilha era uma escada
+  // genérica de "criador de conteúdo" a "ícone". Cada um destes chega à fama
+  // por uma porta diferente: o músico por talento e estrada, o ator por
+  // aparência e audição, o atleta por corpo e idade — e por isso o atleta é o
+  // único que acaba cedo.
+
+  {
+    id: 'celebrity_music',
+    name: 'Música',
+    kind: 'celebrity',
+    entryLabel: 'Viver de música',
+    entryHint: 'Anos tocando de graça antes do primeiro cachê que paga a conta.',
+    annualEffects: [{ type: 'stat', stat: 'fame', op: 'delta', value: 2 }],
+    levels: [
+      {
+        title: 'Tocando em bar',
+        salary: 12_000,
+        volatility: 0.6,
+        minYears: 0,
+        requirements: [{ type: 'age', min: 16 }],
+      },
+      {
+        title: 'Banda com público',
+        salary: 38_000,
+        volatility: 0.65,
+        minYears: 3,
+        requirements: [
+          { type: 'stat', stat: 'charisma', min: 50 },
+          { type: 'stat', stat: 'fame', min: 15 },
+        ],
+      },
+      {
+        title: 'Disco que emplacou',
+        salary: 125_000,
+        volatility: 0.75,
+        minYears: 3,
+        requirements: [
+          { type: 'stat', stat: 'fame', min: 40 },
+          { type: 'performance', min: 55 },
+        ],
+      },
+      {
+        title: 'Turnê nacional',
+        salary: 340_000,
+        volatility: 0.8,
+        minYears: 4,
+        requirements: [
+          { type: 'stat', stat: 'fame', min: 62 },
+          { type: 'stat', stat: 'charisma', min: 68 },
+          { type: 'performance', min: 68 },
+        ],
+      },
+      {
+        title: 'Nome que atravessa gerações',
+        salary: 820_000,
+        volatility: 0.75,
+        minYears: 6,
+        requirements: [
+          { type: 'stat', stat: 'fame', min: 80 },
+          { type: 'stat', stat: 'reputation', min: 60 },
+          { type: 'performance', min: 78 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'celebrity_acting',
+    name: 'Atuação',
+    kind: 'celebrity',
+    entryLabel: 'Tentar a vida como ator',
+    entryHint: 'Cem audições para um papel. Aparência abre a porta; o resto segura.',
+    annualEffects: [{ type: 'stat', stat: 'fame', op: 'delta', value: 2 }],
+    levels: [
+      {
+        title: 'Figuração e publicidade',
+        salary: 18_000,
+        volatility: 0.6,
+        minYears: 0,
+        requirements: [
+          { type: 'age', min: 16 },
+          {
+            type: 'anyOf',
+            conditions: [
+              { type: 'flag', flag: 'course_artes', value: true },
+              { type: 'stat', stat: 'looks', min: 55 },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Papel recorrente',
+        salary: 70_000,
+        volatility: 0.6,
+        minYears: 3,
+        requirements: [
+          { type: 'stat', stat: 'looks', min: 60 },
+          { type: 'stat', stat: 'charisma', min: 55 },
+        ],
+      },
+      {
+        title: 'Protagonista',
+        salary: 240_000,
+        volatility: 0.7,
+        minYears: 3,
+        requirements: [
+          { type: 'stat', stat: 'fame', min: 45 },
+          { type: 'performance', min: 58 },
+        ],
+      },
+      {
+        title: 'Nome que vende bilheteria',
+        salary: 560_000,
+        volatility: 0.75,
+        minYears: 4,
+        requirements: [
+          { type: 'stat', stat: 'fame', min: 65 },
+          { type: 'stat', stat: 'looks', min: 65 },
+          { type: 'performance', min: 70 },
+        ],
+      },
+      {
+        title: 'Prêmio na estante',
+        salary: 1_020_000,
+        volatility: 0.7,
+        minYears: 5,
+        requirements: [
+          { type: 'stat', stat: 'fame', min: 80 },
+          { type: 'stat', stat: 'reputation', min: 62 },
+          { type: 'performance', min: 80 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'celebrity_sports',
+    name: 'Esporte',
+    kind: 'celebrity',
+    entryLabel: 'Tentar viver de esporte',
+    entryHint: 'Paga cedo e acaba cedo. Depois dos trinta e cinco, a porta fecha.',
+    annualEffects: [
+      { type: 'stat', stat: 'fame', op: 'delta', value: 3 },
+      { type: 'stat', stat: 'health', op: 'delta', value: -2 },
+    ],
+    levels: [
+      {
+        title: 'Base',
+        salary: 24_000,
+        volatility: 0.5,
+        minYears: 0,
+        requirements: [
+          // A única trilha do jogo com teto de idade na entrada: corpo tem prazo.
+          { type: 'age', min: 14, max: 24 },
+          { type: 'stat', stat: 'health', min: 65 },
+        ],
+      },
+      {
+        title: 'Profissional',
+        salary: 110_000,
+        volatility: 0.55,
+        minYears: 2,
+        requirements: [
+          { type: 'stat', stat: 'health', min: 70 },
+          { type: 'performance', min: 50 },
+        ],
+      },
+      {
+        title: 'Titular de time grande',
+        salary: 360_000,
+        volatility: 0.6,
+        minYears: 3,
+        requirements: [
+          { type: 'stat', stat: 'health', min: 75 },
+          { type: 'stat', stat: 'fame', min: 40 },
+          { type: 'performance', min: 62 },
+        ],
+      },
+      {
+        title: 'Seleção',
+        salary: 720_000,
+        volatility: 0.65,
+        minYears: 3,
+        requirements: [
+          { type: 'stat', stat: 'health', min: 80 },
+          { type: 'stat', stat: 'fame', min: 60 },
+          { type: 'performance', min: 74 },
+        ],
+      },
+      {
+        title: 'Ídolo',
+        salary: 1_250_000,
+        volatility: 0.6,
+        minYears: 3,
+        requirements: [
+          { type: 'stat', stat: 'health', min: 82 },
+          { type: 'stat', stat: 'fame', min: 78 },
+          { type: 'performance', min: 82 },
         ],
       },
     ],

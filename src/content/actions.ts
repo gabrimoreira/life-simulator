@@ -456,4 +456,135 @@ export const GAME_ACTIONS: GameAction[] = [
       },
     ],
   },
+
+  // --- Empresário -----------------------------------------------------------
+  // O spec descreve a trilha como "abre empresa, escolhe setor, INJETA CAPITAL,
+  // CONTRATA". O setor virou escolha de trilha; estas duas são o resto. As duas
+  // trocam dinheiro por desempenho, que é a moeda da promoção — e é o que
+  // diferencia empresário de assalariado: dá para comprar crescimento, e dá
+  // para perder o que se comprou.
+  {
+    id: 'inject_capital',
+    group: 'career',
+    label: 'Injetar capital no negócio',
+    hint: 'Põe dinheiro seu para acelerar. Nem sempre volta.',
+    cost: 1,
+    conditions: [{ type: 'careerKind', kind: 'business' }],
+    requirements: [{ type: 'money', min: 40_000 }],
+    cooldown: 2,
+    outcomes: [
+      {
+        chance: 0.6,
+        luckBias: 0.3,
+        text: 'O dinheiro virou estrutura, e a estrutura virou faturamento.',
+        effects: [
+          { type: 'money', delta: -40_000 },
+          { type: 'performance', delta: 22 },
+        ],
+      },
+      {
+        chance: 0.4,
+        text: 'Você pôs quarenta mil e o mercado não estava nem aí.',
+        effects: [
+          { type: 'money', delta: -40_000 },
+          { type: 'performance', delta: 3 },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: -6 },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'hire_team',
+    group: 'career',
+    label: 'Contratar gente',
+    hint: 'Folha de pagamento todo mês. Alguém precisa fazer o trabalho.',
+    cost: 1,
+    conditions: [
+      { type: 'careerKind', kind: 'business' },
+      { type: 'careerLevel', min: 1 },
+    ],
+    requirements: [{ type: 'money', min: 25_000 }],
+    cooldown: 3,
+    outcomes: [
+      {
+        chance: 0.55,
+        text: 'Você contratou bem, e pela primeira vez o negócio anda sem você em cima.',
+        effects: [
+          { type: 'money', delta: -25_000 },
+          { type: 'performance', delta: 18 },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: 6 },
+          { type: 'stat', stat: 'health', op: 'delta', value: 4 },
+        ],
+      },
+      {
+        chance: 0.3,
+        text: 'Contratou, treinou seis meses, e a pessoa saiu.',
+        effects: [
+          { type: 'money', delta: -25_000 },
+          { type: 'performance', delta: -4 },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: -8 },
+        ],
+      },
+      {
+        chance: 0.15,
+        text: 'A contratação foi um desastre e você descobriu tarde demais.',
+        effects: [
+          { type: 'money', delta: -25_000 },
+          { type: 'performance', delta: -15 },
+          { type: 'stat', stat: 'reputation', op: 'delta', value: -8 },
+        ],
+      },
+    ],
+  },
+
+  // --- Celebridade ----------------------------------------------------------
+  // "Contratos publicitários" é o único item da descrição da trilha no spec que
+  // não tinha nenhuma mecânica: a expressão aparecia uma vez no jogo inteiro,
+  // como texto de um desfecho ruim. É a forma mais direta de fama virar
+  // dinheiro, e por isso cobra reputação quando a marca é ruim.
+  {
+    id: 'endorsement_deal',
+    group: 'career',
+    label: 'Fechar contrato publicitário',
+    hint: 'Fama vira dinheiro direto. Depende de quem está pagando.',
+    cost: 1,
+    conditions: [
+      { type: 'careerKind', kind: 'celebrity' },
+      { type: 'stat', stat: 'fame', min: 30 },
+    ],
+    cooldown: 2,
+    outcomes: [
+      {
+        chance: 0.45,
+        text: 'Marca boa, campanha bem feita, cachê que paga o ano.',
+        effects: [
+          // O cachê é modesto de propósito: com cooldown de 2 anos, uma vida
+          // fecha ~20 contratos, e a 190 mil isso somava quase R$4 milhões de
+          // dinheiro sem risco — mais que a carreira inteira de muita gente.
+          { type: 'money', delta: 80_000 },
+          { type: 'stat', stat: 'fame', op: 'delta', value: 6 },
+          { type: 'stat', stat: 'reputation', op: 'delta', value: 4 },
+        ],
+      },
+      {
+        chance: 0.4,
+        text: 'Pagou bem e você preferiu não olhar muito para o que estava anunciando.',
+        effects: [
+          { type: 'money', delta: 130_000 },
+          { type: 'stat', stat: 'fame', op: 'delta', value: 8 },
+          { type: 'stat', stat: 'reputation', op: 'delta', value: -14 },
+        ],
+      },
+      {
+        chance: 0.15,
+        text: 'A empresa virou notícia por fraude duas semanas depois, com a sua cara no anúncio.',
+        effects: [
+          { type: 'money', delta: 130_000 },
+          { type: 'stat', stat: 'reputation', op: 'delta', value: -30 },
+          { type: 'stat', stat: 'fame', op: 'delta', value: 14 },
+          { type: 'flag', flag: 'public_scandal', value: true },
+        ],
+      },
+    ],
+  },
 ]
