@@ -333,10 +333,17 @@ export interface Outcome {
   chance: number
   text: string
   /**
-   * Quanto a Sorte enviesa este outcome. Positivo = sorte favorece.
-   * chance efetiva = chance * (1 + luckBias * (luck - 50) / 50), renormalizado.
+   * Quanto cada atributo enviesa este outcome. Positivo = atributo alto
+   * favorece; negativo, atrapalha.
+   *
+   * chance efetiva = chance * (1 + soma de peso * (atributo - 50) / 50).
+   *
+   * Ate a Fase 8 so a Sorte podia enviesar um outcome, e por isso o spec
+   * prometia coisas que o conteudo nao tinha como dizer: carisma pesando numa
+   * negociacao, aparencia pesando num flerte. Nao era conteudo faltando, era
+   * o tipo que nao permitia escrever.
    */
-  luckBias?: number
+  bias?: Partial<Record<StatKey, number>>
   effects: Effect[]
 }
 

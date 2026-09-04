@@ -223,7 +223,7 @@ export const LATE_LIFE_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.45,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Deu para segurar em casa, com cuidado.',
             effects: [{ type: 'stat', stat: 'health', op: 'delta', value: 4 }],
           },
@@ -308,7 +308,7 @@ export const LATE_LIFE_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.35,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Era o banco mesmo. Você resolveu em três minutos.',
             effects: [],
           },

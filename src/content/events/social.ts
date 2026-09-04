@@ -200,7 +200,7 @@ export const SOCIAL_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.55,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Você foi e voltou com dois números de telefone.',
             effects: [
               { type: 'stat', stat: 'charisma', op: 'delta', value: 8 },
@@ -373,7 +373,7 @@ export const SOCIAL_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.45,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Vocês se reencontraram e desta vez o momento era outro.',
             effects: [
               { type: 'addRelation', kind: 'partner' },

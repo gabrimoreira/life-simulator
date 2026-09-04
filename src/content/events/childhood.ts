@@ -71,7 +71,7 @@ export const CHILDHOOD_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.65,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'Seus pais cederam. Ele dorme no seu pé todas as noites.',
             effects: [
               { type: 'stat', stat: 'happiness', op: 'delta', value: 10 },
@@ -126,7 +126,7 @@ export const CHILDHOOD_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.45,
-            luckBias: 0.6,
+            bias: { luck: 0.6 },
             text: 'Você revidou uma vez só. Nunca mais encostaram em você.',
             effects: [
               { type: 'stat', stat: 'reputation', op: 'delta', value: 6 },
@@ -241,7 +241,7 @@ export const CHILDHOOD_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.6,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Na escola nova você virou novidade. Fez amigos na primeira semana.',
             effects: [
               { type: 'stat', stat: 'charisma', op: 'delta', value: 6 },
@@ -396,7 +396,7 @@ export const CHILDHOOD_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.55,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'Você caiu umas vinte vezes e aprendeu numa tarde. Ninguém viu, mas você sabe.',
             effects: [
               { type: 'stat', stat: 'happiness', op: 'delta', value: 8 },

@@ -44,6 +44,42 @@ describe('validateEvents', () => {
     expect(has(problems, 'once e cooldown juntos')).toBe(true)
   })
 
+  it('pega bias fora do teto — o atributo decidiria em vez de enviesar', () => {
+    const event = makeEvent({})
+    const opcao = {
+      text: 'Negociar',
+      outcomes: [
+        { chance: 0.5, bias: { charisma: 5 }, text: 'Deu certo.', effects: [] },
+        { chance: 0.5, text: 'Não deu.', effects: [] },
+      ],
+    }
+    const problems = validateEvents([{ ...event, options: [opcao, event.options[1]!] }])
+    expect(has(problems, 'passa do teto')).toBe(true)
+  })
+
+  it('pega bias decorativo em outcome único', () => {
+    const event = makeEvent({})
+    const opcao = {
+      text: 'Tentar',
+      outcomes: [{ chance: 1, bias: { looks: 0.5 }, text: 'Deu certo.', effects: [] }],
+    }
+    const problems = validateEvents([{ ...event, options: [opcao, event.options[1]!] }])
+    expect(has(problems, 'outcome unico')).toBe(true)
+  })
+
+  it('pega peso zerado, que parece pesar e não pesa', () => {
+    const event = makeEvent({})
+    const opcao = {
+      text: 'Tentar',
+      outcomes: [
+        { chance: 0.5, bias: { luck: 0 }, text: 'Deu certo.', effects: [] },
+        { chance: 0.5, text: 'Não deu.', effects: [] },
+      ],
+    }
+    const problems = validateEvents([{ ...event, options: [opcao, event.options[1]!] }])
+    expect(has(problems, 'nao enviesa nada')).toBe(true)
+  })
+
   it('pega token desconhecido no texto', () => {
     const problems = validateEvents([makeEvent({ text: 'Oi, {nome_inexistente}.' })])
     expect(has(problems, 'token desconhecido')).toBe(true)

@@ -74,6 +74,7 @@ export const RELATION_ACTIONS: RelationAction[] = [
     outcomes: [
       {
         chance: 0.75,
+        bias: { charisma: 0.3 },
         text: 'vocês conversaram de verdade, sem pressa.',
         effects: [
           { type: 'relation', target: { by: 'target' }, delta: 12 },
@@ -126,7 +127,7 @@ export const RELATION_ACTIONS: RelationAction[] = [
     outcomes: [
       {
         chance: 0.5,
-        luckBias: 0.4,
+        bias: { charisma: 0.4 },
         text: 'emprestou sem fazer perguntas.',
         effects: [
           { type: 'money', delta: 15_000 },
@@ -190,7 +191,7 @@ export const RELATION_ACTIONS: RelationAction[] = [
     outcomes: [
       {
         chance: 0.8,
-        luckBias: 0.3,
+        bias: { charisma: 0.25, looks: 0.15 },
         text: 'disse sim.',
         effects: [
           { type: 'money', delta: -15_000 },
@@ -223,7 +224,7 @@ export const RELATION_ACTIONS: RelationAction[] = [
     outcomes: [
       {
         chance: 0.85,
-        luckBias: 0.3,
+        bias: { luck: 0.3 },
         text: 'nasceu saudável.',
         effects: [
           { type: 'addRelation', kind: 'child' },

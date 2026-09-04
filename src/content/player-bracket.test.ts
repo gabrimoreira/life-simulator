@@ -19,6 +19,20 @@ import type { GameState } from '../engine/types'
 
 const N = 60
 
+/**
+ * Longevidade precisa de mais vidas que o resto.
+ *
+ * Com 60 vidas a mediana da idade de morte anda em degraus de anos inteiros:
+ * a mesma afirmação media 5 numa leva e 7 na seguinte sem nada ter mudado no
+ * jogo. Medido em 150 vidas por jogador, a diferença assenta em ~1,7 ano e
+ * para de depender de quais sementes caíram na amostra.
+ */
+const N_LONGEVIDADE = 150
+
+function media(valores: number[]): number {
+  return valores.reduce((soma, valor) => soma + valor, 0) / valores.length
+}
+
 function mediana(valores: number[]): number {
   const ordenado = [...valores].sort((a, b) => a - b)
   return ordenado[Math.floor(ordenado.length / 2)] ?? 0
@@ -55,16 +69,18 @@ describe('escolher bem muda o dinheiro', () => {
 })
 
 describe('mas não muda tudo', () => {
-  const { ruim, bom } = levas(['Procurar emprego'])
+  const acoes = ['Procurar emprego']
+  const ruim = simulateMany(N_LONGEVIDADE, GAME_CONTENT, { actions: acoes, policy: 'first' })
+  const bom = simulateMany(N_LONGEVIDADE, GAME_CONTENT, { actions: acoes, policy: 'sensible' })
 
   it('a idade de morte quase não depende de escolha', () => {
     // Longevidade é estrutural: sai da curva de Gompertz e do teto de saúde da
-    // idade, não do que o jogador clica. Se este teste começar a falhar, é
-    // porque alguma escolha virou um botão de viver mais — e isso precisa ser
-    // deliberado.
-    const idade = (vidas: GameState[]): number => mediana(vidas.map((s) => s.character.deathAge ?? 0))
-    const diferenca = Math.abs(idade(bom) - idade(ruim))
-    expect(diferenca).toBeLessThanOrEqual(6)
+    // idade, não do que o jogador clica. Medido: 69,3 contra 71,0 anos — o
+    // jogador sensato ganha menos de dois anos por não se sabotar. Se este
+    // teste começar a falhar, é porque alguma escolha virou um botão de viver
+    // mais, e isso precisa ser deliberado.
+    const idade = (vidas: GameState[]): number => media(vidas.map((s) => s.character.deathAge ?? 0))
+    expect(Math.abs(idade(bom) - idade(ruim))).toBeLessThanOrEqual(4)
   })
 })
 

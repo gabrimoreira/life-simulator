@@ -29,7 +29,7 @@ export const CALLBACK_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.5,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'A franqueza contou a seu favor. Não resolveu, mas não piorou.',
             effects: [{ type: 'stat', stat: 'reputation', op: 'delta', value: 4 }],
           },
@@ -46,7 +46,7 @@ export const CALLBACK_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.4,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'Saiu. Depois de anos, seu nome está limpo de novo.',
             effects: [
               { type: 'money', delta: -40_000 },
@@ -109,7 +109,7 @@ export const CALLBACK_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.3,
-            luckBias: 0.6,
+            bias: { luck: 0.6 },
             text: 'Vocês começaram a tocar em bar e uma coisa levou à outra.',
             effects: [
               { type: 'stat', stat: 'fame', op: 'delta', value: 14 },
@@ -417,7 +417,7 @@ export const CALLBACK_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.6,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Virou um livro pequeno que uma cidade inteira leu.',
             effects: [
               { type: 'stat', stat: 'fame', op: 'delta', value: 18 },
@@ -555,7 +555,7 @@ export const CALLBACK_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.15,
-            luckBias: 1,
+            bias: { luck: 1 },
             text: 'Contra tudo o que era razoável, deu certo outra vez.',
             effects: [
               { type: 'money', delta: 220_000 },

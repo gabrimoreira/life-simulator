@@ -226,7 +226,7 @@ export function performRelationAction(
 
   const outcome = pickOutcome(
     { text: action.label, outcomes: action.outcomes },
-    state.character.stats.luck,
+    state.character.stats,
     rng,
   )
   const logs = applyEffects(retarget(outcome.effects, personId), state, rng, content)

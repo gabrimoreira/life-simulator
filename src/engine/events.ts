@@ -4,7 +4,8 @@ import { evaluateAll } from './conditions'
 import type { ContentPack } from './content-pack'
 import { isInPrison, mentionsPrison } from './prison'
 import type { Rng } from './rng'
-import type { EventOption, GameEvent, GameState, Outcome } from './types'
+import { STAT_KEYS } from './types'
+import type { EventOption, GameEvent, GameState, Outcome, StatKey } from './types'
 
 export function findEvent(content: ContentPack, id: string): GameEvent | undefined {
   return content.events.find((event) => event.id === id)
@@ -57,17 +58,30 @@ export function selectEvents(
 }
 
 /**
- * Chance do outcome depois do vies de Sorte.
- * luck 50 e neutro; luck 100 com luckBias 1 dobra o peso.
+ * Chance do outcome depois do vies dos atributos.
+ *
+ * 50 e neutro em qualquer atributo; 100 com peso 1 dobra a chance, 0 zera.
+ * Varios atributos somam: `{ charisma: 0.4, looks: 0.2 }` e uma negociacao
+ * que depende mais de conversa do que de aparencia, e um pouco das duas.
  */
-export function effectiveChance(outcome: Outcome, luck: number): number {
-  const bias = outcome.luckBias ?? 0
-  if (bias === 0) return outcome.chance
-  const factor = 1 + bias * ((luck - 50) / 50)
+export function effectiveChance(outcome: Outcome, stats: Record<StatKey, number>): number {
+  const bias = outcome.bias
+  if (bias === undefined) return outcome.chance
+
+  let factor = 1
+  for (const key of STAT_KEYS) {
+    const weight = bias[key]
+    if (weight === undefined || weight === 0) continue
+    factor += weight * ((stats[key] - 50) / 50)
+  }
   return Math.max(0, outcome.chance * factor)
 }
 
-export function pickOutcome(option: EventOption, luck: number, rng: Rng): Outcome {
+export function pickOutcome(
+  option: EventOption,
+  stats: Record<StatKey, number>,
+  rng: Rng,
+): Outcome {
   if (option.outcomes.length === 0) {
     throw new Error('pickOutcome: opcao sem outcomes')
   }
@@ -77,5 +91,5 @@ export function pickOutcome(option: EventOption, luck: number, rng: Rng): Outcom
     return only
   }
   // `weighted` ja normaliza pelo total, entao nao precisa renormalizar a mao.
-  return rng.weighted(option.outcomes, (outcome) => effectiveChance(outcome, luck))
+  return rng.weighted(option.outcomes, (outcome) => effectiveChance(outcome, stats))
 }

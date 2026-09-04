@@ -138,7 +138,9 @@ export const GAME_ACTIONS: GameAction[] = [
     outcomes: [
       {
         chance: 0.45,
-        luckBias: 0.4,
+        // A negociação que o spec prometia: quem sabe conversar e tem nome
+        // limpo pede aumento em condições diferentes de quem não tem.
+        bias: { charisma: 0.45, reputation: 0.2 },
         text: 'Conseguiu. Não foi o que você pediu, mas foi.',
         effects: [
           { type: 'money', delta: 18_000 },
@@ -217,7 +219,7 @@ export const GAME_ACTIONS: GameAction[] = [
     outcomes: [
       {
         chance: 0.55,
-        luckBias: 0.4,
+        bias: { charisma: 0.4, luck: 0.15 },
         text: 'Você fez uma amizade de verdade este ano.',
         effects: [
           { type: 'addRelation', kind: 'friend' },
@@ -279,7 +281,9 @@ export const GAME_ACTIONS: GameAction[] = [
     outcomes: [
       {
         chance: 0.45,
-        luckBias: 0.5,
+        // Aparência afetando relacionamento, que era promessa do spec e não
+        // existia: `looks` só valia como porteiro de carreira pública.
+        bias: { looks: 0.4, charisma: 0.25, luck: 0.15 },
         text: 'Você conheceu alguém, e desta vez foi diferente.',
         effects: [
           { type: 'addRelation', kind: 'partner' },
@@ -354,7 +358,7 @@ export const GAME_ACTIONS: GameAction[] = [
     outcomes: [
       {
         chance: 0.55,
-        luckBias: 0.4,
+        bias: { luck: 0.4 },
         text: 'Você virou gente de confiança. Ninguém mais te encosta.',
         effects: [
           { type: 'stat', stat: 'charisma', op: 'delta', value: 6 },
@@ -383,7 +387,7 @@ export const GAME_ACTIONS: GameAction[] = [
     outcomes: [
       {
         chance: 0.35,
-        luckBias: 0.5,
+        bias: { luck: 0.5 },
         text: 'O juiz aceitou. Você sai antes do previsto.',
         effects: [{ type: 'release' }],
       },
@@ -409,7 +413,7 @@ export const GAME_ACTIONS: GameAction[] = [
     outcomes: [
       {
         chance: 0.65,
-        luckBias: 0.5,
+        bias: { luck: 0.5 },
         text: 'Deu certo e ninguém viu.',
         effects: [{ type: 'money', delta: 3_000 }],
       },
@@ -438,7 +442,7 @@ export const GAME_ACTIONS: GameAction[] = [
     outcomes: [
       {
         chance: 0.4,
-        luckBias: 0.6,
+        bias: { luck: 0.6 },
         text: 'Funcionou. O dinheiro entrou e ninguém veio atrás.',
         effects: [
           { type: 'money', delta: 60_000 },
@@ -475,7 +479,7 @@ export const GAME_ACTIONS: GameAction[] = [
     outcomes: [
       {
         chance: 0.6,
-        luckBias: 0.3,
+        bias: { luck: 0.3 },
         text: 'O dinheiro virou estrutura, e a estrutura virou faturamento.',
         effects: [
           { type: 'money', delta: -40_000 },

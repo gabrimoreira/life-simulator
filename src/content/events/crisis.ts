@@ -202,7 +202,7 @@ export const CRISIS_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.5,
-            luckBias: 0.3,
+            bias: { luck: 0.3 },
             text: 'Você arrancou tudo pela raiz e recomeçou. Deu certo, contra o que era razoável esperar.',
             effects: [
               { type: 'career', action: 'quit' },

@@ -111,7 +111,7 @@ export const PROFESSION_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.6,
-            luckBias: 0.3,
+            bias: { luck: 0.3 },
             text: 'O consultório encheu. Você passou a atender de manhã e operar de tarde.',
             effects: [
               { type: 'money', delta: -120_000 },
@@ -208,7 +208,7 @@ export const PROFESSION_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.55,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Você ganhou, e a história saiu no jornal do jeito certo.',
             effects: [
               { type: 'stat', stat: 'reputation', op: 'delta', value: 16 },
@@ -264,7 +264,7 @@ export const PROFESSION_EVENTS: GameEvent[] = [
           },
           {
             chance: 0.25,
-            luckBias: -0.4,
+            bias: { luck: -0.4 },
             text: 'Deu problema, e a assinatura na planta era a sua.',
             effects: [
               { type: 'stat', stat: 'reputation', op: 'delta', value: -25 },

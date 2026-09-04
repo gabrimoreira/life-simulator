@@ -22,7 +22,7 @@ export const CAREER_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.45,
-            luckBias: 0.4,
+            bias: { charisma: 0.35, reputation: 0.2 },
             text: 'A proposta era boa e você usou como alavanca onde já estava.',
             effects: [
               { type: 'money', delta: 25_000 },
@@ -137,7 +137,7 @@ export const CAREER_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.5,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Você segurou o mercado e saiu maior da briga.',
             effects: [{ type: 'performance', delta: 15 }],
           },
@@ -193,7 +193,7 @@ export const CAREER_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.35,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'Funcionou. Metade da internet passou a te achar autêntic{o}.',
             effects: [
               { type: 'stat', stat: 'fame', op: 'delta', value: 16 },
@@ -243,7 +243,7 @@ export const CAREER_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.55,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'Você aproveitou a janela inteira. Ganhou público que ficou.',
             effects: [
               { type: 'stat', stat: 'fame', op: 'delta', value: 18 },
@@ -398,7 +398,7 @@ export const CAREER_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.3,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Ele ouviu. Mudou o que dava para mudar, e você voltou a render.',
             effects: [
               { type: 'performance', delta: 25 },

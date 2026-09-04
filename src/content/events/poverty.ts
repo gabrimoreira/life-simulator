@@ -113,7 +113,7 @@ export const POVERTY_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.35,
-            luckBias: 0.3,
+            bias: { luck: 0.3 },
             text: 'Apareceu coisa melhor. Valeu ter esperado.',
             effects: [
               { type: 'money', delta: 9_000 },

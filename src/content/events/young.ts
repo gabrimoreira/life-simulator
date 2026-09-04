@@ -21,7 +21,7 @@ export const YOUNG_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.55,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Rodou cinco anos sem dar problema. Liberdade tem preço e você pagou pouco.',
             effects: [
               { type: 'asset', action: 'buy', assetId: 'car_popular' },
@@ -344,7 +344,7 @@ export const YOUNG_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.55,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Deu tudo certo e virou a história que vocês contam há vinte anos.',
             effects: [
               { type: 'stat', stat: 'happiness', op: 'delta', value: 12 },
@@ -395,7 +395,7 @@ export const YOUNG_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.25,
-            luckBias: 0.6,
+            bias: { luck: 0.6 },
             text: 'Cresceu. Não o suficiente para viver disso, o suficiente para mudar a sua cabeça.',
             effects: [
               { type: 'stat', stat: 'fame', op: 'delta', value: 16 },

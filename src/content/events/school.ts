@@ -17,7 +17,7 @@ export const SCHOOL_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.55,
-            luckBias: 0.6,
+            bias: { luck: 0.6 },
             text: 'Vocês conversaram até o sinal bater. Combinaram de sair no sábado.',
             effects: [
               { type: 'stat', stat: 'happiness', op: 'delta', value: 14 },
@@ -40,7 +40,7 @@ export const SCHOOL_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.4,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'O bilhete chegou. A resposta veio na aula seguinte, e era sim.',
             effects: [
               { type: 'stat', stat: 'happiness', op: 'delta', value: 12 },
@@ -83,7 +83,7 @@ export const SCHOOL_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.65,
-            luckBias: 0.7,
+            bias: { luck: 0.7 },
             text: 'Deu certo. Você tirou nota boa e ninguém desconfiou.',
             effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: 4 }],
           },
@@ -149,7 +149,7 @@ export const SCHOOL_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.55,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'Foi a melhor noite do ano. Você voltou de manhã com dois amigos novos.',
             effects: [
               { type: 'stat', stat: 'happiness', op: 'delta', value: 12 },
@@ -259,7 +259,7 @@ export const SCHOOL_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.35,
-            luckBias: 0.8,
+            bias: { luck: 0.8 },
             text: 'Vocês tocaram na festa junina da escola e o colégio inteiro cantou junto.',
             effects: [
               { type: 'stat', stat: 'reputation', op: 'delta', value: 12 },
@@ -326,7 +326,7 @@ export const SCHOOL_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.6,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Corte novo, roupa nova. Funcionou melhor do que você esperava.',
             effects: [
               { type: 'stat', stat: 'looks', op: 'delta', value: 6 },
@@ -432,7 +432,7 @@ export const SCHOOL_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.5,
-            luckBias: 0.6,
+            bias: { luck: 0.6 },
             text: 'Era sincero. Você entendeu que eles nunca souberam o que estavam fazendo.',
             effects: [
               { type: 'stat', stat: 'happiness', op: 'delta', value: 12 },
