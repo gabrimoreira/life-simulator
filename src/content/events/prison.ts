@@ -17,7 +17,7 @@ export const PRISON_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.45,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Funcionou. Deixaram você em paz depois disso.',
             effects: [{ type: 'stat', stat: 'reputation', op: 'delta', value: 8 }],
           },
@@ -113,7 +113,7 @@ export const PRISON_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.4,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Você reagiu e ninguém mais mexeu com você.',
             effects: [
               { type: 'stat', stat: 'reputation', op: 'delta', value: 10 },
@@ -176,7 +176,7 @@ export const PRISON_EVENTS: GameEvent[] = [
           },
           {
             chance: 0.25,
-            luckBias: 0.6,
+            bias: { luck: 0.6 },
             text: 'Você trabalhou tão bem que a remição adiantou sua saída.',
             effects: [
               { type: 'money', delta: 2_500 },
@@ -214,7 +214,7 @@ export const PRISON_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.5,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Você aceitou. Vai sair com contato e com dívida.',
             effects: [
               { type: 'money', delta: 30_000 },
@@ -510,7 +510,7 @@ export const PRISON_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.45,
-            luckBias: 0.3,
+            bias: { luck: 0.3 },
             text: 'Funcionou. Saiu um ano da conta.',
             effects: [{ type: 'jail', years: -1, reason: 'progressão de regime' }],
           },
@@ -526,7 +526,7 @@ export const PRISON_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.35,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'A honestidade pegou bem. Saiu quase dois anos da conta.',
             effects: [
               { type: 'jail', years: -2, reason: 'progressão de regime' },

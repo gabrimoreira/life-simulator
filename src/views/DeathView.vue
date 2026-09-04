@@ -13,6 +13,18 @@ defineEmits<{ restart: [] }>()
 
 const store = useGameStore()
 const confirming = ref(false)
+
+function baixar(): void {
+  const texto = store.exportSave()
+  if (texto === null) return
+  const nome = props.character.name.split(' ')[0]?.toLowerCase() ?? 'vida'
+  const url = URL.createObjectURL(new Blob([texto], { type: 'application/json' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `vida-${nome}-${props.character.deathAge ?? 0}anos.json`
+  link.click()
+  URL.revokeObjectURL(url)
+}
 const chosen = computed(() => props.timeline.filter((entry) => entry.kind === 'note').length)
 
 // As mesmas Marcas do Perfil: elas descrevem a vida e sumiam justamente na
@@ -29,8 +41,8 @@ const marks = computed(() =>
   <div
     class="h-full scroll-pane px-6 py-10"
     :style="{
-      paddingTop: 'max(2.5rem, env(safe-area-inset-top))',
-      paddingBottom: 'max(2.5rem, env(safe-area-inset-bottom))',
+      paddingTop: '2.5rem',
+      paddingBottom: '2.5rem',
     }"
   >
     <p class="font-serif text-xs tracking-[0.2em] text-muted uppercase">Fim da linha</p>
@@ -60,6 +72,18 @@ const marks = computed(() =>
         <dd class="text-right">{{ store.peakJob ?? 'Nunca teve cargo' }}</dd>
         <dt class="text-muted">Filhos</dt>
         <dd class="text-right tabular-nums">{{ store.lifeSummary?.children ?? 0 }}</dd>
+        <!-- `married` e `yearsJailed` eram calculados no store desde a Fase 4
+             e nenhuma tela os lia. Numa vida que acabou, "casou?" e "quantos
+             anos ficou preso?" são das poucas perguntas que sobram. -->
+        <dt class="text-muted">Casamento</dt>
+        <dd class="text-right">{{ store.lifeSummary?.married ? 'Casado' : 'Nunca casou' }}</dd>
+        <dt v-if="(store.lifeSummary?.yearsJailed ?? 0) > 0" class="text-muted">Anos preso</dt>
+        <dd
+          v-if="(store.lifeSummary?.yearsJailed ?? 0) > 0"
+          class="text-right tabular-nums text-rust"
+        >
+          {{ store.lifeSummary?.yearsJailed }}
+        </dd>
         <dt v-if="store.lifeSummary?.hadRecord" class="text-muted">Ficha</dt>
         <dd v-if="store.lifeSummary?.hadRecord" class="text-right text-rust">Suja</dd>
         <dt class="text-muted">Momentos vividos</dt>
@@ -149,6 +173,16 @@ const marks = computed(() =>
         </template>
       </div>
     </section>
+
+    <!-- Baixar a cópia só existia na aba Perfil, que não existe mais depois da
+         morte: a vida inteira acabava sem nenhuma forma de guardá-la. -->
+    <button
+      type="button"
+      class="mt-6 min-h-[48px] w-full border border-ink px-3 text-xs active:bg-panel"
+      @click="baixar"
+    >
+      Baixar cópia desta vida
+    </button>
 
     <!-- Com herdeiro disponível, recomeçar do zero descarta a linhagem inteira
          e não tem volta: aqui vale o segundo toque. -->

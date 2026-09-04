@@ -24,21 +24,30 @@ import {
   MORTALITY_HEALTH_MIN_MULT,
   FRIEND_ANNUAL_DECAY,
   RELATION_ANNUAL_DECAY,
+  VICES,
 } from './balance'
 import { setStat } from './effects'
 import { FLAG_CHRONIC_CONDITION, FLAG_TRAINS_REGULARLY } from './flags'
 import type { Rng } from './rng'
 import type { GameState } from './types'
 
+/** Quanto os vicios ativos derrubam do teto de saude. Somam entre si. */
+export function vicePenalty(flags: Record<string, boolean>): number {
+  return VICES.reduce(
+    (total, vice) => total + (flags[vice.flag] === true ? vice.healthPenalty : 0),
+    0,
+  )
+}
+
 /**
  * Teto de saude para a idade, deslocado pelo que a pessoa faz da vida.
- * Treinar levanta o teto; uma condicao cronica o abaixa.
+ * Treinar levanta o teto; uma condicao cronica e cada vicio o abaixam.
  */
 export function healthBaseline(age: number, flags: Record<string, boolean> = {}): number {
   const base = 100 - Math.max(0, age - HEALTH_PEAK_AGE) * HEALTH_BASELINE_DECLINE
   const trained = flags[FLAG_TRAINS_REGULARLY] === true ? TRAINED_HEALTH_BONUS : 0
   const chronic = flags[FLAG_CHRONIC_CONDITION] === true ? CHRONIC_HEALTH_PENALTY : 0
-  return Math.max(0, base + trained - chronic)
+  return Math.max(0, base + trained - chronic - vicePenalty(flags))
 }
 
 export function applyAging(state: GameState, rng: Rng): void {

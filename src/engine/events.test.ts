@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { makeCharacter, makeContent, makeEvent, makeState } from '../test/fixtures'
 import { effectiveChance, eligibleEvents, pickOutcome, selectEvents } from './events'
 import { createRng } from './rng'
-import type { Outcome } from './types'
+import { STAT_KEYS } from './types'
+import type { Outcome, StatKey } from './types'
 
 describe('eligibleEvents', () => {
   it('filtra por condições', () => {
@@ -73,26 +74,59 @@ describe('selectEvents', () => {
   })
 })
 
-describe('viés de sorte nos outcomes', () => {
-  const good: Outcome = { chance: 0.5, luckBias: 1, text: 'bom', effects: [] }
+describe('viés de atributo nos outcomes', () => {
+  /** Só os atributos importam aqui; o resto do personagem não entra na conta. */
+  const stats = (partial: Partial<Record<StatKey, number>>): Record<StatKey, number> =>
+    Object.fromEntries(STAT_KEYS.map((key) => [key, partial[key] ?? 50])) as Record<
+      StatKey,
+      number
+    >
+
+  const good: Outcome = { chance: 0.5, bias: { luck: 1 }, text: 'bom', effects: [] }
   const neutral: Outcome = { chance: 0.5, text: 'neutro', effects: [] }
 
-  it('sorte 50 é neutra', () => {
-    expect(effectiveChance(good, 50)).toBeCloseTo(0.5)
+  it('atributo 50 é neutro', () => {
+    expect(effectiveChance(good, stats({ luck: 50 }))).toBeCloseTo(0.5)
   })
 
-  it('sorte alta aumenta o peso de quem tem luckBias positivo', () => {
-    expect(effectiveChance(good, 100)).toBeCloseTo(1.0)
+  it('atributo alto aumenta o peso de quem tem viés positivo', () => {
+    expect(effectiveChance(good, stats({ luck: 100 }))).toBeCloseTo(1.0)
   })
 
-  it('sorte baixa reduz, sem passar de zero', () => {
-    expect(effectiveChance(good, 0)).toBeCloseTo(0)
-    expect(effectiveChance({ ...good, luckBias: 3 }, 0)).toBe(0)
+  it('atributo baixo reduz, sem passar de zero', () => {
+    expect(effectiveChance(good, stats({ luck: 0 }))).toBeCloseTo(0)
+    expect(effectiveChance({ ...good, bias: { luck: 3 } }, stats({ luck: 0 }))).toBe(0)
   })
 
-  it('outcome sem luckBias não é afetado', () => {
-    expect(effectiveChance(neutral, 0)).toBe(0.5)
-    expect(effectiveChance(neutral, 100)).toBe(0.5)
+  it('outcome sem viés não é afetado', () => {
+    expect(effectiveChance(neutral, stats({ luck: 0 }))).toBe(0.5)
+    expect(effectiveChance(neutral, stats({ luck: 100 }))).toBe(0.5)
+  })
+
+  // O ponto da Fase 8: a Sorte deixou de ser o único atributo capaz de pesar.
+  it('qualquer atributo pode enviesar, não só a sorte', () => {
+    const negociacao: Outcome = { chance: 0.4, bias: { charisma: 0.5 }, text: 'ok', effects: [] }
+    expect(effectiveChance(negociacao, stats({ charisma: 100 }))).toBeCloseTo(0.6)
+    expect(effectiveChance(negociacao, stats({ charisma: 0 }))).toBeCloseTo(0.2)
+    // Sorte alta não compra o que era para ser conversa.
+    expect(effectiveChance(negociacao, stats({ luck: 100 }))).toBeCloseTo(0.4)
+  })
+
+  it('vieses de atributos diferentes somam', () => {
+    const flerte: Outcome = {
+      chance: 0.5,
+      bias: { looks: 0.4, charisma: 0.4 },
+      text: 'ok',
+      effects: [],
+    }
+    expect(effectiveChance(flerte, stats({ looks: 100, charisma: 100 }))).toBeCloseTo(0.9)
+    // Um compensa o outro: bonito e sem conversa fica no meio.
+    expect(effectiveChance(flerte, stats({ looks: 100, charisma: 0 }))).toBeCloseTo(0.5)
+  })
+
+  it('peso negativo faz o atributo alto atrapalhar', () => {
+    const anonimato: Outcome = { chance: 0.5, bias: { fame: -0.6 }, text: 'ok', effects: [] }
+    expect(effectiveChance(anonimato, stats({ fame: 100 }))).toBeCloseTo(0.2)
   })
 
   it('muda a distribuição real do sorteio', () => {
@@ -101,7 +135,7 @@ describe('viés de sorte nos outcomes', () => {
       const rng = createRng(9)
       let bons = 0
       for (let i = 0; i < 3000; i++) {
-        if (pickOutcome(option, luck, rng).text === 'bom') bons++
+        if (pickOutcome(option, stats({ luck }), rng).text === 'bom') bons++
       }
       return bons
     }
@@ -111,7 +145,7 @@ describe('viés de sorte nos outcomes', () => {
   it('opção de um único outcome não consome o rng', () => {
     const rng = createRng(5)
     const before = rng.getState()
-    pickOutcome({ text: 'x', outcomes: [neutral] }, 50, rng)
+    pickOutcome({ text: 'x', outcomes: [neutral] }, stats({}), rng)
     expect(rng.getState()).toBe(before)
   })
 })

@@ -122,7 +122,7 @@ export const ELDER_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.7,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'O tratamento funcionou. Você ganhou anos que não estavam no cálculo.',
             effects: [
               { type: 'money', delta: -50000 },

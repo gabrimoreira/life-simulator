@@ -17,7 +17,7 @@ export const ACADEMIA_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.35,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Aceito. Um artigo na revista certa vale dez nas outras.',
             effects: [
               { type: 'performance', delta: 25 },
@@ -63,7 +63,7 @@ export const ACADEMIA_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.4,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Aprovado. Você montou um laboratório com o dinheiro.',
             effects: [
               { type: 'money', delta: 90_000 },

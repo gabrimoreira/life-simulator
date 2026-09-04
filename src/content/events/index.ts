@@ -16,12 +16,14 @@ import { PARENTHOOD_EVENTS } from './parenthood'
 import { PRISON_EVENTS } from './prison'
 import { POVERTY_EVENTS } from './poverty'
 import { PROFESSION_EVENTS } from './professions'
+import { SECTOR_EVENTS } from './sectors'
 import { SOCIAL_EVENTS } from './social'
 import { CHILDHOOD_EVENTS } from './childhood'
 import { ELDER_EVENTS } from './elder'
 import { RANDOM_EVENTS } from './random'
 import { SCHOOL_EVENTS } from './school'
 import { YOUNG_EVENTS } from './young'
+import { VICE_EVENTS } from './vices'
 import { YOUNG_ADULT_EVENTS } from './young-adult'
 import type { GameEvent } from '../../engine/types'
 
@@ -36,9 +38,11 @@ export const ALL_EVENTS: GameEvent[] = [
   ...PRISON_EVENTS,
   ...CRIME_EVENTS,
   ...CRISIS_EVENTS,
+  ...VICE_EVENTS,
   ...POLITICS_EVENTS,
   ...POVERTY_EVENTS,
   ...PROFESSION_EVENTS,
+  ...SECTOR_EVENTS,
   ...ACADEMIA_EVENTS,
   ...PARENTHOOD_EVENTS,
   ...LUXURY_EVENTS,

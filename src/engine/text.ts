@@ -14,6 +14,7 @@ export const KNOWN_TOKENS = [
   'money',
   'mother',
   'father',
+  'conjuge',
   // concordancia de genero
   'o',
   'ele',
@@ -41,6 +42,19 @@ function relationName(state: GameState, kind: 'mother' | 'father'): string {
   return person?.name ?? (kind === 'mother' ? 'sua mãe' : 'seu pai')
 }
 
+/**
+ * Primeiro nome de quem voce casou.
+ *
+ * O spec listava `{conjuge}` entre os tokens desde o comeco e ele nunca
+ * existiu — escrever "Ana disse que..." num evento de casamento era
+ * impossivel. So conta conjuge VIVO: a flag `married` sobrevive a viuvez, e o
+ * texto nao pode citar quem morreu.
+ */
+function spouseName(state: GameState): string {
+  const spouse = state.relations.find((r) => r.kind === 'spouse' && r.alive)
+  return spouse?.name.split(' ')[0] ?? 'seu cônjuge'
+}
+
 function resolve(token: string, state: GameState): string | null {
   const isMale = state.character.gender === 'male'
 
@@ -59,6 +73,8 @@ function resolve(token: string, state: GameState): string | null {
       return relationName(state, 'mother')
     case 'father':
       return relationName(state, 'father')
+    case 'conjuge':
+      return spouseName(state)
     case 'o':
       return isMale ? 'o' : 'a'
     case 'ele':

@@ -9,7 +9,6 @@ defineEmits<{ 'update:modelValue': [TabKey] }>()
 <template>
   <nav
     class="grid shrink-0 grid-cols-5 border-t border-rule bg-panel"
-    :style="{ paddingBottom: 'env(safe-area-inset-bottom)' }"
     role="tablist"
     aria-label="Seções do jogo"
   >
@@ -18,6 +17,8 @@ defineEmits<{ 'update:modelValue': [TabKey] }>()
       :key="tab.key"
       type="button"
       role="tab"
+      :id="`tab-${tab.key}`"
+      aria-controls="tab-panel"
       :aria-selected="modelValue === tab.key"
       class="flex min-h-[52px] flex-col items-center justify-center gap-0.5 border-t-2 px-1 text-[11px] transition-colors duration-100"
       :class="

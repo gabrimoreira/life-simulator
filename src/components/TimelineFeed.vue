@@ -10,16 +10,31 @@ const scroller = ref<HTMLElement | null>(null)
 // lida — nem por regra, nem por tela. Numa vida de setenta anos a timeline
 // passa de trezentas linhas, e reler só o que aconteceu de carreira era
 // impossível.
-const FILTERS: readonly { key: EventCategory | 'all'; label: string }[] = [
+//
+// "Outros" existe porque a categoria pode ser NULA: conquistas, resultados de
+// ação e as notas do próprio motor não têm categoria nenhuma. Sem esse balde,
+// escolher qualquer filtro escondia tudo isso para sempre — inclusive as
+// conquistas, que são o que o jogador mais quer reler.
+type Filter = EventCategory | 'all' | 'other'
+
+const FILTERS: readonly { key: Filter; label: string }[] = [
   { key: 'all', label: 'Tudo' },
   { key: 'career', label: 'Carreira' },
   { key: 'relationship', label: 'Relações' },
   { key: 'health', label: 'Saúde' },
   { key: 'school', label: 'Estudo' },
+  { key: 'childhood', label: 'Infância' },
   { key: 'crime', label: 'Crime' },
+  { key: 'other', label: 'Outros' },
 ]
 
-const filter = ref<EventCategory | 'all'>('all')
+const filter = ref<Filter>('all')
+
+/** "Outros" recolhe o que nenhum outro filtro mostra: sem categoria e sorte. */
+function matches(category: EventCategory | null, key: Filter): boolean {
+  if (key === 'other') return category === null || category === 'random'
+  return category === key
+}
 
 /**
  * Com filtro ativo, o cabeçalho do ano só fica se sobrou nota debaixo dele —
@@ -31,7 +46,7 @@ const visible = computed<TimelineEntry[]>(() => {
   const out: TimelineEntry[] = []
   for (const entry of props.entries) {
     if (entry.kind === 'note') {
-      if (entry.category === filter.value) out.push(entry)
+      if (matches(entry.category, filter.value)) out.push(entry)
       continue
     }
     if (entry.kind === 'death') {
@@ -64,12 +79,12 @@ watch(
   <!-- `aria-live="polite"`: as notas do ano, incluindo conquistas, chegam sem
        nenhuma interação. Sem isto um leitor de tela não anunciava nada. -->
   <div class="flex h-full flex-col">
-    <div class="flex shrink-0 gap-3 overflow-x-auto border-b border-rule px-4 py-1.5">
+    <div class="flex shrink-0 gap-4 overflow-x-auto border-b border-rule px-4">
       <button
         v-for="option in FILTERS"
         :key="option.key"
         type="button"
-        class="shrink-0 py-1 text-[11px] tracking-wide uppercase transition-colors duration-100"
+        class="min-h-[44px] shrink-0 text-[11px] tracking-wide uppercase transition-colors duration-100"
         :class="filter === option.key ? 'text-ochre' : 'text-muted'"
         :aria-pressed="filter === option.key"
         @click="filter = option.key"

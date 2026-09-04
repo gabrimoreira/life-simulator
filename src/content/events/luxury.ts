@@ -215,7 +215,7 @@ export const LUXURY_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.45,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Você ganhou e recuperou o dinheiro, com juros.',
             effects: [{ type: 'money', delta: 600_000 }],
           },
@@ -266,7 +266,7 @@ export const LUXURY_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.45,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'A contratação deu certo e o time engatou.',
             effects: [
               { type: 'money', delta: -8_000_000 },

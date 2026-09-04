@@ -24,6 +24,27 @@ describe('interpolate', () => {
     expect(interpolate('{father} ligou.', state)).toBe('seu pai ligou.')
   })
 
+  // O spec listava `{conjuge}` desde o começo e o token nunca existiu: um
+  // evento de casamento não tinha como citar a pessoa pelo nome.
+  it('usa o primeiro nome do cônjuge vivo', () => {
+    const casado = makeState({
+      character: makeCharacter({ name: 'Joana' }),
+      relations: [
+        { id: 's', name: 'Rui Barbosa', kind: 'spouse', gender: 'male', age: 40, relation: 70, alive: true },
+      ],
+    })
+    expect(interpolate('{conjuge} não gostou.', casado)).toBe('Rui não gostou.')
+  })
+
+  it('não cita cônjuge morto: a flag de casado sobrevive à viuvez', () => {
+    const viuva = makeState({
+      relations: [
+        { id: 's', name: 'Rui Barbosa', kind: 'spouse', gender: 'male', age: 40, relation: 70, alive: false },
+      ],
+    })
+    expect(interpolate('{conjuge} não gostou.', viuva)).toBe('seu cônjuge não gostou.')
+  })
+
   it('resolve concordância de gênero pelo personagem', () => {
     const feminino = makeState({ character: makeCharacter({ gender: 'female' }) })
     const masculino = makeState({ character: makeCharacter({ gender: 'male' }) })

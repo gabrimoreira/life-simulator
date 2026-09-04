@@ -177,7 +177,7 @@ export function chooseOption(state: GameState, content: ContentPack, optionIndex
 
   state.choiceLog.push({ year: state.year, eventId: event.id, optionIndex })
 
-  const outcome = withRng(state, (rng) => pickOutcome(option, state.character.stats.luck, rng))
+  const outcome = withRng(state, (rng) => pickOutcome(option, state.character.stats, rng))
   const effects = withRng(state, (rng) => applyEffects(outcome.effects, state, rng, content))
 
   state.timeline.push({

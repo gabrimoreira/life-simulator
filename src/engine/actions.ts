@@ -366,7 +366,7 @@ export function performAction(
 
   const outcome = pickOutcome(
     { text: spec.label, outcomes: spec.outcomes },
-    state.character.stats.luck,
+    state.character.stats,
     rng,
   )
   const logs = applyEffects(outcome.effects, state, rng, content)

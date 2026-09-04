@@ -17,7 +17,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.02,
-            luckBias: 1.2,
+            bias: { luck: 1.2 },
             text: 'Cinco números. Não é a sorte grande, mas mudou o ano inteiro.',
             effects: [
               { type: 'money', delta: 200000 },
@@ -57,7 +57,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.867,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'Você atravessou. Um motorista buzinou e você levantou a mão pedindo desculpa.',
             effects: [],
           },
@@ -71,7 +71,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
           },
           {
             chance: 0.013,
-            luckBias: -0.8,
+            bias: { luck: -0.8 },
             text: 'Você não viu o carro que vinha na segunda faixa.',
             effects: [{ type: 'death', cause: 'atropelamento' }],
           },
@@ -111,7 +111,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
           },
           {
             chance: 0.15,
-            luckBias: 0.6,
+            bias: { luck: 0.6 },
             text: 'Ela insistiu em te dar o telefone do filho, que acabou virando um contato valioso.',
             effects: [
               { type: 'stat', stat: 'happiness', op: 'delta', value: 6 },
@@ -168,7 +168,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.6,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'Passou sozinho na segunda semana.',
             effects: [{ type: 'stat', stat: 'health', op: 'delta', value: -5 }],
           },
@@ -199,7 +199,7 @@ export const RANDOM_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.5,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Sua resposta foi honesta e virou o jogo. Você saiu maior do que entrou.',
             effects: [{ type: 'stat', stat: 'reputation', op: 'delta', value: 10 }],
           },

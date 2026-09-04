@@ -16,7 +16,7 @@ export const ADULT_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.4,
-            luckBias: 0.6,
+            bias: { luck: 0.6 },
             text: 'Deu certo. Você perdeu dinheiro e ganhou de volta o gosto de acordar.',
             effects: [
               { type: 'money', delta: -30000 },
@@ -110,7 +110,7 @@ export const ADULT_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.45,
-            luckBias: 0.7,
+            bias: { luck: 0.7 },
             text: 'Passou sozinho. Você teve sorte e sabe disso.',
             effects: [{ type: 'stat', stat: 'health', op: 'delta', value: -2 }],
           },
@@ -145,7 +145,7 @@ export const ADULT_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.7,
-            luckBias: 0.3,
+            bias: { luck: 0.3 },
             text: 'A região valorizou. Foi a melhor decisão financeira que você tomou.',
             effects: [
               { type: 'asset', action: 'buy', assetId: 'apartment_small' },
@@ -338,14 +338,14 @@ export const ADULT_EVENTS: GameEvent[] = [
       { type: 'flag', flag: 'has_child', value: false },
       { type: 'flag', flag: 'chose_no_children', value: false },
     ],
-    text: 'A conversa sobre ter filho parou de ser hipotética.',
+    text: '{conjuge} quis conversar sobre ter filho, e desta vez não foi hipotético.',
     options: [
       {
         text: 'Ter um filho',
         outcomes: [
           {
             chance: 0.85,
-            luckBias: 0.3,
+            bias: { luck: 0.3 },
             text: 'Nasceu saudável. Você não dormiu direito por dois anos e não trocaria por nada.',
             effects: [
               { type: 'addRelation', kind: 'child' },
@@ -464,7 +464,7 @@ export const ADULT_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.55,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Você levou a vaga. Salário maior e o dobro de reunião.',
             effects: [
               { type: 'performance', delta: 22 },
@@ -488,7 +488,7 @@ export const ADULT_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.5,
-            luckBias: -0.4,
+            bias: { luck: -0.4 },
             text: 'Funcionou. Você levou a vaga e ninguém soube como.',
             effects: [
               { type: 'performance', delta: 22 },

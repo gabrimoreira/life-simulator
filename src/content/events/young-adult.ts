@@ -79,7 +79,7 @@ export const YOUNG_ADULT_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.6,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Você caiu numa casa boa. Um dos colegas virou amizade para a vida.',
             effects: [
               { type: 'money', delta: -2000 },
@@ -133,7 +133,7 @@ export const YOUNG_ADULT_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.7,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Você passou. Primeiro emprego formal, primeiro contracheque de verdade.',
             effects: [
               { type: 'stat', stat: 'happiness', op: 'delta', value: 12 },
@@ -153,7 +153,7 @@ export const YOUNG_ADULT_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.35,
-            luckBias: 0.8,
+            bias: { luck: 0.8 },
             text: 'Você improvisou tudo e passou. O entrevistador gostou do seu jeito.',
             effects: [
               { type: 'stat', stat: 'charisma', op: 'delta', value: 7 },
@@ -201,7 +201,7 @@ export const YOUNG_ADULT_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.75,
-            luckBias: 0.3,
+            bias: { luck: 0.3 },
             text: 'Disse sim. A festa foi pequena e não faltou ninguém que importava.',
             effects: [
               { type: 'money', delta: -8000 },
@@ -272,7 +272,7 @@ export const YOUNG_ADULT_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.2,
-            luckBias: 1,
+            bias: { luck: 1 },
             text: 'Multiplicou por seis em oito meses. Você sacou tudo a tempo.',
             effects: [
               { type: 'money', delta: 45000 },
@@ -295,7 +295,7 @@ export const YOUNG_ADULT_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.25,
-            luckBias: 0.8,
+            bias: { luck: 0.8 },
             text: 'Rendeu bem. Você ficou com gosto de quero mais e a lição de não exagerar.',
             effects: [{ type: 'money', delta: 6000 }],
           },

@@ -18,6 +18,11 @@ import type {
 } from './types'
 
 const CHANCE_TOLERANCE = 0.001
+/**
+ * Teto do peso de um vies. Acima disso o atributo deixa de enviesar e passa a
+ * decidir: com peso 2, quem tem o atributo abaixo de 25 nunca ve o outcome.
+ */
+const MAX_BIAS = 2
 const MIN_OPTIONS = 2
 const MAX_OPTIONS = 4
 
@@ -63,6 +68,38 @@ function checkCondition(condition: Condition, where: string, problems: string[])
   }
 }
 
+/**
+ * Um vies que nao enviesa e pior que nenhum: quem le o conteudo acha que o
+ * atributo pesa ali.
+ */
+function checkBias(
+  outcome: Outcome,
+  totalOutcomes: number,
+  where: string,
+  problems: string[],
+): void {
+  const bias = outcome.bias
+  if (bias === undefined) return
+
+  const pesos = Object.entries(bias).filter(([, weight]) => weight !== undefined)
+  if (pesos.length === 0) {
+    problems.push(`${where}: bias vazio`)
+    return
+  }
+  // `pickOutcome` devolve o unico outcome sem olhar a chance: aqui o vies e
+  // decorativo, e o texto promete um risco que nao existe.
+  if (totalOutcomes === 1) {
+    problems.push(`${where}: bias em outcome unico nao muda nada`)
+  }
+  for (const [stat, weight] of pesos) {
+    if (weight === 0) {
+      problems.push(`${where}: bias.${stat} = 0 nao enviesa nada`)
+    } else if (Math.abs(weight ?? 0) > MAX_BIAS) {
+      problems.push(`${where}: bias.${stat} = ${weight} passa do teto ${MAX_BIAS}`)
+    }
+  }
+}
+
 function checkOutcomes(outcomes: Outcome[], where: string, problems: string[]): void {
   if (outcomes.length === 0) {
     problems.push(`${where}: sem outcomes`)
@@ -75,6 +112,7 @@ function checkOutcomes(outcomes: Outcome[], where: string, problems: string[]): 
     if (outcome.chance <= 0) problems.push(`${outcomeWhere}: chance deve ser > 0`)
     if (outcome.text.trim() === '') problems.push(`${outcomeWhere}: text vazio`)
     checkTokens(outcome.text, outcomeWhere, problems)
+    checkBias(outcome, outcomes.length, outcomeWhere, problems)
     sum += outcome.chance
   })
 
@@ -172,12 +210,20 @@ export function validateActions(actions: GameAction[]): string[] {
 export function validateCareers(careers: CareerTrack[]): string[] {
   const problems: string[] = []
   const seen = new Set<string>()
+  const names = new Set<string>()
 
   for (const track of careers) {
     const where = `trilha "${track.id}"`
 
     if (seen.has(track.id)) problems.push(`${where}: id duplicado`)
     seen.add(track.id)
+
+    // Nome e o que o jogador le. Duas trilhas com o mesmo nome sao duas coisas
+    // diferentes que ele nao tem como separar — e foi o que aconteceu quando a
+    // Fase 8 criou uma trilha de tecnologia CLT ao lado da empresa de
+    // tecnologia que ja existia.
+    if (names.has(track.name)) problems.push(`${where}: nome "${track.name}" duplicado`)
+    names.add(track.name)
 
     if (track.levels.length < 2) problems.push(`${where}: precisa de pelo menos 2 niveis`)
 

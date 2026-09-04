@@ -21,8 +21,8 @@ function start(): void {
   <div
     class="flex h-full flex-col justify-between px-6 py-10"
     :style="{
-      paddingTop: 'max(2.5rem, env(safe-area-inset-top))',
-      paddingBottom: 'max(2.5rem, env(safe-area-inset-bottom))',
+      paddingTop: '2.5rem',
+      paddingBottom: '2.5rem',
     }"
   >
     <div>

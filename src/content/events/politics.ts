@@ -126,7 +126,7 @@ export const POLITICS_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.55,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Você respondeu tudo e virou o jogo ao vivo.',
             effects: [
               { type: 'stat', stat: 'reputation', op: 'delta', value: 12 },
@@ -279,7 +279,7 @@ export const POLITICS_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.5,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Dessa vez você tinha resposta pronta, e ela pegou melhor que a acusação.',
             effects: [
               { type: 'stat', stat: 'reputation', op: 'delta', value: 20 },

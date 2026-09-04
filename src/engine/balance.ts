@@ -1,5 +1,6 @@
 // Todo numero magico do jogo mora aqui. Balancear = editar um arquivo.
 
+import { FLAG_HEAVY_DRINKER, FLAG_SMOKER } from './flags'
 import type { SocialClass, StatKey } from './types'
 
 export const STAT_MIN = 0
@@ -50,6 +51,30 @@ export const TRAINED_HEALTH_BONUS = 6
 /** Condicao cronica: teto de saude menor e conta medica todo ano. */
 export const CHRONIC_HEALTH_PENALTY = 12
 export const CHRONIC_ANNUAL_COST = 9_000
+
+/**
+ * O que cada vicio cobra por ano, enquanto durar.
+ *
+ * Uma lista, e nao um par de constantes soltas, porque adicionar um vicio
+ * novo tem que ser uma linha aqui — e nao uma cacada por `if` espalhado em
+ * `aging.ts` e `economy.ts`.
+ *
+ * Escala deliberada: cada vicio pesa menos que uma condicao cronica (12) e
+ * mais que o bonus de treinar (6). Os dois juntos derrubam o teto de saude em
+ * 16, o que tira uns anos de vida sem matar ninguem sozinho.
+ */
+export interface Vice {
+  flag: string
+  /** Quanto derruba o teto de saude da idade. */
+  healthPenalty: number
+  /** Quanto sai do bolso por ano so por manter o habito. */
+  annualCost: number
+}
+
+export const VICES: readonly Vice[] = [
+  { flag: FLAG_SMOKER, healthPenalty: 9, annualCost: 3_000 },
+  { flag: FLAG_HEAVY_DRINKER, healthPenalty: 7, annualCost: 4_500 },
+]
 
 /** Felicidade regride a media com esta fracao por ano. */
 export const HAPPINESS_MEAN_REVERSION = 0.08

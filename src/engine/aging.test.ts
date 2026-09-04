@@ -3,7 +3,7 @@
 // era 15 anos. Estes testes existem para que uma mexida na curva quebre algo.
 
 import { describe, expect, it } from 'vitest'
-import { applyAging, checkDeath, healthBaseline, mortalityChance } from './aging'
+import { applyAging, checkDeath, healthBaseline, mortalityChance, vicePenalty } from './aging'
 import {
   CHRONIC_HEALTH_PENALTY,
   FRIEND_ANNUAL_DECAY,
@@ -15,7 +15,7 @@ import {
   RELATION_ANNUAL_DECAY,
   TRAINED_HEALTH_BONUS,
 } from './balance'
-import { FLAG_CHRONIC_CONDITION, FLAG_TRAINS_REGULARLY } from './flags'
+import { FLAG_CHRONIC_CONDITION, FLAG_HEAVY_DRINKER, FLAG_SMOKER, FLAG_TRAINS_REGULARLY } from './flags'
 import { createPerson } from './people'
 import { createRng } from './rng'
 import { makeCharacter, makeContent, makeState } from '../test/fixtures'
@@ -54,6 +54,26 @@ describe('healthBaseline', () => {
       [FLAG_CHRONIC_CONDITION]: true,
     })
     expect(both).toBe(healthBaseline(60) + TRAINED_HEALTH_BONUS - CHRONIC_HEALTH_PENALTY)
+  })
+
+  // O terceiro vetor que o spec sempre listou e que nao existia: idade,
+  // doenca e VICIO.
+  it('cada vicio abaixa o teto, e dois vicios abaixam mais que um', () => {
+    const plain = healthBaseline(60)
+    const fumante = healthBaseline(60, { [FLAG_SMOKER]: true })
+    const os_dois = healthBaseline(60, { [FLAG_SMOKER]: true, [FLAG_HEAVY_DRINKER]: true })
+    expect(fumante).toBeLessThan(plain)
+    expect(os_dois).toBeLessThan(fumante)
+    expect(plain - os_dois).toBe(vicePenalty({ [FLAG_SMOKER]: true, [FLAG_HEAVY_DRINKER]: true }))
+  })
+
+  it('largar o vicio devolve o teto', () => {
+    expect(healthBaseline(60, { [FLAG_SMOKER]: false })).toBe(healthBaseline(60))
+  })
+
+  it('treinar nao compensa fumar', () => {
+    const treinado = healthBaseline(50, { [FLAG_TRAINS_REGULARLY]: true, [FLAG_SMOKER]: true })
+    expect(treinado).toBeLessThan(healthBaseline(50))
   })
 })
 

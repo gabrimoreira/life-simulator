@@ -203,6 +203,16 @@ export const ACHIEVEMENTS: Achievement[] = [
     ],
   },
   {
+    id: 'clean',
+    name: 'Limpo',
+    description: 'Largou um vício e não voltou.',
+    conditions: [
+      { type: 'flag', flag: 'quit_a_vice', value: true },
+      { type: 'flag', flag: 'smoker', value: false },
+      { type: 'flag', flag: 'heavy_drinker', value: false },
+    ],
+  },
+  {
     id: 'content',
     name: 'Em paz',
     description: 'Passou dos setenta feliz.',

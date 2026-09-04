@@ -22,6 +22,7 @@ const TRILHA_TESTE: CareerTrack = {
   entryHint: 'Previsível.',
   levels: [{ title: 'Analista', salary: 40_000, minYears: 0, requirements: [] }],
 }
+import { FLAG_HEAVY_DRINKER, FLAG_SMOKER } from './flags'
 import { applyEconomy, costOfLiving } from './economy'
 import { enroll } from './education'
 import type { GameState } from './types'
@@ -99,6 +100,23 @@ describe('ano financeiro', () => {
     expect(state.character.money).toBeLessThan(100_000)
   })
 
+  // O vício sai do bolso todo ano, como a condição crônica. Sem isto ele
+  // seria só um número de saúde, e largar não teria lado financeiro.
+  it('o vício cobra todo ano, e dois cobram mais que um', () => {
+    const gastoDe = (flags: Record<string, boolean>): number => {
+      const state = makeState({
+        character: makeCharacter({ age: 40, money: 500_000, socialClass: 'middle', flags }),
+      })
+      applyEconomy(state, rng(), empty)
+      return 500_000 - state.character.money
+    }
+    const limpo = gastoDe({})
+    const fumante = gastoDe({ [FLAG_SMOKER]: true })
+    const os_dois = gastoDe({ [FLAG_SMOKER]: true, [FLAG_HEAVY_DRINKER]: true })
+    expect(fumante).toBeGreaterThan(limpo)
+    expect(os_dois).toBeGreaterThan(fumante)
+  })
+
   it('a dívida rende juros mas respeita o teto', () => {
     const state = makeState({ character: makeCharacter({ age: 40, debt: 399_000 }) })
     for (let i = 0; i < 30; i++) applyEconomy(state, rng(), empty)
@@ -133,21 +151,32 @@ describe('vida de quem joga com um plano', () => {
     })
   }
 
-  const sample = Array.from({ length: 40 }, (_, i) => viveComPlano(i + 1))
+  // Eram 40 vidas, e 40 não bastavam: a taxa de formados media 55% nesta
+  // amostra e 47% em qualquer amostra maior. O teste dizia "a maioria se
+  // forma" e passava por causa das sementes que tinham caído nela.
+  const sample = Array.from({ length: 120 }, (_, i) => viveComPlano(i + 1))
 
   it('quase ninguém termina no vermelho', () => {
     // `netWorth` e não `money - debt`: quem financia um imóvel fica com a
     // dívida no passivo E o apartamento no ativo. Medir só o caixa acusaria
     // de falido justamente quem fez a compra mais sensata da vida.
+    //
+    // Era 10% antes dos vícios da Fase 8 e é 19% depois — e este planejador
+    // escolhe sempre a primeira opção, que nos dois eventos de vício é a que
+    // bebe. Decomposto: ~4 pontos vêm do custo anual do vício, o resto vem
+    // do que os próprios eventos cobram e do fim do ganho de desempenho que
+    // a sexta no bar dava de graça. O teto continua sendo o que ele sempre
+    // foi: um alarme para a economia quebrar de novo como na Fase 2, quando
+    // TODO mundo morria devendo R$ 310 mil.
     const broke = sample.filter((s) => netWorth(s) < 0)
-    expect(broke.length / sample.length).toBeLessThan(0.15)
+    expect(broke.length / sample.length).toBeLessThan(0.25)
   })
 
-  it('a maioria chega a se formar', () => {
+  it('perto de metade chega a se formar', () => {
     const graduated = sample.filter(
       (s) => s.character.education === 'bachelor' || s.character.education === 'postgrad',
     )
-    expect(graduated.length / sample.length).toBeGreaterThan(0.5)
+    expect(graduated.length / sample.length).toBeGreaterThan(0.4)
   })
 
   it('a carreira progride além do primeiro degrau', () => {

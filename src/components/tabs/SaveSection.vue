@@ -11,6 +11,10 @@ import { useGameStore } from '../../stores/game'
 const store = useGameStore()
 
 const confirmando = ref(false)
+// Carregar um arquivo APAGA a vida que está rodando, e era o único caminho
+// destrutivo da tela que não perguntava nada — "Abandonar", logo abaixo,
+// sempre perguntou.
+const confirmandoImport = ref(false)
 const importErro = ref<string | null>(null)
 const importOk = ref(false)
 const arquivo = ref<HTMLInputElement | null>(null)
@@ -68,7 +72,7 @@ async function importar(event: Event): Promise<void> {
       <button
         type="button"
         class="min-h-[48px] flex-1 border border-ink px-3 text-xs active:bg-panel"
-        @click="arquivo?.click()"
+        @click="store.hasGame ? (confirmandoImport = true) : arquivo?.click()"
       >
         Carregar arquivo
       </button>
@@ -79,6 +83,28 @@ async function importar(event: Event): Promise<void> {
         class="hidden"
         @change="importar"
       />
+    </div>
+
+    <div v-if="confirmandoImport" class="mt-3 border-l-2 border-rust pl-3">
+      <p class="text-[11px] leading-snug text-rust">
+        Carregar um arquivo substitui a vida que está rodando agora. Ela não volta.
+      </p>
+      <div class="mt-2 flex gap-2">
+        <button
+          type="button"
+          class="min-h-[44px] flex-1 border border-ink px-3 text-xs active:bg-panel"
+          @click="confirmandoImport = false"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="min-h-[44px] flex-1 bg-rust px-3 text-xs text-paper active:opacity-80"
+          @click="confirmandoImport = false; arquivo?.click()"
+        >
+          Substituir
+        </button>
+      </div>
     </div>
 
     <p v-if="importErro" class="mt-2 text-[11px] leading-snug text-rust" role="alert">

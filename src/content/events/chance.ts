@@ -444,7 +444,7 @@ export const CHANCE_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.05,
-            luckBias: 1,
+            bias: { luck: 1 },
             text: 'Deu. Não muda a vida, mas paga um ano.',
             effects: [{ type: 'money', delta: 90_000 }],
           },
@@ -483,6 +483,7 @@ export const CHANCE_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.6,
+            bias: { charisma: 0.35 },
             text: 'Você negociou um desconto grande para quitar à vista o que dava.',
             effects: [{ type: 'debt', delta: -60_000 }],
           },

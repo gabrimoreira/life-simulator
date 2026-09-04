@@ -173,7 +173,7 @@ export const MIDLIFE_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.5,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Você recomeçou e o teto lá era mais alto.',
             effects: [
               { type: 'career', action: 'quit' },
@@ -218,7 +218,7 @@ export const MIDLIFE_EVENTS: GameEvent[] = [
       { type: 'hasRelation', kind: 'spouse' },
       { type: 'relationLevel', kind: 'spouse', max: 50 },
     ],
-    text: 'Alguém no trabalho deixou claro que está interessado, e você não desconversou na hora.',
+    text: 'Alguém no trabalho deixou claro que está interessado, e faz meses que você e {conjuge} não conversam sobre nada.',
     options: [
       {
         text: 'Ir adiante',
@@ -367,7 +367,7 @@ export const MIDLIFE_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.3,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'A ideia virou coisa. Pequena, mas coisa.',
             effects: [
               { type: 'money', delta: 120_000 },
@@ -392,7 +392,7 @@ export const MIDLIFE_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.35,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'Deu certo. Você não voltou para o que fazia antes.',
             effects: [
               { type: 'career', action: 'quit' },
@@ -439,7 +439,7 @@ export const MIDLIFE_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.5,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Deu certo. Foi difícil por três anos e valeu pelos trinta seguintes.',
             effects: [
               { type: 'money', delta: -80_000 },

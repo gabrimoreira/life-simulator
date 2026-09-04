@@ -19,6 +19,20 @@ import type { GameState } from '../engine/types'
 
 const N = 60
 
+/**
+ * Longevidade precisa de mais vidas que o resto.
+ *
+ * Com 60 vidas a mediana da idade de morte anda em degraus de anos inteiros:
+ * a mesma afirmação media 5 numa leva e 7 na seguinte sem nada ter mudado no
+ * jogo. Medido em 150 vidas por jogador, a diferença assenta em ~1,7 ano e
+ * para de depender de quais sementes caíram na amostra.
+ */
+const N_LONGEVIDADE = 150
+
+function media(valores: number[]): number {
+  return valores.reduce((soma, valor) => soma + valor, 0) / valores.length
+}
+
 function mediana(valores: number[]): number {
   const ordenado = [...valores].sort((a, b) => a - b)
   return ordenado[Math.floor(ordenado.length / 2)] ?? 0
@@ -37,10 +51,18 @@ function levas(actions: string[], social: string[] = []): {
 describe('escolher bem muda o dinheiro', () => {
   const { ruim, bom } = levas(['Cursar mais um ano', 'Procurar emprego', 'Se dedicar ao trabalho'])
 
-  it('o jogador que não se sabota termina com bem mais patrimônio', () => {
+  it('o jogador que não se sabota termina com mais patrimônio', () => {
+    // A afirmação já foi "1,25x" e não sobrevivia à própria amostra: a
+    // mediana de patrimônio tem cauda pesada, e a mesma comparação mede 1,77
+    // com 40 vidas, 1,14 com 60, 1,13 com 80 e 1,32 com 150. Qualquer número
+    // fixo aqui é sorte da amostra; o que se sustenta é a DIREÇÃO.
     const patrimonioRuim = mediana(ruim.map(netWorth))
-    const patrimonioBom = mediana(bom.map(netWorth))
-    expect(patrimonioBom).toBeGreaterThan(patrimonioRuim * 1.25)
+    expect(mediana(bom.map(netWorth))).toBeGreaterThan(patrimonioRuim)
+
+    // E a estatística que não depende da cauda: mais da metade das vidas
+    // sensatas passa a vida MEDIANA de quem se sabota.
+    const acima = bom.filter((s) => netWorth(s) > patrimonioRuim).length
+    expect(acima / N).toBeGreaterThan(0.5)
   })
 
   it('e quase não morre no vermelho', () => {
@@ -55,16 +77,22 @@ describe('escolher bem muda o dinheiro', () => {
 })
 
 describe('mas não muda tudo', () => {
-  const { ruim, bom } = levas(['Procurar emprego'])
+  const acoes = ['Procurar emprego']
+  const ruim = simulateMany(N_LONGEVIDADE, GAME_CONTENT, { actions: acoes, policy: 'first' })
+  const bom = simulateMany(N_LONGEVIDADE, GAME_CONTENT, { actions: acoes, policy: 'sensible' })
 
-  it('a idade de morte quase não depende de escolha', () => {
-    // Longevidade é estrutural: sai da curva de Gompertz e do teto de saúde da
-    // idade, não do que o jogador clica. Se este teste começar a falhar, é
-    // porque alguma escolha virou um botão de viver mais — e isso precisa ser
-    // deliberado.
-    const idade = (vidas: GameState[]): number => mediana(vidas.map((s) => s.character.deathAge ?? 0))
-    const diferenca = Math.abs(idade(bom) - idade(ruim))
-    expect(diferenca).toBeLessThanOrEqual(6)
+  it('a idade de morte depende pouco de escolha — e o pouco é o vício', () => {
+    // Até a Fase 8 a resposta era "nada": 69,3 contra 71,0 anos, e a
+    // longevidade saía inteira da curva de Gompertz e do teto de saúde da
+    // idade. Os vícios são a primeira escolha do jogo que compra anos de
+    // vida: 67,2 contra 71,7, com 49% dos personagens do jogador que se
+    // sabota terminando alcoolistas contra 21% do jogador sensato.
+    //
+    // Continua sendo POUCO de propósito. Se a diferença passar de seis anos,
+    // alguma escolha virou um botão de viver mais, e isso precisa ser
+    // deliberado em vez de acontecer.
+    const idade = (vidas: GameState[]): number => media(vidas.map((s) => s.character.deathAge ?? 0))
+    expect(Math.abs(idade(bom) - idade(ruim))).toBeLessThanOrEqual(6)
   })
 })
 

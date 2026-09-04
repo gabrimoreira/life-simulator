@@ -17,7 +17,7 @@ export const CRIME_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.6,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Correu limpo. Você recebeu a parte e ninguém falou seu nome.',
             effects: [
               { type: 'money', delta: 25_000 },
@@ -84,7 +84,7 @@ export const CRIME_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.55,
-            luckBias: 0.4,
+            bias: { charisma: 0.4, luck: 0.15 },
             text: 'Você negociou e saiu andando. Metade do bairro sabe.',
             effects: [
               { type: 'stat', stat: 'reputation', op: 'delta', value: -20 },
@@ -107,7 +107,7 @@ export const CRIME_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.6,
-            luckBias: 0.5,
+            bias: { luck: 0.5 },
             text: 'Você sumiu por dois anos e voltou quando esfriou.',
             effects: [
               { type: 'money', delta: -50_000 },
@@ -189,7 +189,7 @@ export const CRIME_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.35,
-            luckBias: 0.6,
+            bias: { luck: 0.6 },
             text: 'Saiu perfeito. Você não precisa trabalhar por muitos anos.',
             effects: [
               { type: 'money', delta: 900_000 },
@@ -294,7 +294,7 @@ export const CRIME_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.6,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Foram três dias e um dinheiro que você nunca tinha visto junto.',
             effects: [
               { type: 'money', delta: 8_000 },
@@ -371,7 +371,7 @@ export const CRIME_EVENTS: GameEvent[] = [
         outcomes: [
           {
             chance: 0.45,
-            luckBias: 0.4,
+            bias: { luck: 0.4 },
             text: 'Você mandou embora e não voltaram. Você não dormiu bem por um ano.',
             effects: [{ type: 'stat', stat: 'happiness', op: 'delta', value: -10 }],
           },

@@ -593,6 +593,136 @@ export const CAREER_TRACKS: CareerTrack[] = [
     ],
   },
 
+  // Os dois setores de CLT que o spec listava — "corporativo, tech, saúde,
+  // jurídico, serviços" — e que não existiam. Cada um é o oposto do outro na
+  // porta de entrada, e é isso que os torna necessários:
+  //
+  // Tecnologia não pede diploma e não faz checagem de antecedentes. É a única
+  // porta de emprego formal aberta para quem tem ficha suja, e a única em que
+  // estudar por conta própria substitui a faculdade.
+  //
+  // Serviços não pede NADA: nem médio, nem inteligência, nem dinheiro. É a
+  // escada de quem não teve escolha nenhuma, e o teto baixo diz por quê. Sem
+  // ela, o personagem pobre e sem estudo não tinha carreira alguma — só a
+  // renda informal de R$9.000 por ano até morrer.
+  {
+    id: 'clt_tech',
+    // "Desenvolvimento", e não "Tecnologia": `business_tech` já é Tecnologia,
+    // e duas trilhas com o mesmo nome na tela são duas coisas diferentes que o
+    // jogador não tem como separar. O validador agora rejeita isso.
+    name: 'Desenvolvimento',
+    kind: 'clt',
+    entryLabel: 'Trabalhar com programação',
+    entryHint: 'Não pede diploma nem passado limpo. Pede que você saiba fazer.',
+    levels: [
+      {
+        title: 'Suporte técnico',
+        salary: 34_000,
+        minYears: 0,
+        requirements: [
+          { type: 'age', min: 18 },
+          { type: 'stat', stat: 'intelligence', min: 45 },
+        ],
+      },
+      {
+        title: 'Desenvolvedor júnior',
+        salary: 60_000,
+        minYears: 3,
+        requirements: [{ type: 'stat', stat: 'intelligence', min: 55 }],
+      },
+      {
+        title: 'Desenvolvedor pleno',
+        salary: 95_000,
+        minYears: 4,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 65 },
+          { type: 'performance', min: 50 },
+        ],
+      },
+      {
+        title: 'Desenvolvedor sênior',
+        salary: 178_000,
+        minYears: 4,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 72 },
+          { type: 'performance', min: 62 },
+          // O diploma cobra no MESMO degrau em que cobra no corporativo.
+          //
+          // Ele já esteve um degrau acima, e aí a trilha dominava o jogo: sem
+          // faculdade nenhuma, tecnologia terminava com o dobro do patrimônio
+          // do corporativo. Autodidata entra e chega a pleno; daí para cima
+          // alguém quer ver uma credencial, aqui como em qualquer lugar.
+          {
+            type: 'anyOf',
+            conditions: [
+              { type: 'education', level: 'bachelor', atLeast: true },
+              { type: 'flag', flag: 'course_engenharia', value: true },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Arquiteto de software',
+        salary: 275_000,
+        minYears: 5,
+        requirements: [
+          { type: 'stat', stat: 'intelligence', min: 80 },
+          { type: 'performance', min: 72 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'clt_servicos',
+    name: 'Serviços',
+    kind: 'clt',
+    entryLabel: 'Pegar um emprego em serviços',
+    entryHint: 'Loja, call center, restaurante. Aceita qualquer um, paga como tal.',
+    levels: [
+      {
+        title: 'Atendente',
+        salary: 19_000,
+        minYears: 0,
+        requirements: [{ type: 'age', min: 16 }],
+      },
+      {
+        title: 'Vendedor',
+        salary: 32_000,
+        minYears: 2,
+        requirements: [{ type: 'stat', stat: 'charisma', min: 40 }],
+      },
+      {
+        title: 'Supervisor de turno',
+        salary: 52_000,
+        minYears: 3,
+        requirements: [
+          { type: 'stat', stat: 'charisma', min: 52 },
+          { type: 'performance', min: 50 },
+        ],
+      },
+      {
+        title: 'Gerente de loja',
+        salary: 74_000,
+        minYears: 4,
+        requirements: [
+          { type: 'stat', stat: 'charisma', min: 62 },
+          { type: 'performance', min: 62 },
+        ],
+      },
+      {
+        title: 'Gerente regional',
+        salary: 118_000,
+        minYears: 5,
+        requirements: [
+          { type: 'stat', stat: 'charisma', min: 70 },
+          { type: 'performance', min: 72 },
+          { type: 'education', level: 'highschool', atLeast: true },
+        ],
+      },
+    ],
+  },
+
   // --- Empresário: o setor é a escolha ---------------------------------------
   // O spec descreve a trilha como "abre empresa, ESCOLHE SETOR, injeta capital,
   // contrata" e por cinco fases ela era uma escada de salário só. Os três

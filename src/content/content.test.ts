@@ -145,6 +145,35 @@ describe('saúde do conteúdo', () => {
     expect(orphanFlags(GAME_CONTENT)).toEqual([])
   })
 
+  it('setor que divide o kind com outro tem evento próprio', () => {
+    // Um `kind` com uma trilha só se vira com eventos de `careerKind`. Dois ou
+    // mais dividindo o mesmo kind, não: sem evento que nomeie a trilha,
+    // "Alimentação" e "Tecnologia" são a mesma vida com outro nome na tela do
+    // Perfil, e `careerTrack` volta a ser uma condição que ninguém usa.
+    const porKind = new Map<string, string[]>()
+    for (const track of GAME_CONTENT.careers) {
+      porKind.set(track.kind, [...(porKind.get(track.kind) ?? []), track.id])
+    }
+
+    const nomeados = new Set<string>()
+    const walk = (value: unknown): void => {
+      if (Array.isArray(value)) return value.forEach(walk)
+      if (value === null || typeof value !== 'object') return
+      const record = value as Record<string, unknown>
+      if (record['type'] === 'careerTrack' && typeof record['trackId'] === 'string') {
+        nomeados.add(record['trackId'])
+      }
+      Object.values(record).forEach(walk)
+    }
+    walk(GAME_CONTENT.events)
+
+    const orfas = [...porKind.values()]
+      .filter((ids) => ids.length > 1)
+      .flat()
+      .filter((id) => !nomeados.has(id))
+    expect(orfas).toEqual([])
+  })
+
   it('nenhuma condição `chose` aponta para um evento ou opção que não existe', () => {
     // `chose` guarda uma coordenada, não um nome: renomear um evento ou
     // reordenar suas opções quebra o callback em silêncio.
