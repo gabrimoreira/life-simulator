@@ -135,7 +135,10 @@ const marks = computed(() =>
         <dd class="text-right">{{ character.birthYear }}</dd>
         <dt class="text-muted">Cidade</dt>
         <dd class="text-right">{{ character.city }}/{{ character.uf }}</dd>
-        <dt class="text-muted">Classe</dt>
+        <!-- "de origem" não é enfeite: o motor decide a classe no nascimento e
+             nunca mais a altera. Escrito só "Classe", o campo prometia uma
+             posição atual que o jogo não acompanha — ficar rico não move isto. -->
+        <dt class="text-muted">Classe de origem</dt>
         <dd class="text-right">{{ SOCIAL_CLASS_LABELS[character.socialClass] }}</dd>
         <dt class="text-muted">Educação</dt>
         <dd class="text-right">{{ EDUCATION_LABELS[character.education] }}</dd>

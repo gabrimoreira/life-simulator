@@ -17,6 +17,10 @@ import { createGame } from '../engine/generate'
 import { lazy, simulate } from '../test/player'
 import { GAME_CONTENT } from '.'
 import { ALL_EVENTS } from './events'
+import { CLASS_PROFILES } from '../engine/balance'
+import type { SocialClass } from '../engine/types'
+
+const SOCIAL_CLASSES = Object.keys(CLASS_PROFILES) as SocialClass[]
 
 describe('conteúdo do jogo', () => {
   it('passa na validação estrutural', () => {
@@ -181,6 +185,30 @@ describe('saúde do conteúdo', () => {
       .flat()
       .filter((id) => !nomeados.has(id))
     expect(orfas).toEqual([])
+  })
+
+  it('toda classe social tem conteúdo que fala com ela', () => {
+    // Até a Fase 9 as sete condições de `socialClass` do conteúdo eram todas
+    // do lado de baixo: nascer classe média alta ou classe alta mudava dois
+    // números da economia e nada do que acontecia com a pessoa. Este teste
+    // impede a assimetria de voltar — e vale lembrar que `socialClass` é
+    // ORIGEM: o motor a decide no nascimento e nunca a altera.
+    const gated = new Map<SocialClass, number>()
+    const walk = (value: unknown): void => {
+      if (Array.isArray(value)) return value.forEach(walk)
+      if (value === null || typeof value !== 'object') return
+      const record = value as Record<string, unknown>
+      if (record['type'] === 'socialClass' && Array.isArray(record['oneOf'])) {
+        for (const classe of record['oneOf'] as SocialClass[]) {
+          gated.set(classe, (gated.get(classe) ?? 0) + 1)
+        }
+      }
+      Object.values(record).forEach(walk)
+    }
+    walk(GAME_CONTENT.events)
+
+    const semNada = SOCIAL_CLASSES.filter((c) => (gated.get(c) ?? 0) === 0)
+    expect(semNada).toEqual([])
   })
 
   it('nenhuma condição `chose` aponta para um evento ou opção que não existe', () => {
