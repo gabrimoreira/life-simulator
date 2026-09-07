@@ -83,4 +83,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           # O nome do projeto e o da URL: <projeto>.pages.dev. Se voce criar o
           # projeto na Cloudflare com outro nome, e esta linha que muda.
-          command: pages deploy dist --project-name=vida-simulador --branch=main
+          command: pages deploy dist --project-name=life-simulator --branch=main
