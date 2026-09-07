@@ -1,0 +1,61 @@
+# Cabeçalhos do Cloudflare Pages. Este arquivo mora em `public/` para o Vite
+# copiá-lo cru para `dist/`; a Pages lê o formato nativamente.
+#
+# A ordem importa: a Pages aplica a primeira regra que casa, e `/*` no fim é o
+# fallback de todo mundo.
+
+# --- Cache -------------------------------------------------------------------
+#
+# Estes têm hash de conteúdo no nome (`index-CienDV_T.js`), então o nome MUDA
+# quando o arquivo muda. Um ano imutável é seguro por construção.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Estes NÃO têm hash: vêm de `public/` com nome fixo. Uma semana, não um ano —
+# trocar a fonte mantendo o nome serviria arquivo velho por um ano a quem abre
+# pelo navegador em vez do app instalado. O service worker tem revisão própria
+# para eles, então quem instalou o PWA não depende disto.
+/fonts/*
+  Cache-Control: public, max-age=604800
+/icons/*
+  Cache-Control: public, max-age=604800
+/favicon.svg
+  Cache-Control: public, max-age=604800
+
+# É por estes quatro que uma versão nova chega. Cache longo aqui é a diferença
+# entre publicar e o jogador ver o que foi publicado — foi um service worker
+# servindo build velho que custou uma hora de caça a um bug inexistente na
+# Fase 8, e ali era só a minha máquina.
+/index.html
+  Cache-Control: no-cache
+/sw.js
+  Cache-Control: no-cache
+/registerSW.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
+
+# --- Segurança ---------------------------------------------------------------
+#
+# O jogo não faz UMA chamada de rede depois de carregado, então a CSP aqui pode
+# ser do jeito que quase nunca dá: `default-src 'self'` de verdade, sem CDN,
+# sem analytics, sem exceção.
+#
+# Duas escolhas que merecem motivo escrito:
+#
+#   `script-src 'self'` puro, sem hash nem nonce, porque o HTML gerado não tem
+#   NENHUM script inline — o registrador do service worker entra como
+#   `<script src="/registerSW.js">`. Se um dia aparecer script inline no
+#   index.html, isto quebra em produção e não no dev; é de propósito.
+#
+#   `style-src` precisa de 'unsafe-inline' e não dá para evitar: sete
+#   componentes usam binding `:style` (App, EventModal, FatalError, StatBar,
+#   RelationsTab, DeathView, NewGameView), e binding de estilo no Vue vira
+#   atributo `style` inline, que a CSP bloqueia sem isso. Não é frouxidão de
+#   conveniência — é o preço do `env(safe-area-inset-*)` e das barras de
+#   atributo.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()
