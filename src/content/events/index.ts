@@ -8,6 +8,7 @@ import { CAREER_EVENTS } from './career'
 import { CHANCE_EVENTS } from './chance'
 import { CRIME_EVENTS } from './crime'
 import { CRISIS_EVENTS } from './crisis'
+import { GENDER_EVENTS } from './gender'
 import { POLITICS_EVENTS } from './politics'
 import { LATE_LIFE_EVENTS } from './late-life'
 import { LUXURY_EVENTS } from './luxury'
@@ -39,6 +40,7 @@ export const ALL_EVENTS: GameEvent[] = [
   ...CRIME_EVENTS,
   ...CRISIS_EVENTS,
   ...VICE_EVENTS,
+  ...GENDER_EVENTS,
   ...POLITICS_EVENTS,
   ...POVERTY_EVENTS,
   ...PROFESSION_EVENTS,
