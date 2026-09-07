@@ -5,6 +5,9 @@ on:
     branches: ['**']
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -36,3 +39,48 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # O deploy BAIXA este artefato em vez de buildar de novo. Assim vai para o
+      # ar exatamente o byte que passou nos testes, e nao um segundo build que
+      # ninguem verificou — dois builds da mesma arvore deveriam ser iguais, mas
+      # "deveriam" nao e uma garantia que se queira em producao.
+      - name: Guardar o build
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy:
+    # So a main, so em push (um PR de fork nao publica), e so depois do portao.
+    # A integracao Git da Cloudflare foi deliberadamente NAO usada: se a CF
+    # buildasse sozinha, o CI deixaria de ser portao e um build quebrado subiria
+    # do mesmo jeito.
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Dois merges seguidos nao podem publicar fora de ordem: o mais novo cancela
+    # o mais velho em vez de correrem juntos.
+    concurrency:
+      group: deploy-pages
+      cancel-in-progress: true
+    environment:
+      name: producao
+      url: ${{ steps.publicar.outputs.deployment-url }}
+    steps:
+      - name: Pegar o build que passou
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Publicar no Cloudflare Pages
+        id: publicar
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # O nome do projeto e o da URL: <projeto>.pages.dev. Se voce criar o
+          # projeto na Cloudflare com outro nome, e esta linha que muda.
+          command: pages deploy dist --project-name=vida-simulador --branch=main

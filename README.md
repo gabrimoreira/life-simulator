@@ -2,6 +2,9 @@
 
 Simulador de vida em PWA. Um turno = um ano. Nasce, escolhe, morre.
 
+**[Jogar](https://vida-simulador.pages.dev)** — abre no celular, instala pelo
+próprio navegador e roda em modo avião.
+
 ## Rodar
 
 ```bash
@@ -471,6 +474,33 @@ Uma conquista é um punhado de condições declarativas avaliadas no fim de cada
 turno pelo mesmo `evaluateAll` dos eventos. Não há gatilho nem contador
 escondido. A checagem roda **depois** da morte, de propósito: "chegou aos cem"
 e "morreu no vermelho" só fazem sentido no turno em que a vida acaba.
+
+## Deploy
+
+Cloudflare Pages, publicado pelo CI: `verify` roda typecheck, lint, testes e
+build, e só se os quatro passarem o job `deploy` sobe o `dist/`. O deploy
+**baixa o artefato** que o `verify` guardou em vez de buildar de novo — vai para
+o ar exatamente o byte que passou nos testes.
+
+A integração Git da Cloudflare foi deliberadamente não usada. Se a CF buildasse
+sozinha, o CI deixaria de ser portão e um build quebrado subiria do mesmo jeito.
+
+Nada de `base` ou caminho relativo: a Pages serve na raiz do domínio, que é
+onde `start_url`, `scope` e o `navigateFallback` do service worker já apontam.
+Um host em subpasta obrigaria a mexer nos quatro, e é o tipo de coisa que quebra
+o PWA em silêncio.
+
+`public/_headers` cuida de duas coisas. O cache separa o que tem hash no nome
+(`/assets/*`, um ano imutável) do que não tem (`public/`, uma semana) e do que
+**não pode** ter cache longo — `index.html`, `sw.js`, `registerSW.js` e o
+manifest, que são por onde uma versão nova chega. E a CSP, que aqui pode ser
+`default-src 'self'` de verdade porque o jogo não faz uma única chamada de rede;
+a única exceção é `style-src 'unsafe-inline'`, que os bindings `:style` do Vue
+exigem.
+
+**A migração de save deixou de ser teórica.** Enquanto nada estava publicado, a
+cadeia v1→v7 era cuidado; com o jogo no ar, quebrar uma migração apaga a vida de
+setenta anos de alguém que não pode recuperá-la.
 
 ## Os invariantes são testados, não conferidos na mão
 
