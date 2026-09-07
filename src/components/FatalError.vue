@@ -33,6 +33,7 @@ function baixar(): void {
   <div
     v-if="store.fatal"
     class="fixed inset-0 z-50 flex items-end bg-ink/40 p-4"
+    :style="{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }"
     role="alertdialog"
     aria-labelledby="fatal-title"
   >

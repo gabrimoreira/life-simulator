@@ -91,15 +91,20 @@ export function createHeir(state: GameState, heirId: string): GameState | null {
   for (const person of state.relations) {
     if (!person.alive || person.id === heir.id) continue
 
+    // `flags: {}` em ambos: a história é do falecido, não do filho. A viúva
+    // que traiu o pai não traiu o filho, e o irmão que devia dinheiro devia a
+    // ele. Sem isto a linhagem acumularia mágoa para sempre, do mesmo jeito
+    // que os atributos acumulariam sem a regressão à média lá em cima.
     if (person.kind === 'spouse') {
       relations.push({
         ...person,
         kind: person.gender === 'female' ? 'mother' : 'father',
+        flags: {},
       })
       continue
     }
     if (person.kind === 'child') {
-      relations.push({ ...person, kind: 'sibling' })
+      relations.push({ ...person, kind: 'sibling', flags: {} })
       continue
     }
     // Avós, tios e amigos do falecido não são a vida do filho.

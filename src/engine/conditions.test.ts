@@ -47,7 +47,7 @@ describe('evaluate', () => {
   it('hasRelation ignora quem já morreu', () => {
     const state = makeState({
       relations: [
-        { id: 'm', name: 'Ana', kind: 'mother', gender: 'female', age: 50, relation: 70, alive: false },
+        { id: 'm', name: 'Ana', kind: 'mother', gender: 'female', age: 50, relation: 70, alive: false, flags: {} },
       ],
     })
     expect(evaluate({ type: 'hasRelation', kind: 'mother' }, state)).toBe(false)
@@ -118,8 +118,8 @@ describe('relationLevel com mais de uma pessoa do mesmo tipo', () => {
   function comDoisFilhos(primeiro: number, segundo: number): GameState {
     const state = makeState({ character: makeCharacter({ age: 50 }) })
     state.relations.push(
-      { id: 'c1', name: 'Rui Silva', kind: 'child', gender: 'male', age: 20, relation: primeiro, alive: true },
-      { id: 'c2', name: 'Ana Silva', kind: 'child', gender: 'female', age: 17, relation: segundo, alive: true },
+      { id: 'c1', name: 'Rui Silva', kind: 'child', gender: 'male', age: 20, relation: primeiro, alive: true, flags: {} },
+      { id: 'c2', name: 'Ana Silva', kind: 'child', gender: 'female', age: 17, relation: segundo, alive: true, flags: {} },
     )
     return state
   }
@@ -160,6 +160,7 @@ describe('relationCount com limiar de proximidade', () => {
         age: 40,
         relation,
         alive: true,
+        flags: {},
       })
     })
     return state
@@ -204,5 +205,53 @@ describe('a política cobra o que promete', () => {
       .map((level) => level.title)
 
     expect(semRede).toEqual([])
+  })
+})
+
+describe('personFlag', () => {
+  function comAmigos(...flags: Record<string, boolean>[]): GameState {
+    const state = makeState({ character: makeCharacter({ age: 40 }) })
+    flags.forEach((f, i) => {
+      state.relations.push({
+        id: `f${i}`,
+        name: `Amigo ${i}`,
+        kind: 'friend',
+        gender: 'male',
+        age: 40,
+        relation: 60,
+        alive: true,
+        flags: f,
+      })
+    })
+    return state
+  }
+
+  it('basta uma pessoa daquele tipo carregar a flag', () => {
+    // Mesma razão de `relationLevel`: com `.find()` a resposta viria sempre do
+    // primeiro do array, e quem tem três amigos ficaria preso ao mais antigo.
+    const state = comAmigos({}, {}, { owes_me: true })
+    expect(evaluate({ type: 'personFlag', kind: 'friend', flag: 'owes_me', value: true }, state)).toBe(true)
+  })
+
+  it('ninguém com a flag responde falso', () => {
+    const state = comAmigos({}, { helped_me: true })
+    expect(evaluate({ type: 'personFlag', kind: 'friend', flag: 'owes_me', value: true }, state)).toBe(false)
+  })
+
+  it('value: false pergunta por quem NÃO carrega a flag', () => {
+    const state = comAmigos({ owes_me: true }, {})
+    expect(evaluate({ type: 'personFlag', kind: 'friend', flag: 'owes_me', value: false }, state)).toBe(true)
+  })
+
+  it('quem morreu não responde mais', () => {
+    const state = comAmigos({ owes_me: true })
+    const amigo = state.relations[0]
+    if (amigo) amigo.alive = false
+    expect(evaluate({ type: 'personFlag', kind: 'friend', flag: 'owes_me', value: true }, state)).toBe(false)
+  })
+
+  it('não atravessa tipos de relação', () => {
+    const state = comAmigos({ owes_me: true })
+    expect(evaluate({ type: 'personFlag', kind: 'sibling', flag: 'owes_me', value: true }, state)).toBe(false)
   })
 })

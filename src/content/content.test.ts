@@ -9,13 +9,18 @@ import {
   validateRelationActions,
   danglingChoices,
   orphanFlags,
+  orphanPersonFlags,
 } from '../engine/validate'
 import { eligibleEvents } from '../engine/events'
 import { makeCharacter, makeState } from '../test/fixtures'
 import { createGame } from '../engine/generate'
-import { simulate } from '../test/player'
+import { lazy, simulate } from '../test/player'
 import { GAME_CONTENT } from '.'
 import { ALL_EVENTS } from './events'
+import { CLASS_PROFILES } from '../engine/balance'
+import type { SocialClass } from '../engine/types'
+
+const SOCIAL_CLASSES = Object.keys(CLASS_PROFILES) as SocialClass[]
 
 describe('conteúdo do jogo', () => {
   it('passa na validação estrutural', () => {
@@ -145,6 +150,14 @@ describe('saúde do conteúdo', () => {
     expect(orphanFlags(GAME_CONTENT)).toEqual([])
   })
 
+  it('nenhuma flag de pessoa é decorativa, nos dois sentidos', () => {
+    // A regra é mais dura que a das flags globais porque o silêncio é pior:
+    // uma flag de pessoa escrita e nunca lida some, e uma flag LIDA e nunca
+    // escrita esconde o conteúdo que ela gateia — a condição nunca é
+    // verdadeira e nada reclama.
+    expect(orphanPersonFlags(GAME_CONTENT)).toEqual([])
+  })
+
   it('setor que divide o kind com outro tem evento próprio', () => {
     // Um `kind` com uma trilha só se vira com eventos de `careerKind`. Dois ou
     // mais dividindo o mesmo kind, não: sem evento que nomeie a trilha,
@@ -172,6 +185,30 @@ describe('saúde do conteúdo', () => {
       .flat()
       .filter((id) => !nomeados.has(id))
     expect(orfas).toEqual([])
+  })
+
+  it('toda classe social tem conteúdo que fala com ela', () => {
+    // Até a Fase 9 as sete condições de `socialClass` do conteúdo eram todas
+    // do lado de baixo: nascer classe média alta ou classe alta mudava dois
+    // números da economia e nada do que acontecia com a pessoa. Este teste
+    // impede a assimetria de voltar — e vale lembrar que `socialClass` é
+    // ORIGEM: o motor a decide no nascimento e nunca a altera.
+    const gated = new Map<SocialClass, number>()
+    const walk = (value: unknown): void => {
+      if (Array.isArray(value)) return value.forEach(walk)
+      if (value === null || typeof value !== 'object') return
+      const record = value as Record<string, unknown>
+      if (record['type'] === 'socialClass' && Array.isArray(record['oneOf'])) {
+        for (const classe of record['oneOf'] as SocialClass[]) {
+          gated.set(classe, (gated.get(classe) ?? 0) + 1)
+        }
+      }
+      Object.values(record).forEach(walk)
+    }
+    walk(GAME_CONTENT.events)
+
+    const semNada = SOCIAL_CLASSES.filter((c) => (gated.get(c) ?? 0) === 0)
+    expect(semNada).toEqual([])
   })
 
   it('nenhuma condição `chose` aponta para um evento ou opção que não existe', () => {
@@ -202,8 +239,8 @@ describe('densidade do sorteio', () => {
     if (age >= 30) {
       state.character.flags['married'] = true
       state.relations.push(
-        { id: 'sp', name: 'Ana Silva', kind: 'spouse', gender: 'female', age, relation: 70, alive: true },
-        { id: 'ch', name: 'Rui Silva', kind: 'child', gender: 'male', age: Math.max(1, age - 28), relation: 70, alive: true },
+        { id: 'sp', name: 'Ana Silva', kind: 'spouse', gender: 'female', age, relation: 70, alive: true, flags: {} },
+        { id: 'ch', name: 'Rui Silva', kind: 'child', gender: 'male', age: Math.max(1, age - 28), relation: 70, alive: true, flags: {} },
       )
     }
     return state
@@ -293,20 +330,23 @@ describe('a crise de felicidade acontece de verdade', () => {
     return state
   }
 
-  const amostra = Array.from({ length: 40 }, (_, i) => vidaSemPlano(i + 1))
+  // Adiada: no corpo do `describe` estas 40 vidas rodavam na fase de coleta,
+  // em toda rodada do Vitest, inclusive com `-t` filtrando outro teste.
+  const amostra = lazy(() => Array.from({ length: 40 }, (_, i) => vidaSemPlano(i + 1)))
 
   it('a sequência de anos infelizes chega aos gates mais fundos', () => {
     // O spec pede crise "se a felicidade zerar por VÁRIOS turnos". Sem esta
     // medida, um evento gated em `unhappyYears min 6` poderia ser conteúdo
     // morto e ninguém notaria — foi exatamente o que aconteceu com o time de
     // futebol de R$40 milhões.
-    const picos = amostra.map((s) => s.character.unhappyYears)
+    const picos = amostra().map((s) => s.character.unhappyYears)
     expect(Math.max(...picos), 'maior sequência vista').toBeGreaterThanOrEqual(6)
-  })
+  }, 20_000)
 
   it('mas a infelicidade não é o estado normal da vida', () => {
     // Se todo mundo vivesse em crise, a crise não significaria nada.
-    const medio = amostra.reduce((sum, s) => sum + s.character.unhappyYears, 0) / amostra.length
+    const vidas = amostra()
+    const medio = vidas.reduce((sum, s) => sum + s.character.unhappyYears, 0) / vidas.length
     expect(medio).toBeLessThan(8)
   })
 
@@ -319,7 +359,7 @@ describe('a crise de felicidade acontece de verdade', () => {
         e.conditions.filter((c) => c.type === 'unhappyYears').map((c) => c.min ?? 0),
       ),
     )
-    const maiorVisto = Math.max(...amostra.map((s) => s.character.unhappyYears))
+    const maiorVisto = Math.max(...amostra().map((s) => s.character.unhappyYears))
     expect(maiorVisto, `gate mais fundo é ${maiorGate}`).toBeGreaterThanOrEqual(maiorGate)
   })
 })

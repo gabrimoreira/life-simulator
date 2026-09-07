@@ -6,7 +6,7 @@ describe('interpolate', () => {
   const state = makeState({
     character: makeCharacter({ name: 'Joana', city: 'Recife', uf: 'PE', age: 24, money: 3240 }),
     relations: [
-      { id: 'm', name: 'Ana Silva', kind: 'mother', gender: 'female', age: 50, relation: 70, alive: true },
+      { id: 'm', name: 'Ana Silva', kind: 'mother', gender: 'female', age: 50, relation: 70, alive: true, flags: {} },
     ],
   })
 
@@ -30,7 +30,7 @@ describe('interpolate', () => {
     const casado = makeState({
       character: makeCharacter({ name: 'Joana' }),
       relations: [
-        { id: 's', name: 'Rui Barbosa', kind: 'spouse', gender: 'male', age: 40, relation: 70, alive: true },
+        { id: 's', name: 'Rui Barbosa', kind: 'spouse', gender: 'male', age: 40, relation: 70, alive: true, flags: {} },
       ],
     })
     expect(interpolate('{conjuge} não gostou.', casado)).toBe('Rui não gostou.')
@@ -39,7 +39,7 @@ describe('interpolate', () => {
   it('não cita cônjuge morto: a flag de casado sobrevive à viuvez', () => {
     const viuva = makeState({
       relations: [
-        { id: 's', name: 'Rui Barbosa', kind: 'spouse', gender: 'male', age: 40, relation: 70, alive: false },
+        { id: 's', name: 'Rui Barbosa', kind: 'spouse', gender: 'male', age: 40, relation: 70, alive: false, flags: {} },
       ],
     })
     expect(interpolate('{conjuge} não gostou.', viuva)).toBe('seu cônjuge não gostou.')

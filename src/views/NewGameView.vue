@@ -71,7 +71,10 @@ function start(): void {
           </button>
         </div>
         <p class="mt-2 text-xs text-muted">
-          Define a concordância dos textos e alguns eventos. Nada mais.
+          <!-- "Nada mais" era verdade até a Fase 9, quando gênero era condição
+               de 1 evento em 214. Hoje são treze, e 96% das vidas com a mesma
+               semente terminam diferentes conforme a resposta aqui. -->
+          Muda a concordância dos textos e boa parte do que acontece com você.
         </p>
       </fieldset>
 

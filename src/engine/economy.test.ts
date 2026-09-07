@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GAME_CONTENT } from '../content'
-import { simulate } from '../test/player'
+import { lazy, simulate } from '../test/player'
 import { makeCharacter, makeContent, makeState } from '../test/fixtures'
 import { netWorth } from './assets'
 import {
@@ -154,7 +154,9 @@ describe('vida de quem joga com um plano', () => {
   // Eram 40 vidas, e 40 não bastavam: a taxa de formados media 55% nesta
   // amostra e 47% em qualquer amostra maior. O teste dizia "a maioria se
   // forma" e passava por causa das sementes que tinham caído nela.
-  const sample = Array.from({ length: 120 }, (_, i) => viveComPlano(i + 1))
+  // Adiada: no corpo do `describe` estas 120 vidas rodavam na fase de coleta,
+  // em toda rodada do Vitest, inclusive com `-t` filtrando outro teste.
+  const sample = lazy(() => Array.from({ length: 120 }, (_, i) => viveComPlano(i + 1)))
 
   it('quase ninguém termina no vermelho', () => {
     // `netWorth` e não `money - debt`: quem financia um imóvel fica com a
@@ -168,19 +170,23 @@ describe('vida de quem joga com um plano', () => {
     // a sexta no bar dava de graça. O teto continua sendo o que ele sempre
     // foi: um alarme para a economia quebrar de novo como na Fase 2, quando
     // TODO mundo morria devendo R$ 310 mil.
-    const broke = sample.filter((s) => netWorth(s) < 0)
-    expect(broke.length / sample.length).toBeLessThan(0.25)
-  })
+    const vidas = sample()
+    const broke = vidas.filter((s) => netWorth(s) < 0)
+    expect(broke.length / vidas.length).toBeLessThan(0.25)
+    // O timeout é do primeiro `it` a tocar `sample()`: é ele que paga as 120
+    // vidas, agora que elas não rodam mais na coleta.
+  }, 20_000)
 
   it('perto de metade chega a se formar', () => {
-    const graduated = sample.filter(
+    const vidas = sample()
+    const graduated = vidas.filter(
       (s) => s.character.education === 'bachelor' || s.character.education === 'postgrad',
     )
-    expect(graduated.length / sample.length).toBeGreaterThan(0.4)
+    expect(graduated.length / vidas.length).toBeGreaterThan(0.4)
   })
 
   it('a carreira progride além do primeiro degrau', () => {
-    const levels = sample.map((s) => s.character.careerHistory['clt'] ?? 0)
+    const levels = sample().map((s) => s.character.careerHistory['clt'] ?? 0)
     const median = levels.sort((a, b) => a - b)[Math.floor(levels.length / 2)] ?? 0
     expect(median).toBeGreaterThanOrEqual(2)
   })
@@ -196,10 +202,11 @@ describe('vida de quem joga com um plano', () => {
     //
     // O que importa de verdade é a escala: dívida grande convivendo com caixa
     // grande por anos seria o sintoma real de amortização quebrada.
-    const sentados = sample.filter(
+    const vidas = sample()
+    const sentados = vidas.filter(
       (s) => s.character.debt > 50_000 && s.character.money > s.character.debt * 3,
     )
-    expect(sentados.length / sample.length).toBeLessThan(0.1)
+    expect(sentados.length / vidas.length).toBeLessThan(0.1)
   })
 })
 

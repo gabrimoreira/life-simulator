@@ -132,6 +132,10 @@ export const RELATION_ACTIONS: RelationAction[] = [
         effects: [
           { type: 'money', delta: 15_000 },
           { type: 'relation', target: { by: 'target' }, delta: -12 },
+          // `{ by: 'target' }` é o único alvo exato do jogo: uma ação de
+          // relação sabe em QUEM foi disparada. Marcar aqui e ler em
+          // `pay_back` é a cadeia inteira dentro de uma pessoa só.
+          { type: 'personFlag', target: { by: 'target' }, flag: 'helped_me', value: true },
         ],
       },
       {
@@ -283,6 +287,80 @@ export const RELATION_ACTIONS: RelationAction[] = [
         effects: [
           { type: 'divorce' },
           { type: 'stat', stat: 'happiness', op: 'delta', value: -20 },
+        ],
+      },
+    ],
+  },
+
+  // --- O que só existe por causa da história com aquela pessoa -------------
+  //
+  // Estas duas são a razão de `Person.flags` existir. Antes da Fase 9 uma
+  // relação era um número e um tipo: dava para saber que o amigo estava
+  // distante, nunca POR QUÊ. Elas aparecem em UMA pessoa da lista — a que
+  // pegou o dinheiro, a que emprestou — e em mais ninguém.
+  {
+    id: 'collect_debt',
+    label: 'Cobrar o que devem',
+    hint: 'Cobrar custa a relação. Deixar passar custa o dinheiro.',
+    cost: 1,
+    cooldown: 4,
+    kinds: [...FAMILIA, 'friend'],
+    personFlags: { owes_me: true },
+    outcomes: [
+      {
+        chance: 0.35,
+        bias: { charisma: 0.4, reputation: 0.3 },
+        text: 'pagou o que devia, parcelado, e sumiu depois.',
+        effects: [
+          { type: 'money', delta: 12_000 },
+          { type: 'relation', target: { by: 'target' }, delta: -10 },
+          { type: 'personFlag', target: { by: 'target' }, flag: 'owes_me', value: false },
+        ],
+      },
+      {
+        chance: 0.3,
+        text: 'pagou uma parte e chorou o resto.',
+        effects: [
+          { type: 'money', delta: 4_000 },
+          { type: 'relation', target: { by: 'target' }, delta: -6 },
+          { type: 'personFlag', target: { by: 'target' }, flag: 'owes_me', value: false },
+        ],
+      },
+      {
+        chance: 0.35,
+        text: 'disse que você está cobrando na pior hora possível.',
+        effects: [{ type: 'relation', target: { by: 'target' }, delta: -20 }],
+      },
+    ],
+  },
+
+  {
+    id: 'pay_back',
+    label: 'Retribuir',
+    hint: 'Devolver o que fizeram por você, quando você podia menos.',
+    cost: 1,
+    cooldown: 5,
+    kinds: [...FAMILIA, 'friend', 'spouse'],
+    personFlags: { helped_me: true },
+    requirements: [{ type: 'money', min: 15_000 }],
+    outcomes: [
+      {
+        chance: 0.75,
+        text: 'recebeu de volta o que emprestou, e a cara de quem não esperava mais.',
+        effects: [
+          { type: 'money', delta: -12_000 },
+          { type: 'relation', target: { by: 'target' }, delta: 22 },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: 6 },
+          { type: 'personFlag', target: { by: 'target' }, flag: 'helped_me', value: false },
+        ],
+      },
+      {
+        chance: 0.25,
+        text: 'recusou, e disse que aquilo nunca foi empréstimo.',
+        effects: [
+          { type: 'relation', target: { by: 'target' }, delta: 12 },
+          { type: 'stat', stat: 'happiness', op: 'delta', value: 8 },
+          { type: 'personFlag', target: { by: 'target' }, flag: 'helped_me', value: false },
         ],
       },
     ],

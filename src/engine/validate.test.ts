@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   orphanFlags,
+  orphanPersonFlags,
   validateAchievements,
   validateActions,
   validateAssets,
@@ -422,5 +423,86 @@ describe('orphanFlags', () => {
       makeEvent({ id: 'le', conditions: [{ type: 'flag', flag: 'alguem_le', value: true }] }),
     ])
     expect(orphanFlags(content)).toEqual([])
+  })
+})
+
+describe('orphanPersonFlags', () => {
+  /** Um evento que escreve a flag na mãe. */
+  function escreve(flag: string) {
+    return makeEvent({
+      id: `escreve_${flag}`,
+      options: [
+        {
+          text: 'A',
+          outcomes: [
+            {
+              chance: 1,
+              text: 'ok',
+              effects: [
+                { type: 'personFlag', target: { by: 'kind', kind: 'mother' }, flag, value: true },
+              ],
+            },
+          ],
+        },
+        { text: 'B', outcomes: [{ chance: 1, text: 'ok', effects: [] }] },
+      ],
+    })
+  }
+
+  it('acusa uma flag de pessoa escrita e nunca lida', () => {
+    const problems = orphanPersonFlags(makeContent([escreve('ninguem_le')]))
+    expect(has(problems, 'ninguem_le')).toBe(true)
+    expect(has(problems, 'escrita e nunca lida')).toBe(true)
+  })
+
+  it('acusa uma flag de pessoa lida e nunca escrita', () => {
+    // Este é o lado que a regra das flags globais não tem, e é o pior dos
+    // dois: a condição existe, nunca é verdadeira, e o conteúdo que ela
+    // gateava simplesmente nunca aparece para ninguém.
+    const content = makeContent([
+      makeEvent({
+        id: 'le',
+        conditions: [{ type: 'personFlag', kind: 'mother', flag: 'ninguem_escreve', value: true }],
+      }),
+    ])
+    expect(has(orphanPersonFlags(content), 'lida e nunca escrita')).toBe(true)
+  })
+
+  it('escrita e lida em lugares diferentes está ok', () => {
+    const content = makeContent([
+      escreve('combinada'),
+      makeEvent({
+        id: 'le',
+        conditions: [{ type: 'personFlag', kind: 'mother', flag: 'combinada', value: true }],
+      }),
+    ])
+    expect(orphanPersonFlags(content)).toEqual([])
+  })
+
+  it('o gate `personFlags` de uma ação de relação conta como leitor', () => {
+    const content = makeContent([escreve('cobravel')], {
+      relationActions: [
+        {
+          id: 'cobrar',
+          label: 'Cobrar',
+          hint: 'x',
+          cost: 1,
+          kinds: ['mother'],
+          personFlags: { cobravel: true },
+          outcomes: [{ chance: 1, text: 'ok', effects: [] }],
+        },
+      ],
+    })
+    expect(orphanPersonFlags(content)).toEqual([])
+  })
+
+  it('não confunde os dois namespaces de flag', () => {
+    // Uma flag global com o mesmo nome NÃO satisfaz a de pessoa: são estados
+    // diferentes, e `character.flags['x']` nunca responde por `person.flags`.
+    const content = makeContent([
+      escreve('mesmo_nome'),
+      makeEvent({ id: 'le_global', conditions: [{ type: 'flag', flag: 'mesmo_nome', value: true }] }),
+    ])
+    expect(has(orphanPersonFlags(content), 'escrita e nunca lida')).toBe(true)
   })
 })

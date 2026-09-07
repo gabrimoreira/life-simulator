@@ -93,6 +93,18 @@ export function evaluate(condition: Condition, state: GameState): boolean {
       )
     }
 
+    case 'personFlag': {
+      // Viva, como em `relationLevel`. A flag de quem morreu continua no
+      // array — o herdeiro precisa dela para saber de quem herdou — mas nao
+      // deve responder por "meu irmao ainda me deve".
+      return state.relations.some(
+        (r) =>
+          r.kind === condition.kind &&
+          r.alive &&
+          (r.flags[condition.flag] ?? false) === condition.value,
+      )
+    }
+
     case 'relationCount': {
       const floor = condition.minRelation
       const count = state.relations.filter(
@@ -205,6 +217,9 @@ export function describe(condition: Condition): string {
 
     case 'relationLevel':
       return describeRange('relação', condition.min, condition.max, plain)
+
+    case 'personFlag':
+      return 'Depende da história com alguém'
 
     case 'relationCount':
       return condition.minRelation !== undefined

@@ -9,6 +9,7 @@ npm install
 npm run dev        # desenvolvimento
 npm run test       # testes do engine
 npm run typecheck  # TypeScript estrito, zero any
+npm run lint       # regras que dependem de tipo, que o compilador não pega
 npm run build      # build de produção + service worker
 npm run preview    # serve o build (necessário para testar o PWA)
 ```
@@ -97,8 +98,8 @@ que `pickOutcome` devolve sem olhar a chance.
 
 Texto declarativo não pode ramificar por gênero, então o sufixo é um token:
 `"Você foi promovid{o}"` vira "promovida" ou "promovido". Também existem
-`{ele}`, `{Ele}`, `{dele}`, `{um}`, além de `{name}`, `{city}`, `{uf}`,
-`{age}`, `{money}`, `{mother}` e `{father}`.
+`{ele}`, `{Ele}`, `{dele}`, `{um}`, `{conjuge}`, além de `{name}`, `{city}`,
+`{uf}`, `{age}`, `{money}`, `{mother}` e `{father}`.
 
 ### Determinismo
 
@@ -264,6 +265,104 @@ Três medidas mudaram o desenho pelo caminho:
 - **O custo anual começou em R$5.000 e R$8.000 e caiu.** A renda informal de
   quem é pobre é R$9.000 por ano, e beber não pode ser sentença de pobreza.
 
+## Gênero pesa, e não só na concordância
+
+Por oito fases o jogo perguntava o gênero na criação do personagem, flexionava
+todo o texto por ele e **nunca ramificava a vida por ele**: a condição
+`{ type: 'gender' }` aparecia em 1 de 214 eventos. Era a mesma doença dos
+vícios antes da Fase 8 — uma pergunta feita ao jogador que o conteúdo não lia.
+
+`content/events/gender.ts` são treze eventos em pares. Quase todo um tem o
+irmão do outro lado, porque o custo de gênero não é de um lado só, é diferente:
+a licença que interrompe uma carreira e a licença de cinco dias que não deixa
+ninguém conhecer o próprio filho são a mesma lei vista de dois ângulos, e as
+duas cobram. O mesmo vale para a rua, o médico e a velhice.
+
+Medido em 100 vidas de cada lado, com o jogador que sempre escolhe a primeira
+opção — o piso:
+
+| | vidas que encostam no conteúdo de gênero | eventos de gênero por vida | fatia da vida |
+|---|---:|---:|---:|
+| mulher | 96% | 12,0 | 9% |
+| homem | 96% | 6,7 | 5% |
+
+E a medida que importa mais: **96% das sementes vivem uma vida diferente
+conforme o gênero**. Mesma seed, mesmo plano, `choiceLog` diferente.
+
+`bias` não foi estendido para aceitar gênero: ele enviesa por atributo, e onde
+a diferença é de chance e não de narrativa dois eventos irmãos com condições
+opostas já dizem a mesma coisa dentro do modelo declarativo — sem um segundo
+mecanismo com um usuário só.
+
+## Classe é origem, e o lado de cima também cobra
+
+As sete condições de `socialClass` do conteúdo eram **todas do lado de baixo**.
+`poverty.ts` tem dez eventos e alcança 77% das vidas; do lado de cima havia
+zero. Nascer classe média alta ou classe alta mudava dois números da economia e
+nada do que acontecia com a pessoa.
+
+Vale dizer o que `socialClass` é, porque o nome engana: ela é decidida no
+nascimento (`generate.ts`) e **nunca muda** — não existe efeito que a altere. É
+origem, não posição atual. O Perfil dizia só "Classe" e prometia uma posição
+que o jogo não acompanha; hoje diz "Classe de origem". Riqueza conquistada é
+outra coisa e já tinha casa: `luxury.ts`, gated em `netWorth`.
+
+`content/events/origin.ts` são dez eventos para quem nasceu em cima: o roteiro
+que a família já decidiu, a rede que faz errar sair barato, o amigo que era a
+conta, o parente que quer um emprego, a bolha do colégio, o inventário falado
+cedo demais. Os dois últimos vivem no cruzamento que nenhum dos dois arquivos
+cobria — **nascido em cima e quebrado hoje** —, porque cair de onde se nasceu é
+uma experiência específica.
+
+Medido em 400 vidas: 94% de quem nasce classe média alta e 100% de quem nasce
+classe alta encostam nesse conteúdo, ~12 eventos por vida. É conteúdo raro e
+fundo: só 17% dos personagens nascem desse lado.
+
+## Uma relação que lembra
+
+O spec pede flags por pessoa desde a linha 164 — "Cada um tem: nome, idade,
+tipo, nível de relação (0–100), **flags**" — e `Person` não tinha o campo. Uma
+relação era um número e um tipo: dava para saber que o amigo estava distante,
+nunca por quê. Mágoa, briga e simples distância eram o mesmo 30 na tela.
+
+São dois namespaces que não se misturam. `character.flags` responde "isso
+aconteceu na minha vida"; `person.flags` responde "isso aconteceu com ELE".
+
+| onde | quem escreve | quem lê |
+|---|---|---|
+| `personFlag` como `Condition` | — | por TIPO de relação: "algum amigo me deve" |
+| `personFlag` como `Effect` | um `RelationRef` | — |
+| `RelationAction.personFlags` | — | a pessoa exata que está na tela |
+
+O gate de `RelationAction` **filtra** a ação em vez de desabilitá-la, como
+`kinds` faz e pela mesma razão: "Cobrar o que devem" numa pessoa que nunca
+pegou dinheiro emprestado não é uma ação bloqueada que dá para destravar — é
+uma ação que não existe ali. Motivo de bloqueio só serve quando o jogador pode
+fazer algo a respeito.
+
+Três memórias existem hoje, cada uma com escritor e leitor: `owes_me` (o amigo
+que não devolveu → "Cobrar o que devem"), `helped_me` (quem te emprestou
+quando você pediu → "Retribuir") e `forgave_me` (o cônjuge que ficou depois da
+traição → um callback que só existe naquele casamento).
+
+Flags **não** atravessam a herança: a viúva que perdoou o pai não perdoou o
+filho. É a mesma razão da regressão à média nos atributos — sem isso a linhagem
+acumularia mágoa para sempre.
+
+Dois defeitos apareceram montando isto, e os dois viraram teste:
+
+- **`retarget` ignorava o efeito novo.** Ele enumerava os três tipos de efeito
+  com alvo que existiam, e `personFlag` passou direto: `{ by: 'target' }`
+  chegava vivo em `findRelation`, que devolve `undefined`, e o efeito virava
+  no-op silencioso — a flag simplesmente nunca era escrita, e nada reclamava.
+  Hoje a checagem é estrutural (`'target' in effect`), então o quinto tipo não
+  pode ser esquecido.
+- **`orphanPersonFlags` cobra os DOIS sentidos**, e é mais duro que o detector
+  das flags globais de propósito: uma flag global write-only é uma promessa
+  quebrada; uma flag de pessoa **lida e nunca escrita** é pior e é silenciosa —
+  a condição existe, nunca é verdadeira, e o conteúdo que ela gateia nunca
+  aparece para ninguém.
+
 ## Amizade acaba
 
 Amigo esfria mais rápido que família e **sai da lista** quando a relação chega
@@ -334,7 +433,7 @@ maior sequência é de 13 anos, o pico médio é 3,1, e os cinco eventos dispara
 
 ## Save
 
-`saveVersion` 6. As migrações rodam sobre o JSON cru e a checagem de forma
+`saveVersion` 7. As migrações rodam sobre o JSON cru e a checagem de forma
 acontece depois, sobre o resultado — o contrário obrigaria a manter o tipo de
 cada versão antiga do `GameState` vivo no código para sempre.
 
@@ -385,6 +484,29 @@ duas `references`), então o comando checava ZERO arquivos e saía limpo. Quem
 segurava tudo era o `build`. Agora é `vue-tsc -b --force`, e é ele que faz o
 `assertNever` funcionar como lista de tarefas quando uma união cresce.
 
+O `lint` chega depois dele e faz outra coisa. O `tsconfig` daqui já é mais duro
+que o `strict` (`exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`,
+`erasableSyntaxOnly`), então quase tudo que um preset de ESLint costuma pegar
+aqui já nem compila. O que sobra são as regras que dependem de TIPO: um `await`
+em coisa que não é promessa, um `any` de `JSON.parse` atravessando três funções
+— foi assim que ele achou os testes de migração que provavam que a migração não
+apaga nada e estavam checando `any`.
+
+### Simulação não roda na coleta
+
+Uma leva de vidas escrita no corpo de um `describe` roda na fase de COLETA do
+Vitest: em `--watch`, com `-t` filtrando outro teste, e mesmo quando o arquivo
+inteiro vai ser pulado. Eram 22 s pagos em toda rodada. O helper `lazy` em
+`src/test/player.ts` adia a leva para o primeiro `it()` que a lê e a memoiza
+para os seguintes — nos três arquivos mais pesados, uma rodada que não executa
+nada caiu de **8,3 s para 0,9 s**.
+
+O custo não sumiu, mudou de fase: uma rodada completa ficou ~1 s mais lenta,
+porque a coleta paraleliza melhor entre arquivos do que a execução. A troca vale
+pelo `--watch`, que é onde se escreve conteúdo. O que sumiu de verdade foram 40
+vidas: `heir.test.ts` simulava as mesmas sementes com o mesmo plano duas vezes,
+e hoje o segundo teste fatia o coorte do primeiro.
+
 ## Flags não podem ser decorativas
 
 `orphanFlags` em `engine/validate.ts` quebra o teste se o conteúdo escrever uma
@@ -394,6 +516,10 @@ exatamente igual.
 
 Flags lidas pelo próprio engine (e não por uma `Condition`) ficam declaradas em
 `engine/flags.ts` — é como o detector sabe que elas têm leitor.
+
+`orphanPersonFlags` faz o mesmo pelas flags de pessoa, nos dois sentidos e sem
+lista de exceção: não há nenhum leitor de flag de pessoa dentro do motor, então
+escritor e leitor têm que estar os dois no conteúdo.
 
 ## Como o balanceamento é medido
 
@@ -417,22 +543,27 @@ Por cinco fases só existiu o primeiro, e por isso cada número vinha com a
 ressalva de que o jogador escolhia sempre a pior opção. Um piso sozinho não
 diz se o jogo é difícil ou se o jogador é ruim.
 
-Medido em 100 vidas por combinação, depois dos vícios da Fase 8:
+Medido em 100 vidas por combinação, com o conteúdo da Fase 9. Os planos, que
+antes não estavam escritos aqui e por isso a tabela não era refazível:
+
+- **carreira** — Cursar mais um ano · Procurar emprego · Se dedicar ao trabalho · Fazer networking
+- **medicina** — Medicina · Cursar mais um ano · Procurar emprego · Se dedicar ao trabalho
+- **família** — Procurar emprego · Procurar um relacionamento, mais Pedir em casamento · Ter um filho · Conversar nas relações
 
 | plano    | política | p50 patrimônio | negativos | herdeiro | morte p50 |
 |----------|----------|---------------:|----------:|---------:|----------:|
-| carreira | first    | 1,57M |  8 |  8 | 71 |
-| carreira | sensible | 2,07M |  2 | 14 | 72 |
-| medicina | first    | 5,10M | 12 |  6 | 69 |
-| medicina | sensible | 7,67M |  5 |  6 | 71 |
-| família  | first    | 1,76M | 13 | 49 | 69 |
-| família  | sensible | 2,70M |  0 | 54 | 72 |
+| carreira | first    | 2,23M |  8 |  8 | 70 |
+| carreira | sensible | 2,72M |  4 |  7 | 71 |
+| medicina | first    | 3,53M |  7 |  9 | 72 |
+| medicina | sensible | 4,24M |  1 | 12 | 73 |
+| família  | first    | 1,91M | 12 | 52 | 72 |
+| família  | sensible | 2,46M |  2 | 51 | 71 |
 
 Duas leituras que só aparecem com os dois lados:
 
-**Morrer no vermelho é quase inteiramente escolha**, não economia dura — 13 em
-100 caem para 0. É a forma certa: um jogo que empobrece quem joga bem estaria
-punindo por existir.
+**Morrer no vermelho é quase inteiramente escolha**, não economia dura — 12 em
+100 caem para 2 no plano de família, e 7 para 1 no de medicina. É a forma
+certa: um jogo que empobrece quem joga bem estaria punindo por existir.
 
 **A idade de morte muda pouco, e o pouco é o vício.** Antes da Fase 8 a
 resposta era "nada": 69,3 contra 71,0 anos de média, tudo saindo da curva de
@@ -462,40 +593,43 @@ baixo, chão firme); atuação tem o inverso. É o desenho, não um desequilíbr
 
 ### Quanto o jogo é capaz de gerar
 
-Todas as dezesseis trilhas, 120 vidas cada, política `sensible`. As marcadas
-com * têm o curso no plano, porque sem o diploma a porta nem abre:
+Todas as dezesseis trilhas, 120 vidas cada, política `sensible`, plano igual
+para todas: *o curso, quando a porta exige · Cursar mais um ano · a ação de
+entrada da trilha · Se dedicar ao trabalho · Fazer networking*. As marcadas com
+* são as que não abrem sem diploma.
 
 | trilha           | p50 | p90 | negativos |
 |------------------|----:|----:|----------:|
-| Música           | 8,07M | 15,41M |  8 |
-| Medicina *       | 7,71M | 14,39M |  7 |
-| Esporte          | 7,61M | 26,29M |  0 |
-| Internet         | 6,66M | 40,95M |  6 |
-| Engenharia *     | 6,62M |  9,68M |  4 |
-| Advocacia *      | 6,12M | 12,57M |  3 |
-| Comércio         | 5,12M | 12,00M |  4 |
-| Alimentação      | 4,94M |  8,82M |  4 |
-| Tecnologia       | 4,45M | 12,87M |  5 |
-| Acadêmica *      | 4,09M |  6,57M |  0 |
-| Política         | 2,79M |  5,64M |  5 |
-| Atuação          | 2,59M | 14,98M | 20 |
-| Desenvolvimento  | 2,37M |  3,91M |  4 |
-| Corporativo      | 2,08M |  3,14M |  2 |
-| Serviços         | 1,99M |  3,09M |  9 |
-| Crime            | 1,14M |  2,26M |  4 |
+| Internet         | 13,48M | 44,81M |  2 |
+| Advocacia *      |  8,95M | 14,29M |  1 |
+| Música           |  8,88M | 15,29M |  2 |
+| Medicina *       |  8,82M | 14,90M |  4 |
+| Engenharia *     |  7,33M | 10,69M |  1 |
+| Comércio         |  6,74M | 13,40M |  6 |
+| Tecnologia       |  5,48M | 12,11M |  6 |
+| Esporte          |  5,13M | 18,33M |  1 |
+| Alimentação      |  4,47M |  9,11M |  6 |
+| Desenvolvimento  |  2,75M |  6,42M |  1 |
+| Corporativo      |  2,72M |  6,90M |  4 |
+| Política         |  2,64M |  4,62M |  6 |
+| Atuação          |  2,59M | 13,73M | 19 |
+| Acadêmica *      |  2,34M |  4,61M |  6 |
+| Serviços         |  2,02M |  2,93M |  5 |
+| Crime            |  1,04M |  2,10M |  2 |
 
-A forma importa mais que a mediana, e aqui ela aparece: engenharia e acadêmica
-têm p50 alto com p90 baixo — teto baixo, chão firme; atuação tem a segunda
-menor mediana e um p90 seis vezes maior, que é a trilha das cem audições;
-internet tem o p90 mais alto do jogo e não é a maior mediana. Crime continua
-sendo a pior aposta financeira, e é assim que tem que ser.
+A forma importa mais que a mediana, e aqui ela aparece. **Atuação** tem a
+terceira menor mediana, um p90 cinco vezes maior e dezenove negativos em 120 —
+é a trilha das cem audições, e a única em que a ruína é comum. **Acadêmica** e
+**Serviços** são o oposto: p50 baixo, p90 baixo, nada de cauda — teto baixo e
+chão firme, e ninguém vai ficar rico ali. **Internet** lidera as duas
+pontas com este plano — entra aos 15 sem exigir nada e ainda fica acima de
+medicina —, e vale dizer que ela responde muito a *Fazer networking*, que entrou
+no plano desta medição e não estava na anterior. Se isso é desenho ou é a fama
+composta demais, é uma pergunta em aberto, não uma coisa já medida. **Crime**
+continua sendo a pior aposta financeira, e é assim que tem que ser.
 
-Serviços fica acima do corporativo por um motivo que faz sentido: entra aos 16
-sem exigir nada e emprega quase todo mundo, enquanto o corporativo trava no
-nível 2 para quem não se forma. Com faculdade, o corporativo passa.
-
-**Não existe teto duro.** O p90 da internet mede R$40,9M sozinho. O que existe
-é a faixa em que quase todas as trilhas caem, entre R$3M e R$15M de p90, e é
+**Não existe teto duro.** O p90 da internet mede R$44,8M sozinho. O que existe
+é a faixa em que quase todas as trilhas caem, entre R$2,9M e R$18M de p90, e é
 contra ela que os bens de luxo são precificados — um item comprável só na
 cauda é o mesmo que um item que ninguém compra.
 

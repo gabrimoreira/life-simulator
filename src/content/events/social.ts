@@ -87,6 +87,7 @@ export const SOCIAL_EVENTS: GameEvent[] = [
             effects: [
               { type: 'money', delta: -12_000 },
               { type: 'relation', target: { by: 'kind', kind: 'friend' }, delta: -35 },
+              { type: 'personFlag', target: { by: 'kind', kind: 'friend' }, flag: 'owes_me', value: true },
             ],
           },
         ],

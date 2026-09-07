@@ -118,16 +118,14 @@ function retargetRef(ref: RelationRef, personId: string): RelationRef {
  * arrastar um "alvo atual" por toda a assinatura de `applyEffect`.
  */
 export function retarget(effects: Effect[], personId: string): Effect[] {
-  return effects.map((effect) => {
-    switch (effect.type) {
-      case 'relation':
-      case 'removeRelation':
-      case 'relationKind':
-        return { ...effect, target: retargetRef(effect.target, personId) }
-      default:
-        return effect
-    }
-  })
+  // Estrutural, e nao uma lista de tipos: qualquer efeito que tenha `target`
+  // e retargetado. A versao anterior enumerava os tres tipos que existiam, e
+  // o quarto — `personFlag`, na Fase 9 — passou direto: `{ by: 'target' }`
+  // chegava vivo em `findRelation`, que devolve undefined, e o efeito virava
+  // no-op silencioso. A flag simplesmente nunca era escrita.
+  return effects.map((effect) =>
+    'target' in effect ? { ...effect, target: retargetRef(effect.target, personId) } : effect,
+  )
 }
 
 /** Motivo de bloqueio vindo do nível de relação com o próprio alvo. */
@@ -139,6 +137,14 @@ function relationBlocker(action: RelationAction, person: Person): string | null 
     return `Só quando a relação estiver ${action.maxRelation} ou menos`
   }
   return null
+}
+
+/** Se a historia com ESTA pessoa permite a acao. Ver `RelationAction.personFlags`. */
+function personFlagsMatch(action: RelationAction, person: Person): boolean {
+  for (const [flag, value] of Object.entries(action.personFlags ?? {})) {
+    if ((person.flags[flag] ?? false) !== value) return false
+  }
+  return true
 }
 
 function cooldownKey(personId: string, actionId: string): string {
@@ -165,6 +171,12 @@ function applicable(state: GameState, content: ContentPack, person: Person): Rel
 
   return content.relationActions.filter((action) => {
     if (!action.kinds.includes(person.kind)) return false
+    // Filtra, nao desabilita — como `kinds`, e pela mesma razao. "Cobrar o que
+    // devem" numa pessoa que nunca pegou dinheiro emprestado nao e uma acao
+    // bloqueada que da para destravar: e uma acao que nao existe ali. Um
+    // motivo de bloqueio so serve quando o jogador pode fazer algo a respeito,
+    // que e o caso de `minRelation` e do custo em pontos.
+    if (!personFlagsMatch(action, person)) return false
     if (locked !== mentionsPrison(action.conditions ?? [])) return false
     if (action.conditions && firstFailure(action.conditions, state) !== null) return false
     return true

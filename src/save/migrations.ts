@@ -1,7 +1,8 @@
 // Migração de save. A v1 era identidade; a v2 acrescentou carreira, matrícula,
 // fama e pontos de ação; a v3 trouxe bens e ações de relação; a v4 trouxe
 // pensão, prisão e conquistas; a v5 trouxe o modo de pagamento do curso; a v6
-// trouxe o contador de anos seguidos de infelicidade.
+// trouxe o contador de anos seguidos de infelicidade; a v7 deu flags a cada
+// pessoa da lista de relações.
 //
 // As migrações rodam sobre o JSON cru e a checagem de forma acontece DEPOIS,
 // sobre o resultado. Fazer o contrário obrigaria a manter o tipo de cada
@@ -89,6 +90,20 @@ const MIGRATIONS: Record<number, (state: RawState) => RawState> = {
       },
     }
   },
+
+  6: (state) => {
+    const relations: unknown[] = Array.isArray(state['relations']) ? state['relations'] : []
+    return {
+      ...state,
+      // Uma pessoa sem `flags` faz `person.flags[x]` estourar na primeira
+      // condição `personFlag` que a alcançar — e ela alcança a lista inteira,
+      // porque compara por tipo de relação. Ninguém carregava história antes
+      // desta versão, então o objeto vazio é a verdade.
+      relations: relations.map((person) =>
+        isRecord(person) ? { ...person, flags: isRecord(person['flags']) ? person['flags'] : {} } : person,
+      ),
+    }
+  },
 }
 
 function isRecord(value: unknown): value is RawState {
@@ -115,7 +130,7 @@ function looksLikeState(value: unknown): value is GameState {
     typeof character['unhappyYears'] === 'number' &&
     'prison' in character &&
     isRecord(character['stats']) &&
-    typeof (character['stats'] as RawState)['fame'] === 'number' &&
+    typeof character['stats']['fame'] === 'number' &&
     'career' in character &&
     isRecord(character['careerHistory']) &&
     'enrollment' in character &&
