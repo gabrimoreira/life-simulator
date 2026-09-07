@@ -23,6 +23,12 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # Depois do typecheck e antes dos testes: o lint deste projeto pega o que
+      # o compilador nao pega — regras que dependem de TIPO, como `await` em
+      # coisa que nao e promessa. Ver eslint.config.js.
+      - name: Lint
+        run: npm run lint
+
       # Aqui moram os invariantes de arquitetura (src/architecture.test.ts) e a
       # sanidade do conteudo, alem dos testes de regra.
       - name: Testes

@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest'
 import { GAME_CONTENT } from '.'
 import { netWorth } from '../engine/assets'
 import { canContinue } from '../engine/heir'
-import { simulateMany } from '../test/player'
+import { lazy, simulateMany } from '../test/player'
 import type { GameState } from '../engine/types'
 
 const N = 60
@@ -38,13 +38,19 @@ function mediana(valores: number[]): number {
   return ordenado[Math.floor(ordenado.length / 2)] ?? 0
 }
 
-function levas(actions: string[], social: string[] = []): {
-  ruim: GameState[]
-  bom: GameState[]
-} {
+/**
+ * As duas levas do mesmo plano, simuladas só quando o primeiro `it` as lê.
+ *
+ * `lazy` não é enfeite: no corpo de um `describe` isto rodaria na fase de
+ * coleta, em toda rodada, inclusive com `-t` filtrando outro teste.
+ */
+function levas(
+  actions: string[],
+  social: string[] = [],
+): { ruim: () => GameState[]; bom: () => GameState[] } {
   return {
-    ruim: simulateMany(N, GAME_CONTENT, { actions, social, policy: 'first' }),
-    bom: simulateMany(N, GAME_CONTENT, { actions, social, policy: 'sensible' }),
+    ruim: lazy(() => simulateMany(N, GAME_CONTENT, { actions, social, policy: 'first' })),
+    bom: lazy(() => simulateMany(N, GAME_CONTENT, { actions, social, policy: 'sensible' })),
   }
 }
 
@@ -56,21 +62,22 @@ describe('escolher bem muda o dinheiro', () => {
     // mediana de patrimônio tem cauda pesada, e a mesma comparação mede 1,77
     // com 40 vidas, 1,14 com 60, 1,13 com 80 e 1,32 com 150. Qualquer número
     // fixo aqui é sorte da amostra; o que se sustenta é a DIREÇÃO.
-    const patrimonioRuim = mediana(ruim.map(netWorth))
-    expect(mediana(bom.map(netWorth))).toBeGreaterThan(patrimonioRuim)
+    const patrimonioRuim = mediana(ruim().map(netWorth))
+    expect(mediana(bom().map(netWorth))).toBeGreaterThan(patrimonioRuim)
 
     // E a estatística que não depende da cauda: mais da metade das vidas
     // sensatas passa a vida MEDIANA de quem se sabota.
-    const acima = bom.filter((s) => netWorth(s) > patrimonioRuim).length
+    const acima = bom().filter((s) => netWorth(s) > patrimonioRuim).length
     expect(acima / N).toBeGreaterThan(0.5)
-  })
+    // Quem toca a leva primeiro paga por ela: o custo saiu da fase de coleta.
+  }, 20_000)
 
   it('e quase não morre no vermelho', () => {
     // Medido: 11 em 100 contra 2. Morrer devendo é quase inteiramente
     // consequência de escolha, não de a economia ser dura — que é a forma
     // certa. Se fosse o contrário, o jogo estaria punindo por existir.
-    const vermelhoRuim = ruim.filter((s) => netWorth(s) < 0).length
-    const vermelhoBom = bom.filter((s) => netWorth(s) < 0).length
+    const vermelhoRuim = ruim().filter((s) => netWorth(s) < 0).length
+    const vermelhoBom = bom().filter((s) => netWorth(s) < 0).length
     expect(vermelhoBom).toBeLessThanOrEqual(vermelhoRuim)
     expect(vermelhoBom / N).toBeLessThan(0.1)
   })
@@ -78,8 +85,8 @@ describe('escolher bem muda o dinheiro', () => {
 
 describe('mas não muda tudo', () => {
   const acoes = ['Procurar emprego']
-  const ruim = simulateMany(N_LONGEVIDADE, GAME_CONTENT, { actions: acoes, policy: 'first' })
-  const bom = simulateMany(N_LONGEVIDADE, GAME_CONTENT, { actions: acoes, policy: 'sensible' })
+  const ruim = lazy(() => simulateMany(N_LONGEVIDADE, GAME_CONTENT, { actions: acoes, policy: 'first' }))
+  const bom = lazy(() => simulateMany(N_LONGEVIDADE, GAME_CONTENT, { actions: acoes, policy: 'sensible' }))
 
   it('a idade de morte depende pouco de escolha — e o pouco é o vício', () => {
     // Até a Fase 8 a resposta era "nada": 69,3 contra 71,0 anos, e a
@@ -92,8 +99,8 @@ describe('mas não muda tudo', () => {
     // alguma escolha virou um botão de viver mais, e isso precisa ser
     // deliberado em vez de acontecer.
     const idade = (vidas: GameState[]): number => media(vidas.map((s) => s.character.deathAge ?? 0))
-    expect(Math.abs(idade(bom) - idade(ruim))).toBeLessThanOrEqual(6)
-  })
+    expect(Math.abs(idade(bom()) - idade(ruim()))).toBeLessThanOrEqual(6)
+  }, 20_000)
 })
 
 describe('a linhagem é alcançável para os dois', () => {
@@ -103,12 +110,12 @@ describe('a linhagem é alcançável para os dois', () => {
   )
 
   it('mesmo o jogador que se sabota chega ao herdeiro com frequência', () => {
-    expect(ruim.filter(canContinue).length / N).toBeGreaterThan(0.4)
-  })
+    expect(ruim().filter(canContinue).length / N).toBeGreaterThan(0.4)
+  }, 20_000)
 
   it('e cuidar das escolhas ajuda, sem ser a única coisa que importa', () => {
     // Medido: 52 contra 61 em 100. A família depende mais de onde os pontos de
     // ação vão do que de escolher bem dentro do evento.
-    expect(bom.filter(canContinue).length).toBeGreaterThanOrEqual(ruim.filter(canContinue).length)
+    expect(bom().filter(canContinue).length).toBeGreaterThanOrEqual(ruim().filter(canContinue).length)
   })
 })
