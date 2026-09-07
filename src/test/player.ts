@@ -23,9 +23,26 @@ import { createGame } from '../engine/generate'
 import { livingRelations, relationActionsFor } from '../engine/relations'
 import { createRng } from '../engine/rng'
 import { advanceYear, chooseOption, currentEvent, runRelationAction } from '../engine/turn'
-import type { Effect, EventOption, GameState, Outcome } from '../engine/types'
+import type { Effect, EventOption, GameState, Gender, Outcome } from '../engine/types'
 
 export type Policy = 'first' | 'sensible'
+
+/**
+ * Adia uma leva de vidas até o teste que precisa dela rodar.
+ *
+ * Uma simulação no corpo de um `describe` roda na fase de COLETA, sempre — em
+ * `--watch`, com `-t` filtrando outro teste, e mesmo quando o arquivo inteiro
+ * vai ser pulado. Eram 22 s de coleta espalhados por cinco arquivos, pagos em
+ * toda rodada. Com isto a leva só nasce quando alguém a lê, e continua sendo
+ * simulada UMA vez por mais `it()` que a use.
+ */
+export function lazy<T>(make: () => T): () => T {
+  let cached: { value: T } | null = null
+  return () => {
+    cached ??= { value: make() }
+    return cached.value
+  }
+}
 
 export interface Plan {
   /** Prefixos de rótulo de ação, tentados nesta ordem a cada turno. */
@@ -45,6 +62,14 @@ export interface Plan {
   /** Teto de turnos, para um bug de conteúdo não virar laço infinito. */
   maxYears?: number
   name?: string
+  /**
+   * Gênero do personagem.
+   *
+   * Existe desde a Fase 9, quando o conteúdo passou a ramificar por gênero: um
+   * jogador simulado que nascia sempre homem media metade do jogo. É o único
+   * campo do plano que muda o PERSONAGEM e não o comportamento dele.
+   */
+  gender?: Gender
   /**
    * Chamado a cada turno, depois das ações e antes de avançar o ano.
    *
@@ -155,10 +180,11 @@ export function simulate(seed: number, content: ContentPack, plan: Plan = {}): G
     repeatActions = 1,
     maxYears = 150,
     name = 'T',
+    gender = 'male',
     onYear,
   } = plan
 
-  const state = createGame({ name, gender: 'male', seed, birthYear: 2000 }, content)
+  const state = createGame({ name, gender, seed, birthYear: 2000 }, content)
   const rng = createRng(seed)
   let guard = 0
 
