@@ -90,5 +90,6 @@ export function createPerson(
     age,
     relation,
     alive: true,
+    flags: {},
   }
 }

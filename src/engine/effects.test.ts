@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { makeCharacter, makeContent, makeState } from '../test/fixtures'
 import { addMoney, applyEffect, applyEffects, clampStat } from './effects'
 import { createRng } from './rng'
+import type { GameState } from './types'
 
 const rng = () => createRng(1)
 const content = makeContent()
@@ -79,7 +80,7 @@ describe('relações', () => {
   it('relation ajusta a pessoa certa e respeita 0..100', () => {
     const state = makeState({
       relations: [
-        { id: 'm', name: 'Ana Silva', kind: 'mother', gender: 'female', age: 45, relation: 95, alive: true },
+        { id: 'm', name: 'Ana Silva', kind: 'mother', gender: 'female', age: 45, relation: 95, alive: true, flags: {} },
       ],
     })
     applyEffect(
@@ -145,5 +146,64 @@ describe('applyEffects', () => {
     expect(logs).toHaveLength(2)
     expect(state.character.flags['formado']).toBe(true)
     expect(state.character.money).toBe(11_000)
+  })
+})
+
+describe('personFlag', () => {
+  function comMae(flags: Record<string, boolean> = {}): GameState {
+    return makeState({
+      relations: [
+        { id: 'm', name: 'Ana Silva', kind: 'mother', gender: 'female', age: 60, relation: 70, alive: true, flags },
+      ],
+    })
+  }
+
+  it('escreve na pessoa apontada e não no personagem', () => {
+    const state = comMae()
+    applyEffect(
+      { type: 'personFlag', target: { by: 'kind', kind: 'mother' }, flag: 'helped_me', value: true },
+      state,
+      rng(),
+      content,
+    )
+    expect(state.relations[0]?.flags['helped_me']).toBe(true)
+    // Os dois namespaces não se misturam: `character.flags` continua vazio.
+    expect(state.character.flags['helped_me']).toBeUndefined()
+  })
+
+  it('apagar é escrever false, e a flag some da condição', () => {
+    const state = comMae({ helped_me: true })
+    applyEffect(
+      { type: 'personFlag', target: { by: 'kind', kind: 'mother' }, flag: 'helped_me', value: false },
+      state,
+      rng(),
+      content,
+    )
+    expect(state.relations[0]?.flags['helped_me']).toBe(false)
+  })
+
+  it('não vai para a timeline', () => {
+    // Como as flags do personagem: é estado interno. O que o jogador vê é o
+    // evento que a escreveu, e depois o que ela abre.
+    const state = comMae()
+    const log = applyEffect(
+      { type: 'personFlag', target: { by: 'kind', kind: 'mother' }, flag: 'helped_me', value: true },
+      state,
+      rng(),
+      content,
+    )
+    expect(log).toBeNull()
+  })
+
+  it('apontar para quem não existe é inócuo', () => {
+    const state = makeState()
+    expect(
+      applyEffect(
+        { type: 'personFlag', target: { by: 'kind', kind: 'spouse' }, flag: 'helped_me', value: true },
+        state,
+        rng(),
+        content,
+      ),
+    ).toBeNull()
   })
 })

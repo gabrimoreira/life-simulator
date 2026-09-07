@@ -19,6 +19,7 @@ function pessoa(over: Partial<Person> & Pick<Person, 'kind'>): Person {
     age: over.age ?? 35,
     relation: over.relation ?? 70,
     alive: over.alive ?? true,
+    flags: {},
   }
 }
 

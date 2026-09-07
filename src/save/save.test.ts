@@ -89,19 +89,35 @@ describe('migração v4 -> v5', () => {
   })
 
   it('quem não estava estudando continua sem matrícula', () => {
-    const save = JSON.parse(JSON.stringify(makeSave()))
-    save.state.character.enrollment = null
+    const save = clone()
+    save.state.character['enrollment'] = null
     expect(migrate({ ...save, saveVersion: 4 })?.state.character.enrollment).toBeNull()
   })
 })
 
+/**
+ * Cópia funda de um save, tipada.
+ *
+ * `JSON.parse` devolve `any`, e um `any` que atravessa três funções apaga a
+ * checagem justamente nos testes que existem para provar que a MIGRAÇÃO não
+ * apaga nada. Aqui ele para na porta.
+ */
+type SaveCru = {
+  saveVersion: number
+  state: { character: Record<string, unknown> } & Record<string, unknown>
+}
+
+function clone(): SaveCru {
+  return JSON.parse(JSON.stringify(makeSave())) as SaveCru
+}
+
 describe('migração v3 -> v4', () => {
   /** Um save v3 é o v4 sem nada que a Fase 4 acrescentou. */
-  function v3Save(): Record<string, unknown> {
-    const save = JSON.parse(JSON.stringify(makeSave()))
-    delete save.state.achievements
-    delete save.state.character.pension
-    delete save.state.character.prison
+  function v3Save(): SaveCru {
+    const save = clone()
+    delete save.state['achievements']
+    delete save.state.character['pension']
+    delete save.state.character['prison']
     return { ...save, saveVersion: 3 }
   }
 
@@ -124,10 +140,10 @@ describe('migração v3 -> v4', () => {
 
 describe('migração v2 -> v3', () => {
   /** Um save v2 é o v3 sem nada que a Fase 3 acrescentou. */
-  function v2Save(): Record<string, unknown> {
-    const save = JSON.parse(JSON.stringify(makeSave()))
-    delete save.state.lastRelationActionYear
-    delete save.state.character.assets
+  function v2Save(): SaveCru {
+    const save = clone()
+    delete save.state['lastRelationActionYear']
+    delete save.state.character['assets']
     return { ...save, saveVersion: 2 }
   }
 
@@ -152,25 +168,25 @@ describe('migração v2 -> v3', () => {
 
 describe('migração v1 -> v6, em cadeia', () => {
   /** Um save v1 é o v2 sem nada que a Fase 2 acrescentou. */
-  function v1Save(): Record<string, unknown> {
-    const save = JSON.parse(JSON.stringify(makeSave()))
-    delete save.state.actionPoints
-    delete save.state.lastActionYear
-    delete save.state.character.career
-    delete save.state.character.enrollment
-    delete save.state.character.stats.fame
-    delete save.state.character.careerHistory
-    delete save.state.character.assets
-    delete save.state.lastRelationActionYear
-    delete save.state.achievements
-    delete save.state.character.pension
-    delete save.state.character.prison
-    delete save.state.character.unhappyYears
+  function v1Save(): SaveCru {
+    const save = clone()
+    delete save.state['actionPoints']
+    delete save.state['lastActionYear']
+    delete save.state.character['career']
+    delete save.state.character['enrollment']
+    delete (save.state.character['stats'] as Record<string, unknown>)['fame']
+    delete save.state.character['careerHistory']
+    delete save.state.character['assets']
+    delete save.state['lastRelationActionYear']
+    delete save.state['achievements']
+    delete save.state.character['pension']
+    delete save.state.character['prison']
+    delete save.state.character['unhappyYears']
     return { ...save, saveVersion: 1 }
   }
 
   it('preenche os campos novos sem perder o que já existia', () => {
-    const antes = v1Save() as { state: { character: { name: string }; seed: number } }
+    const antes = v1Save()
     const depois = migrate(v1Save())
 
     expect(depois?.saveVersion).toBe(CURRENT_SAVE_VERSION)
@@ -186,8 +202,8 @@ describe('migração v1 -> v6, em cadeia', () => {
     // Ninguém era famoso antes de a fama existir.
     expect(depois?.state.character.stats.fame).toBe(0)
     // E nada do save antigo se perdeu no caminho.
-    expect(depois?.state.character.name).toBe(antes.state.character.name)
-    expect(depois?.state.seed).toBe(antes.state.seed)
+    expect(depois?.state.character.name).toBe(antes.state.character['name'])
+    expect(depois?.state.seed).toBe(antes.state['seed'])
   })
 
   it('o save migrado continua jogável', () => {
@@ -220,5 +236,39 @@ describe('v5 -> v6: o contador de infelicidade', () => {
     const migrado = migrate(save)
     expect(migrado?.state.character.unhappyYears).toBe(0)
     expect(Number.isNaN(migrado?.state.character.unhappyYears)).toBe(false)
+  })
+})
+
+describe('v6 -> v7: cada pessoa ganha memória', () => {
+  it('uma relação sem `flags` ganha o objeto vazio', () => {
+    // Sem isto, `person.flags[x]` estoura na primeira condição `personFlag`
+    // que alcançar a lista — e ela alcança a lista inteira, porque compara por
+    // tipo de relação. Ninguém carregava história antes da v7.
+    const save = JSON.parse(JSON.stringify(makeSave())) as {
+      saveVersion: number
+      state: { relations: Record<string, unknown>[] }
+    }
+    save.state.relations = [
+      { id: 'm', name: 'Ana', kind: 'mother', gender: 'female', age: 50, relation: 70, alive: true },
+    ]
+    save.saveVersion = 6
+
+    const migrado = migrate(save)
+    expect(migrado?.state.relations[0]?.flags).toEqual({})
+    // E o resto da pessoa continua lá.
+    expect(migrado?.state.relations[0]?.name).toBe('Ana')
+  })
+
+  it('quem já tinha flags não as perde', () => {
+    const save = JSON.parse(JSON.stringify(makeSave())) as {
+      saveVersion: number
+      state: { relations: Record<string, unknown>[] }
+    }
+    save.state.relations = [
+      { id: 'f', name: 'Bruno', kind: 'friend', gender: 'male', age: 30, relation: 60, alive: true, flags: { owes_me: true } },
+    ]
+    save.saveVersion = 6
+
+    expect(migrate(save)?.state.relations[0]?.flags).toEqual({ owes_me: true })
   })
 })

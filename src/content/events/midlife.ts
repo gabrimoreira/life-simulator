@@ -253,6 +253,10 @@ export const MIDLIFE_EVENTS: GameEvent[] = [
             effects: [
               { type: 'relation', target: { by: 'kind', kind: 'spouse' }, delta: 25 },
               { type: 'stat', stat: 'happiness', op: 'delta', value: 8 },
+              // Fica NA PESSOA, não na sua ficha: quem perdoou foi ele, e é
+              // ele quem vai lembrar. Uma flag global diria "fui perdoado" e
+              // continuaria valendo depois de um divórcio e um casamento novo.
+              { type: 'personFlag', target: { by: 'kind', kind: 'spouse' }, flag: 'forgave_me', value: true },
             ],
           },
           {

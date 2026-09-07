@@ -137,7 +137,7 @@ describe('o ano lá dentro', () => {
   it('cobra saúde, felicidade e distância de quem está fora', () => {
     const state = preso(3)
     state.relations = [
-      { id: 'm', name: 'Ana', kind: 'mother', gender: 'female', age: 55, relation: 80, alive: true },
+      { id: 'm', name: 'Ana', kind: 'mother', gender: 'female', age: 55, relation: 80, alive: true, flags: {} },
     ]
     const saude = state.character.stats.health
     const humor = state.character.stats.happiness
@@ -225,6 +225,7 @@ describe('o sub-loop cobre tambem as relacoes', () => {
       age: 60,
       relation: 70,
       alive: true,
+      flags: {},
     })
     return { state, content }
   }

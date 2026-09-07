@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { GAME_CONTENT } from '../content'
 import { makeCharacter, makeState } from '../test/fixtures'
-import { simulate } from '../test/player'
+import { lazy, simulate } from '../test/player'
 import { INHERITANCE_SHARE } from './balance'
 import { buyAsset } from './assets'
 import { canContinue, createHeir, heirCandidates } from './heir'
@@ -17,6 +17,7 @@ function child(overrides: Partial<Person> = {}): Person {
     age: 12,
     relation: 70,
     alive: true,
+    flags: {},
     ...overrides,
   }
 }
@@ -38,7 +39,7 @@ describe('candidatos', () => {
       relations: [
         child({ id: 'a' }),
         child({ id: 'b', alive: false }),
-        { id: 'm', name: 'Ana', kind: 'mother', gender: 'female', age: 80, relation: 50, alive: true },
+        { id: 'm', name: 'Ana', kind: 'mother', gender: 'female', age: 80, relation: 50, alive: true, flags: {} },
       ],
     })
     expect(heirCandidates(state).map((p) => p.id)).toEqual(['a'])
@@ -125,6 +126,31 @@ describe('o filho', () => {
     expect(createHeir(state, 'c1')?.character.stats.fame).toBeLessThan(15)
   })
 
+  it('não herda a história do pai com as pessoas que sobraram', () => {
+    // A viúva que perdoou o pai não perdoou o filho, e o irmão que devia
+    // dinheiro devia a ele. Sem isto a linhagem acumularia mágoa para sempre,
+    // do mesmo jeito que os atributos acumulariam sem regressão à média.
+    const state = dead({
+      relations: [
+        child(),
+        {
+          id: 'sp',
+          name: 'Marta Prado',
+          kind: 'spouse',
+          gender: 'female',
+          age: 45,
+          relation: 80,
+          alive: true,
+          flags: { forgave_me: true },
+        },
+      ],
+    })
+    const heir = createHeir(state, 'c1')
+    const mae = heir?.relations.find((p) => p.kind === 'mother')
+    expect(mae?.name).toBe('Marta Prado')
+    expect(mae?.flags).toEqual({})
+  })
+
   it('não herda carreira, curso nem bens do pai', () => {
     const state = dead({ relations: [child()] })
     state.character.money = 500_000
@@ -141,7 +167,7 @@ describe('a família que sobra', () => {
     const state = dead({
       relations: [
         child(),
-        { id: 's', name: 'Ana Prado', kind: 'spouse', gender: 'female', age: 58, relation: 80, alive: true },
+        { id: 's', name: 'Ana Prado', kind: 'spouse', gender: 'female', age: 58, relation: 80, alive: true, flags: {} },
       ],
     })
     const heir = createHeir(state, 'c1')
@@ -157,8 +183,8 @@ describe('a família que sobra', () => {
     const state = dead({
       relations: [
         child(),
-        { id: 'g', name: 'Zilda', kind: 'mother', gender: 'female', age: 85, relation: 40, alive: true },
-        { id: 'f', name: 'Diego', kind: 'friend', gender: 'male', age: 60, relation: 70, alive: true },
+        { id: 'g', name: 'Zilda', kind: 'mother', gender: 'female', age: 85, relation: 40, alive: true, flags: {} },
+        { id: 'f', name: 'Diego', kind: 'friend', gender: 'male', age: 60, relation: 70, alive: true, flags: {} },
       ],
     })
     const ids = createHeir(state, 'c1')?.relations.map((p) => p.id)
@@ -212,6 +238,18 @@ describe('alcançabilidade da linhagem', () => {
     return simulate(seed, GAME_CONTENT, { actions: prioridade, social: SOCIAL })
   }
 
+  /**
+   * O coorte do plano "família", compartilhado pelos dois testes daqui.
+   *
+   * `lazy` faz duas coisas: adia as 100 vidas para fora da fase de coleta do
+   * Vitest, e garante que elas sejam simuladas UMA vez para os dois `it`.
+   */
+  const FAMILIA = lazy(() =>
+    Array.from({ length: 100 }, (_, i) =>
+      vive(i + 1, ['Procurar emprego', 'Procurar um relacionamento']),
+    ),
+  )
+
   it('quem prioriza família chega ao herdeiro com frequência', () => {
     // Este número não para de cair, e vale registrar por quê em vez de só
     // baixar o piso mais uma vez:
@@ -234,9 +272,7 @@ describe('alcançabilidade da linhagem', () => {
     // Com 30 vidas o piso de 45% passava por sorte de seed; 100 estabiliza a
     // medida. O teste abaixo, que compara os dois PLANOS entre si, é o que de
     // fato guarda a mecânica: ele não depende do tamanho do catálogo.
-    const vidas = Array.from({ length: 100 }, (_, i) =>
-      vive(i + 1, ['Procurar emprego', 'Procurar um relacionamento']),
-    )
+    const vidas = FAMILIA()
     const comFilho = vidas.filter(canContinue).length
     expect(comFilho / vidas.length).toBeGreaterThan(0.4)
   }, 20_000)
@@ -248,9 +284,9 @@ describe('alcançabilidade da linhagem', () => {
     // A comparação é com o plano que consome os TRÊS pontos em carreira. Um
     // plano de carreira que ainda sobra um ponto para namorar não paga preço
     // nenhum — e essa era a versão frouxa que este teste media antes.
-    const familia = Array.from({ length: 40 }, (_, i) =>
-      vive(i + 1, ['Procurar emprego', 'Procurar um relacionamento']),
-    ).filter(canContinue).length
+    // As mesmas 40 primeiras sementes do coorte acima, com o plano idêntico:
+    // simular de novo era pagar 40 vidas para chegar ao mesmo array.
+    const familia = FAMILIA().slice(0, 40).filter(canContinue).length
 
     const carreira = Array.from({ length: 40 }, (_, i) =>
       vive(i + 1, [

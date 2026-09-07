@@ -222,6 +222,61 @@ export const CALLBACK_EVENTS: GameEvent[] = [
   },
 
   {
+    // O único callback do jogo que não pergunta o que ACONTECEU com você, e
+    // sim o que aconteceu com ELE. `forgave_me` mora no cônjuge, e é por isso
+    // que este evento morre junto com o casamento — uma flag global diria
+    // "fui perdoado" para sempre, inclusive depois de um divórcio e outro
+    // casamento com outra pessoa.
+    id: 'callback_the_forgiveness',
+    category: 'relationship',
+    weight: 11,
+    cooldown: 9,
+    conditions: [
+      { type: 'personFlag', kind: 'spouse', flag: 'forgave_me', value: true },
+      { type: 'age', min: 35 },
+    ],
+    text: 'Numa discussão boba sobre outra coisa, {conjuge} disse "depois daquilo eu já engoli bem pior".',
+    options: [
+      {
+        text: 'Levar a sério e conversar de verdade',
+        outcomes: [
+          {
+            chance: 0.55,
+            text: 'Vocês conversaram até de madrugada. Alguma coisa que estava presa desde então saiu.',
+            bias: { charisma: 0.4 },
+            effects: [
+              { type: 'relation', target: { by: 'kind', kind: 'spouse' }, delta: 20 },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: 10 },
+              { type: 'personFlag', target: { by: 'kind', kind: 'spouse' }, flag: 'forgave_me', value: false },
+            ],
+          },
+          {
+            chance: 0.45,
+            text: 'A conversa abriu tudo de novo e não fechou. Ficou pior por um bom tempo.',
+            effects: [
+              { type: 'relation', target: { by: 'kind', kind: 'spouse' }, delta: -18 },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -12 },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Deixar passar, como das outras vezes',
+        outcomes: [
+          {
+            chance: 1,
+            text: 'Você deixou. Fica guardado, e volta na próxima discussão sobre outra coisa qualquer.',
+            effects: [
+              { type: 'relation', target: { by: 'kind', kind: 'spouse' }, delta: -6 },
+              { type: 'stat', stat: 'happiness', op: 'delta', value: -5 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
     id: 'callback_living_alone',
     category: 'health',
     weight: 9,

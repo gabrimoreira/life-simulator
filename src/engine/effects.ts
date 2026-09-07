@@ -141,6 +141,16 @@ export function applyEffect(
       }
     }
 
+    case 'personFlag': {
+      const person = findRelation(state, effect.target)
+      if (!person) return null
+      if ((person.flags[effect.flag] ?? false) === effect.value) return null
+      person.flags[effect.flag] = effect.value
+      // Como as flags do personagem: estado interno, nao linha de timeline. O
+      // que o jogador ve e o EVENTO que a escreveu, e depois o que ela abre.
+      return null
+    }
+
     case 'addRelation': {
       const person = createPerson(effect.kind, state, rng, content)
       state.relations.push(person)

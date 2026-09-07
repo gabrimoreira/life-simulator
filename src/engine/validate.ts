@@ -325,6 +325,9 @@ export function validateRelationActions(actions: RelationAction[]): string[] {
     ) {
       problems.push(`${where}: minRelation > maxRelation, a acao nunca aparece`)
     }
+    if (action.personFlags !== undefined && Object.keys(action.personFlags).length === 0) {
+      problems.push(`${where}: personFlags vazio nao gateia nada`)
+    }
 
     action.conditions?.forEach((c, i) => checkCondition(c, `${where}.conditions[${i}]`, problems))
     action.requirements?.forEach((c, i) =>
@@ -364,34 +367,53 @@ export function validateAchievements(achievements: Achievement[]): string[] {
 // Saude do conteudo como um todo
 // ---------------------------------------------------------------------------
 
-function walkConditionFlags(condition: Condition, read: Set<string>): void {
+/**
+ * Os quatro conjuntos que a varredura de flags junta.
+ *
+ * Sao dois namespaces independentes: `character.flags` responde "isso
+ * aconteceu na minha vida" e `person.flags` responde "isso aconteceu com
+ * ELE". Uma flag de pessoa com o mesmo nome de uma global nao a satisfaz, e e
+ * por isso que os conjuntos nao se misturam.
+ */
+interface FlagUsage {
+  written: Set<string>
+  read: Set<string>
+  personWritten: Set<string>
+  personRead: Set<string>
+}
+
+function walkConditionFlags(condition: Condition, usage: FlagUsage): void {
   switch (condition.type) {
     case 'flag':
-      read.add(condition.flag)
+      usage.read.add(condition.flag)
+      break
+    case 'personFlag':
+      usage.personRead.add(condition.flag)
       break
     case 'not':
-      walkConditionFlags(condition.condition, read)
+      walkConditionFlags(condition.condition, usage)
       break
     case 'anyOf':
-      condition.conditions.forEach((inner) => walkConditionFlags(inner, read))
+      condition.conditions.forEach((inner) => walkConditionFlags(inner, usage))
       break
     default:
       break
   }
 }
 
-function walkConditions(conditions: Condition[] | undefined, read: Set<string>): void {
-  conditions?.forEach((condition) => walkConditionFlags(condition, read))
+function walkConditions(conditions: Condition[] | undefined, usage: FlagUsage): void {
+  conditions?.forEach((condition) => walkConditionFlags(condition, usage))
 }
 
-function walkEffects(effects: Effect[], written: Set<string>): void {
+function walkEffects(effects: Effect[], usage: FlagUsage): void {
   for (const effect of effects) {
-    if (effect.type === 'flag') written.add(effect.flag)
+    if (effect.type === 'flag') usage.written.add(effect.flag)
+    if (effect.type === 'personFlag') usage.personWritten.add(effect.flag)
   }
 }
 
-function walkOutcomes(outcomes: Outcome[], written: Set<string>): void {
-  outcomes.forEach((outcome) => walkEffects(outcome.effects, written))
+function walkOutcomes(outcomes: Outcome[], usage: FlagUsage): void {
+  outcomes.forEach((outcome) => walkEffects(outcome.effects, usage))
 }
 
 /**
@@ -402,58 +424,93 @@ function walkOutcomes(outcomes: Outcome[], written: Set<string>): void {
  * quando isto foi medido pela primeira vez; hoje sao dezoito flags e nenhuma
  * orfa, e este detector e a unica razao de continuar assim.
  */
-export function orphanFlags(content: ContentPack): string[] {
-  const written = new Set<string>()
-  const read = new Set<string>(ENGINE_READ_FLAGS)
+function collectFlags(content: ContentPack): FlagUsage {
+  const usage: FlagUsage = {
+    written: new Set<string>(),
+    read: new Set<string>(ENGINE_READ_FLAGS),
+    personWritten: new Set<string>(),
+    personRead: new Set<string>(),
+  }
 
   for (const event of content.events) {
-    walkConditions(event.conditions, read)
+    walkConditions(event.conditions, usage)
     for (const option of event.options) {
-      walkConditions(option.requirements, read)
-      walkOutcomes(option.outcomes, written)
+      walkConditions(option.requirements, usage)
+      walkOutcomes(option.outcomes, usage)
     }
   }
 
   for (const action of content.actions) {
-    walkConditions(action.conditions, read)
-    walkConditions(action.requirements, read)
-    walkOutcomes(action.outcomes, written)
+    walkConditions(action.conditions, usage)
+    walkConditions(action.requirements, usage)
+    walkOutcomes(action.outcomes, usage)
   }
 
   for (const action of content.relationActions) {
-    walkConditions(action.conditions, read)
-    walkConditions(action.requirements, read)
-    walkOutcomes(action.outcomes, written)
+    walkConditions(action.conditions, usage)
+    walkConditions(action.requirements, usage)
+    walkOutcomes(action.outcomes, usage)
+    // `personFlags` gateia a acao pelo ALVO — e um leitor tao real quanto uma
+    // condicao, e sem esta linha a flag lida so aqui apareceria como write-only.
+    for (const flag of Object.keys(action.personFlags ?? {})) usage.personRead.add(flag)
   }
 
   for (const track of content.careers) {
-    track.levels.forEach((level) => walkConditions(level.requirements, read))
-    walkEffects(track.annualEffects ?? [], written)
+    track.levels.forEach((level) => walkConditions(level.requirements, usage))
+    walkEffects(track.annualEffects ?? [], usage)
   }
 
   for (const course of content.courses) {
-    walkConditions(course.requirements, read)
+    walkConditions(course.requirements, usage)
     // A bolsa e um requisito como outro qualquer: uma flag lida so aqui
     // seria acusada de orfa sem esta linha.
-    walkConditions(course.scholarship, read)
-    walkEffects(course.completionEffects, written)
+    walkConditions(course.scholarship, usage)
+    walkEffects(course.completionEffects, usage)
   }
 
   for (const asset of content.assets) {
-    walkConditions(asset.requirements, read)
+    walkConditions(asset.requirements, usage)
     // `annualEffects` sao aplicados de verdade em assets.ts; uma flag escrita
     // por um bem de luxo escapava da deteccao.
-    walkEffects(asset.annualEffects ?? [], written)
+    walkEffects(asset.annualEffects ?? [], usage)
   }
 
   // Conquista tambem le flag. Sem isto, uma flag cujo unico leitor fosse uma
   // conquista aparecia como orfa — falso positivo que so nao acontecia porque
   // `criminal_record` e `retired` tinham um segundo leitor por acaso.
   for (const achievement of content.achievements) {
-    walkConditions(achievement.conditions, read)
+    walkConditions(achievement.conditions, usage)
   }
 
-  return [...written].filter((flag) => !read.has(flag)).sort()
+  return usage
+}
+
+export function orphanFlags(content: ContentPack): string[] {
+  const usage = collectFlags(content)
+  return [...usage.written].filter((flag) => !usage.read.has(flag)).sort()
+}
+
+/**
+ * Flags de PESSOA orfas, nos dois sentidos.
+ *
+ * A regra e mais dura que a das flags globais, e de proposito. Uma flag global
+ * write-only e uma promessa quebrada; uma flag de pessoa read-only e pior, e
+ * silenciosa: a condicao existe, nunca e verdadeira, e o conteudo que ela
+ * gateava simplesmente nunca aparece para ninguem. Nao ha nenhum leitor de
+ * flag de pessoa dentro do motor — nada como `ENGINE_READ_FLAGS` — entao os
+ * dois lados tem que estar no conteudo.
+ */
+export function orphanPersonFlags(content: ContentPack): string[] {
+  const usage = collectFlags(content)
+  const problems = [
+    ...[...usage.personWritten]
+      .filter((flag) => !usage.personRead.has(flag))
+      .map((flag) => `${flag}: escrita e nunca lida`),
+    ...[...usage.personRead]
+      .filter((flag) => !usage.personWritten.has(flag))
+      .map((flag) => `${flag}: lida e nunca escrita`),
+  ]
+  return problems.sort()
 }
 
 /**

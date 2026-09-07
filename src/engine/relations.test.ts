@@ -22,6 +22,7 @@ function person(overrides: Partial<Person> = {}): Person {
     age: 50,
     relation: 60,
     alive: true,
+    flags: {},
     ...overrides,
   }
 }
@@ -91,6 +92,17 @@ describe('retarget', () => {
     for (const effect of retarget(effects, 'p9')) {
       expect(effect).toMatchObject({ target: { by: 'id', id: 'p9' } })
     }
+  })
+
+  it('retargeta TODO efeito com alvo, inclusive os que nasceram depois', () => {
+    // `personFlag` entrou na Fase 9 e ficou de fora da lista de tipos que
+    // `retarget` enumerava. `{ by: 'target' }` chegava vivo em `findRelation`,
+    // que devolve undefined, e o efeito virava no-op silencioso: a flag nunca
+    // era escrita e nenhum teste reclamava. Hoje a checagem é estrutural.
+    const comAlvo: Effect[] = [
+      { type: 'personFlag', target: { by: 'target' }, flag: 'helped_me', value: true },
+    ]
+    expect(retarget(comAlvo, 'p9')[0]).toMatchObject({ target: { by: 'id', id: 'p9' } })
   })
 
   it('não mexe em ref por tipo nem em efeito sem alvo', () => {
@@ -284,6 +296,7 @@ describe('amizade que acaba por abandono', () => {
       age: 40,
       relation,
       alive: true,
+      flags: {},
     })
     return state
   }
@@ -316,6 +329,7 @@ describe('amizade que acaba por abandono', () => {
       age: 70,
       relation: 0,
       alive: true,
+      flags: {},
     })
     applyRelationYear(state, createRng(1))
     expect(state.relations).toHaveLength(1)
@@ -326,5 +340,50 @@ describe('amizade que acaba por abandono', () => {
     state.relations[0]!.alive = false
     applyRelationYear(state, createRng(1))
     expect(state.relations).toHaveLength(1)
+  })
+})
+
+describe('personFlags gateia a ação pelo ALVO', () => {
+  const cobrar: RelationAction = {
+    id: 'cobrar',
+    label: 'Cobrar',
+    hint: 'x',
+    cost: 1,
+    kinds: ['friend'],
+    personFlags: { owes_me: true },
+    outcomes: [{ chance: 1, text: 'pagou.', effects: [] }],
+  }
+
+  function comDoisAmigos(): GameState {
+    const state = makeState()
+    state.relations.push(
+      person({ id: 'a', kind: 'friend', flags: { owes_me: true } }),
+      person({ id: 'b', kind: 'friend', flags: {} }),
+    )
+    return state
+  }
+
+  it('aparece só em quem carrega a flag, e some da lista dos outros', () => {
+    // Este é o ponto inteiro de `Person.flags`: `personFlag` como Condition
+    // responde por TIPO — "algum amigo me deve" —, e responderia sim nos dois.
+    // Aqui a pergunta é sobre a pessoa que está na tela.
+    const state = comDoisAmigos()
+    const content = makeContent([], { relationActions: [cobrar] })
+    const [devedor, quitado] = state.relations
+    if (!devedor || !quitado) throw new Error('fixture')
+
+    expect(relationActionsFor(state, content, devedor)[0]?.enabled).toBe(true)
+    // Filtrada, não desabilitada: cobrar quem nunca pegou dinheiro emprestado
+    // não é uma ação bloqueada que dá para destravar.
+    expect(relationActionsFor(state, content, quitado)).toEqual([])
+  })
+
+  it('a flag some e a ação some junto', () => {
+    const state = comDoisAmigos()
+    const content = makeContent([], { relationActions: [cobrar] })
+    const devedor = state.relations[0]
+    if (!devedor) throw new Error('fixture')
+    devedor.flags['owes_me'] = false
+    expect(relationActionsFor(state, content, devedor)).toEqual([])
   })
 })

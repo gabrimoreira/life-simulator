@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/require-await --
+ * Os tres metodos sao `async` porque `SaveAdapter` os declara assincronos, e
+ * nao porque esperam alguma coisa: o localStorage e sincrono. O contrato existe
+ * para o dia em que o adapter falar com IndexedDB ou com a rede, e trocar
+ * `async` por `Promise.resolve()` aqui so esconderia isso.
+ */
 import type { LoadResult, PersistedSave, SaveAdapter, SaveProblem } from './adapter'
 import { migrate } from './migrations'
 

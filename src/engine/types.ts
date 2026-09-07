@@ -147,6 +147,19 @@ export interface Person {
   /** 0..100 */
   relation: number
   alive: boolean
+  /**
+   * Memoria daquela pessoa especifica.
+   *
+   * O spec pede isto desde a linha 164 e ate a Fase 9 nao existia: uma relacao
+   * tinha um numero e nada mais. O amigo que te traiu e o amigo que voce
+   * conheceu ontem eram indistinguiveis para o conteudo, porque a unica coisa
+   * que os separava era o `relation` — e um numero baixo pode ser magoa, briga
+   * ou simplesmente distancia.
+   *
+   * Sao flags POR PESSOA, nao globais: `character.flags` responde "isso
+   * aconteceu na minha vida"; estas respondem "isso aconteceu com ELE".
+   */
+  flags: Record<string, boolean>
 }
 
 export interface Character {
@@ -281,6 +294,14 @@ export type Condition =
   | { type: 'netWorth'; min?: number; max?: number }
   | { type: 'relationLevel'; kind: RelationKind; min?: number; max?: number }
   /**
+   * Se ALGUMA pessoa viva daquele tipo carrega a flag.
+   *
+   * Compara por TIPO, como `relationLevel` e pela mesma razao: o avaliador de
+   * condicoes nao conhece um alvo. Dentro de uma RelationAction quem responde
+   * "esta pessoa" e `requirements` sobre o alvo, resolvido em relations.ts.
+   */
+  | { type: 'personFlag'; kind: RelationKind; flag: string; value: boolean }
+  /**
    * Quantas pessoas daquele tipo estao vivas.
    *
    * `minRelation` restringe a contagem a quem de fato gosta de voce, e existe
@@ -305,6 +326,7 @@ export type Effect =
   | { type: 'flag'; flag: string; value: boolean }
   | { type: 'education'; level: EducationLevel }
   | { type: 'relation'; target: RelationRef; delta: number }
+  | { type: 'personFlag'; target: RelationRef; flag: string; value: boolean }
   | { type: 'addRelation'; kind: RelationKind }
   | { type: 'removeRelation'; target: RelationRef }
   | { type: 'career'; action: 'hire' | 'quit' | 'fire' | 'promote'; trackId?: string }
@@ -431,6 +453,15 @@ export interface RelationAction {
    */
   minRelation?: number
   maxRelation?: number
+  /**
+   * Flags DO ALVO que precisam bater para a acao aparecer.
+   *
+   * Existe pela mesma razao que `minRelation`: a condicao `personFlag`
+   * compara por TIPO de relacao e responderia por outra pessoa quando ha duas
+   * do mesmo tipo. Aqui, e no `retarget` das RelationActions, sao os unicos
+   * pontos do jogo que sabem de QUEM se esta falando.
+   */
+  personFlags?: Record<string, boolean>
   /** Anos minimos entre dois usos NA MESMA pessoa. */
   cooldown?: number
   /** Ver `GameAction.confirm`. */
