@@ -2,7 +2,7 @@
 
 Simulador de vida em PWA. Um turno = um ano. Nasce, escolhe, morre.
 
-**[Jogar](https://life-simulator.pages.dev)** — abre no celular, instala pelo
+**[Jogar](https://life-simulator-133.pages.dev)** — abre no celular, instala pelo
 próprio navegador e roda em modo avião.
 
 ## Rodar
