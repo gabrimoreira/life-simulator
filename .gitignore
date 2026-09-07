@@ -3,6 +3,13 @@ dist/
 dist-ssr/
 *.local
 .DS_Store
+
+# Segredo nunca entra num repositorio publico, e este e publico. O `.env` ja
+# existia sem estar aqui: um `git add .` distraido teria mandado o que
+# estivesse dentro dele para o GitHub, de onde nao se apaga de verdade.
+.env
+.env.*
+!.env.example
 .playwright-mcp/
 
 # saída do Playwright MCP
